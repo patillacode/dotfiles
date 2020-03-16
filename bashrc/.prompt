@@ -1,0 +1,76 @@
+#!/bin/bash
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+
+# uncomment for a colored prompt, if the terminal has the capability; turned
+# off by default to not distract the user: the focus in a terminal window
+# should be on the output of commands, not on the prompt
+force_color_prompt=yes
+
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+        # We have color support; assume it's compliant with Ecma-48
+        # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+        # a case would tend to support setf rather than setaf.)
+        color_prompt=yes
+    else
+        color_prompt=
+    fi
+fi
+
+# recover the current git branch
+function get_git_branch {
+    git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
+}
+
+# unset color_prompt force_color_prompt
+MAGENTA="\[\033[01;35m\]"
+GREEN="\[\033[0;32m\]"
+YELLOW="\[\033[0;33m\]"
+BLACK="\[\033[38;5;0m\]"
+ORANGE_BG="\[\033[48;5;202m\]"
+
+RESET="\[\033[00m\]"
+RESET_BG="\[\033[49m\]"
+
+function prepare_prompt {
+    if [ "$color_prompt" = yes ]
+    then
+        default_ps="${debian_chroot:+($debian_chroot)}"
+        datetime="$MAGENTA\$(date +%k:%M)$RESET"
+        user_host="$YELLOW\u@\h$RESET:"
+        path="$GREEN  \w$RESET "
+    else
+        default_ps='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+        user_host="\u@\h:"
+        path="\w"     
+    fi
+
+    source $DOTFILES_DIR/bashrc/virtualenv-autodetect.sh
+    _virtualenv_auto_activate
+
+    if [[ $VIRTUAL_ENV != "" ]]
+    then
+        venv="$(basename ${VIRTUAL_ENV}) "
+    else
+        venv=''
+    fi
+
+    if [[ $(parse_git_branch) != '' ]]
+    then
+        git_branch=" $BLACK$ORANGE_BG   $(get_git_branch)$RESET$RESET_BG"
+    else
+        git_branch=""
+    fi
+
+    PS1="$venv$datetime $user_host$path$git_branch" 
+}
+PROMPT_COMMAND=prepare_prompt
+
