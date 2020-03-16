@@ -25,7 +25,7 @@ bashrc_dir="$DOTFILES_DIR/bashrc"
 
 for dotfile in "$bashrc_dir"/.*
 do
-    [[ -f "$dotfile" ]] && [[ ! $(basename $dotfile) =~ ^(.|..|.bashrc)$ ]] && source "$dotfile" && echo "sourcing $dotfile" 
+    [[ -f "$dotfile" ]] && [[ ! $(basename $dotfile) =~ ^(.|..|.bashrc)$ ]] && source "$dotfile" # && echo "sourcing $dotfile" 
 done
 
 # source specific .bashrc related dotfiles for the current host if available: .functions, .aliases, .exports, etc
