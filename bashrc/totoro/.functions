@@ -1,0 +1,9 @@
+#! /bin/bash
+
+passlol(){
+        if [ $# == 1 ] || [ $# == 0 ]; then
+                command pass $1 | lolcat
+        else
+                command pass "$@"
+        fi
+}

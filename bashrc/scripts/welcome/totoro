@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo -e "\n"
+figlet totoro -f alligator | lolcat
+echo -e "\n\t\t   Welcome master" | lolcat
+echo -e "\nAvailable services: plex, owncloud, ts3, trackmania, zabbix, dnsmasq and some other shit...\n" | lolcat

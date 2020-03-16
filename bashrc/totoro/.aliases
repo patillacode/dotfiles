@@ -1,0 +1,4 @@
+#! /bin/bash
+
+alias plexupdate='~/projects/bash/plex_updater.sh'
+alias reset='~/projects/bash/reset_services.sh'

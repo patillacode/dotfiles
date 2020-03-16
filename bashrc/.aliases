@@ -1,0 +1,23 @@
+#! /bin/bash
+
+# system
+alias ls='ls --color=auto'
+alias ll='ls -ahl'
+alias l='ll'
+
+alias brc='source ~/.bashrc'
+alias grep='grep --color=auto'
+
+# git
+alias gs='git status'
+alias gd='git diff'
+alias gc='git commit'
+
+# apps
+alias v='vim'
+alias vi='vim'
+alias tg='~/projects/tg/bin/telegram-cli -W --enable-msg-id -k tg-server.pub'
+
+# random
+alias ccat='bat'
+alias pping='prettyping'
