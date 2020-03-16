@@ -23,7 +23,7 @@ _virtualenv_auto_activate() {
         _remove_from_pythonpath
         deactivate 2>/dev/null
     fi
-    source $DOTFILES_DIR/bashrc/.prompt
+    source $DOTFILES_DIR/bashrc/prompt.sh
 }
 
 _add_to_pythonpath() {
@@ -88,5 +88,5 @@ _virtualenv_auto_activate
 # Zsh.
 chpwd_functions+=(_virtualenv_auto_activate)
 # Bash.
-export PROMPT_COMMAND="_bash_chpwd_function _virtualenv_auto_activate"
+export PROMPT_COMMAND="_bash_chpwd_function _virtualenv_auto_activate get_prompt"
 
