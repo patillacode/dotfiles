@@ -29,7 +29,7 @@ do
 done
 
 # source specific .bashrc related dotfiles for the current host if available: .functions, .aliases, .exports, etc
-if [ -d "$bashrc_dir/$HOSTNAME" ]
+if [[ -d "$bashrc_dir/$HOSTNAME" ]]
 then
     for dotfile in "$bashrc_dir/$HOSTNAME/".*
     do
@@ -37,7 +37,7 @@ then
     done 
 fi
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+[[ -f ~/.fzf.bash ]] && source ~/.fzf.bash
 
 bind 'set show-all-if-ambiguous on'
 bind 'TAB:menu-complete'
