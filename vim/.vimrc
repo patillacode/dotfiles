@@ -3,7 +3,7 @@ colorscheme monokai
 
 set number relativenumber   " set both current line number and realtive ones
 
-" tabs/spaces 
+" tabs/spaces
 set softtabstop=4
 set tabstop=4
 set expandtab
@@ -17,4 +17,6 @@ set hlsearch                " highlight matches
 " turn off search highlight
 nnoremap <leader><space> :nohlsearch<CR>
 
+" remove trailing spaces
+nnoremap tr :%s/\s\+$//
 
