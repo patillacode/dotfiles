@@ -25,7 +25,7 @@ $ ./setup_dotfiles.sh
 
 You should see an output similar to this:
 
-[!]()
+[!](img/setup_ouput.png)
 
 ### Quick notes
 The styles, aliases, scripts, etc... used here are my personal choice and I use them to quickly have my prefered _aliases_ and vim _syntax color_ etc without having to rewrite them everytime I go into a new machine/system.
@@ -35,4 +35,4 @@ The key file in this repo could be `setup_dotfiles.sh` which creates soft-links 
 Below is and explanation of the whole file organization, each file's purpose and explanation of the content for each file.
 
 
-### Files
+### Folders and Files
