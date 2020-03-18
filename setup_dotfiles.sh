@@ -125,4 +125,4 @@ do
     fi
 done < $requirements_file
 
-echo -e "\n${GREEN_BOLD}All set! ${NOCOLOR}try to run ${CYAN}brc${NOCOLOR} to reload the new ${CYAN}.bashr ${GREEN_BOLD}Enjoy!${NOCOLOR}\n"
+echo -e "\n${GREEN_BOLD}All set! ${NOCOLOR}try to run ${CYAN}source $HOME/.bashrc${NOCOLOR} to reload the new ${CYAN}.bashr ${GREEN_BOLD}Enjoy!${NOCOLOR}\n"
