@@ -1,4 +1,5 @@
 #! /bin/bash
 
+alias tg='~/projects/tg/bin/telegram-cli -W --enable-msg-id -k tg-server.pub'
 alias plexupdate='~/projects/bash/plex_updater.sh'
 alias reset='~/projects/bash/reset_services.sh'

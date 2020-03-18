@@ -16,7 +16,6 @@ alias gc='git commit'
 # apps
 alias v='vim'
 alias vi='vim'
-alias tg='~/projects/tg/bin/telegram-cli -W --enable-msg-id -k tg-server.pub'
 
 # random
 alias ccat='bat'
