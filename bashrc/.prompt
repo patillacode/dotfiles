@@ -63,7 +63,7 @@ function prepare_prompt {
         venv=''
     fi
 
-    if [[ $(parse_git_branch) != '' ]]
+    if [[ $(get_git_branch) != '' ]]
     then
         git_branch=" $BLACK$ORANGE_BG   $(get_git_branch)$RESET$RESET_BG"
     else
