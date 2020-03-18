@@ -18,5 +18,5 @@ set hlsearch                " highlight matches
 nnoremap <leader><space> :nohlsearch<CR>
 
 " remove trailing spaces
-nnoremap tr :%s/\s\+$//
+nnoremap tr :%s/\s\+$//<CR>
 
