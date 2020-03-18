@@ -17,6 +17,3 @@ alias gc='git commit'
 alias v='vim'
 alias vi='vim'
 
-# random
-alias ccat='bat'
-alias pping='prettyping'
