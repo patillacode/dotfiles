@@ -40,4 +40,4 @@ fi
 [[ -f ~/.fzf.bash ]] && source ~/.fzf.bash
 
 bind 'set show-all-if-ambiguous on'
-bind 'TAB:menu-complete'
+#bind 'TAB:menu-complete'
