@@ -1,2 +1,4 @@
 figlet
 lolcat
+bat
+prettyping
