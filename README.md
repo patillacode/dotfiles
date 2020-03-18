@@ -25,7 +25,9 @@ $ ./setup_dotfiles.sh
 
 You should see an output similar to this:
 
-[!](img/setup_ouput.png)
+
+![](img/setup_output.png)
+
 
 ### Quick notes
 The styles, aliases, scripts, etc... used here are my personal choice and I use them to quickly have my prefered _aliases_ and vim _syntax color_ etc without having to rewrite them everytime I go into a new machine/system.
