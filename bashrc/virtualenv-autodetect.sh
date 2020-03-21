@@ -15,19 +15,21 @@ _virtualenv_auto_activate() {
         # Check if already activated to avoid redundant activation.
         if [ "$VIRTUAL_ENV" != "${_virtualenv_path%/bin/activate}" ]
         then
-            _remove_from_pythonpath     # Remove any previous VE path
+            # _remove_from_pythonpath     # Remove any previous VE path
             source "$_virtualenv_path"
-            _add_to_pythonpath "$VIRTUAL_ENV"
+            # _add_to_pythonpath "$VIRTUAL_ENV"
         fi
     else
-        _remove_from_pythonpath
+        # _remove_from_pythonpath
         deactivate 2>/dev/null
     fi
 }
 
 _add_to_pythonpath() {
+    echo "adding python path"
     sp=$(find $1 -type d -name 'site-packages')
     export PYTHONPATH=$(echo $PYTHONPATH${PYTHONPATH:+:}$sp | tr : "\n" | sort -u | tr "\n" : | sed -e 's/:$//')
+    echo 'GOTCHA'
 }
 
 _remove_from_pythonpath() {
