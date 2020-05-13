@@ -15,7 +15,6 @@ echo -e "${CYAN}Running ${YELLOW_BOLD}recolte${CYAN} ...${NOCOLOR}"
 cd $RECOLTE_WORKING_DIR
 . venv/bin/activate
 python main.py
-# echo -e "${CYAN}########################${NOCOLOR}"
 
 # run recolte with dry run to get values for pdf invoice
 echo -e "${CYAN}Running ${YELLOW_BOLD}recolte ${YELLOW}(dry run)${CYAN} ...${NOCOLOR}"
@@ -26,7 +25,6 @@ to=$(echo ${myarr[2]})
 time_period=$(echo "$from / $to")
 rate=$(echo ${myarr[4]})
 total_hours=$(echo ${myarr[3]})
-# echo -e "${CYAN}########################${NOCOLOR}"
 
 # calculate next Invoice ID
 last_number=$(ls $INVOICES_FOLDER | tail -1 | awk -F '[-]' '{print $(NF-0)}')
@@ -39,7 +37,6 @@ echo -e "${CYAN}Running ${YELLOW_BOLD}pdf-invoice-generator${CYAN} ...${NOCOLOR}
 cd $PDF_GENERATOR_WORKING_DIR
 . venv/bin/activate
 python generate.py -t $total_hours -r $rate -id $invoice_id -n "$time_period"
-# echo -e "${CYAN}########################${NOCOLOR}"
 
 # create a new folder under invoices folder
 echo -e "${CYAN}Creating new folder in owncloud ...${NOCOLOR}"
