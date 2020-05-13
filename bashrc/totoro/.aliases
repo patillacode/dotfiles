@@ -1,4 +1,7 @@
 #! /bin/bash
+
+source $DOTFILES_DIR/bashrc/$HOSTNAME/secrets.cfg
+
 alias ccat='bat'
 alias pping='prettyping'
 alias tg='~/projects/tg/bin/telegram-cli -W --enable-msg-id -k tg-server.pub'
@@ -8,3 +11,8 @@ alias reset='~/projects/bash/reset_services.sh'
 # transmission
 alias td='sudo service transmission-daemon'
 alias tr='transmission-remote'
+
+# minecraft 
+alias mc="sudo su -c '/opt/minecraft/tools/mcrcon/mcrcon -H 127.0.0.1 -P 25575 -p $minecraft_rcon_password -t'  minecraft"
+alias mc_log="sudo cat /var/log/daemon.log | grep java"
+alias mc_user_log="mc_log | grep 'joined\|left'"
