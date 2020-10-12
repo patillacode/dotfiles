@@ -15,8 +15,7 @@ INVOICES_FOLDER="/Users/dvitto/ownCloud/documents/StackBuilders/invoices/${YEAR}
 echo -e "${CYAN}Running ${YELLOW_BOLD}recolte${CYAN} ...${NOCOLOR}"
 cd $RECOLTE_WORKING_DIR
 . venv/bin/activate
-# python main.py
-echo -e "NOPE NOPE NOPE"
+python main.py
 
 # run recolte with dry run to get values for pdf invoice
 echo -e "${CYAN}Running ${YELLOW_BOLD}recolte ${YELLOW}(dry run)${CYAN} ...${NOCOLOR}"
