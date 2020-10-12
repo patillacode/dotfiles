@@ -15,7 +15,18 @@ INVOICES_FOLDER="/Users/dvitto/ownCloud/documents/StackBuilders/invoices/${YEAR}
 echo -e "${CYAN}Running ${YELLOW_BOLD}recolte${CYAN} ...${NOCOLOR}"
 cd $RECOLTE_WORKING_DIR
 . venv/bin/activate
-python main.py
+
+# ask the user if this is a test or "the real thing"
+read -p "Please confirm recolte will send the email, default is no (yes/no):" answer
+
+if [[ $answer = 'yes' ]]
+then
+	echo -e "Will send email"
+	python main.py
+else
+	echo -e "Will NOT send email"
+	python main.py --dont-send
+fi
 
 # run recolte with dry run to get values for pdf invoice
 echo -e "${CYAN}Running ${YELLOW_BOLD}recolte ${YELLOW}(dry run)${CYAN} ...${NOCOLOR}"
