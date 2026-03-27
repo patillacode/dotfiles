@@ -1,0 +1,17 @@
+.DS_Store
+*.swp
+*secret*
+.netrwhist
+.aider*
+.env
+
+backups
+.config/ghostty/config.*.bak
+kitty.conf.bak
+themes.conf.bak
+
+btop.log
+
+.claude/settings.local.json
+
+dot_config/yt-dlp/cookies/

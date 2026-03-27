@@ -1,0 +1,75 @@
+{{- /* ─── Machine identity ─────────────────────────────── */ -}}
+{{- $machineName := promptStringOnce . "machine_name" "Machine name (bars/nordhealth/totoro)" "" -}}
+
+{{- /* ─── OS / shell detection ─────────────────────────── */ -}}
+{{- $shell := "zsh" -}}
+{{- $isGui := true -}}
+{{- $isArch := false -}}
+{{- $useHomebrew := true -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{-   $shell = promptStringOnce . "shell" "Shell (zsh/bash)" "bash" -}}
+{{-   $isGui = false -}}
+{{-   $isArch = (or (stat "/etc/arch-release") (lookPath "pacman")) | not | not -}}
+{{-   $useHomebrew = promptBoolOnce . "use_homebrew" "Install Homebrew on this Linux machine?" false -}}
+{{- end -}}
+
+{{- /* ─── Profile selection ──────────────────────────────── */ -}}
+{{- $profileChoice := promptStringOnce . "profile_choice" "Profile: 1=personal 2=work 3=server" "1" -}}
+{{- $profiles := list "base" -}}
+{{- if eq $profileChoice "1" -}}
+{{-   $profiles = list "base" "developer" "personal" -}}
+{{- else if eq $profileChoice "2" -}}
+{{-   $profiles = list "base" "developer" "work" -}}
+{{- else if eq $profileChoice "3" -}}
+{{-   $profiles = list "base" "server" -}}
+{{- end -}}
+
+{{- /* ─── Starship theme ──────────────────────────────────── */ -}}
+{{- $starshipTheme := promptStringOnce . "starship_theme" "Starship theme (simple/minimal/zenful/nerd-font-symbols/gruvbox/catppuccin/dracula/nord/tokyo-night/pastel/tops/totoro/ushuaia)" "simple" -}}
+
+{{- /* ─── Git identity ────────────────────────────────────── */ -}}
+{{- $gitName := promptStringOnce . "git_name" "Git user name" "PatillaCode" -}}
+{{- $gitEmail := promptStringOnce . "git_email" "Git email" "patillacode@gmail.com" -}}
+
+{{- /* ─── KeePassXC ───────────────────────────────────────── */ -}}
+{{- $keepassDb := promptStringOnce . "keepassxc_database" "KeePassXC database path (full path to .kdbx)" "" -}}
+
+{{- /* ─── Claude Code ─────────────────────────────────────── */ -}}
+{{- $claudeVariant := "none" -}}
+{{- if or (has "developer" $profiles) (has "personal" $profiles) (has "work" $profiles) -}}
+{{-   $claudeVariant = promptStringOnce . "claude_variant" "Claude Code variant (personal/work/none)" "personal" -}}
+{{- end -}}
+
+{{- /* ─── Font ─────────────────────────────────────────────── */ -}}
+{{- $fontFamily := promptStringOnce . "font_family" "Font family" "Hack Nerd Font Propo" -}}
+{{- $fontSize := promptIntOnce . "font_size" "Font size" 17 -}}
+
+[data]
+    machine_name = {{ $machineName | quote }}
+    os = {{ .chezmoi.os | quote }}
+    shell = {{ $shell | quote }}
+    is_gui = {{ $isGui }}
+    is_arch = {{ $isArch }}
+    use_homebrew = {{ $useHomebrew }}
+    profiles = {{ $profiles | toJson }}
+    exclude_aliases = []
+    exclude_configs = []
+    include_aliases = []
+    include_configs = []
+
+    [data.font]
+        family = {{ $fontFamily | quote }}
+        size = {{ $fontSize }}
+
+    [data.starship]
+        theme = {{ $starshipTheme | quote }}
+
+    [data.git]
+        name = {{ $gitName | quote }}
+        email = {{ $gitEmail | quote }}
+
+    [data.keepassxc]
+        database = {{ $keepassDb | quote }}
+
+    [data.claude]
+        variant = {{ $claudeVariant | quote }}

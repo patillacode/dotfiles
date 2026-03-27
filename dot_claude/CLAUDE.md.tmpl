@@ -1,0 +1,29 @@
+# Global Claude Code Instructions
+
+This file applies to all Claude Code sessions on this machine ({{ .machine_name }}, profile: {{ last .profiles }}).
+
+## Response Style
+
+- Lead with the answer — skip preamble and summaries
+- Concise over verbose; one sentence beats three
+- No emojis unless explicitly requested
+- No docstrings or comments on code I didn't change
+
+## Git
+
+- Never add `Co-Authored-By` trailers to commit messages
+- Create new commits rather than amending (unless explicitly asked)
+- Never use `--no-verify` or force-push to main/master without explicit request
+- Prefer specific file staging over `git add -A`
+
+## Code
+
+- Edit existing files rather than creating new ones
+- No backwards-compatibility shims, renamed `_unused` vars, or `// removed` comments
+- No error handling for scenarios that can't happen
+- No feature flags or abstractions for one-time use
+- Trust internal code; only validate at system boundaries (user input, external APIs)
+
+## Rules
+
+See `~/.claude/rules/` for additional context-specific instructions.

@@ -1,0 +1,130 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  Starship Config: TOTORO                                     ║
+# ║  Custom theme for totoro home server                         ║
+# ║  Nature-inspired colors with perfect balance                 ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+format = """
+$time\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$docker_context\
+$cmd_duration\
+$line_break\
+$character"""
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Time - Dark background with golden yellow text              │
+# ╰─────────────────────────────────────────────────────────────╯
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bg:#1c1c1c fg:#fabd2f bold"
+format = '[ $time ]($style)'
+
+[username]
+show_always = false
+style_user = "bg:#1c1c1c fg:#ff006e"
+style_root = "bg:#1c1c1c fg:#ff006e bold"
+format = '[ $user ]($style)'
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Hostname - Dark background with magenta text (totoro pride!)│
+# ╰─────────────────────────────────────────────────────────────╯
+[hostname]
+ssh_only = false
+style = "bg:#1c1c1c fg:#ff006e bold"
+format = '[ 󰒋 $hostname ]($style)'
+disabled = false
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Directory - Full path, dark bg with olive green text        │
+# ╰─────────────────────────────────────────────────────────────╯
+[directory]
+style = "bg:#1c1c1c fg:#a8b56c bold"
+format = "[$path ]($style)"
+truncation_length = 0  # Show FULL path, no truncation
+truncate_to_repo = false
+# No directory substitutions - full explicit paths
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Git Branch - Cyberpunk magenta                              │
+# ╰─────────────────────────────────────────────────────────────╯
+[git_branch]
+symbol = " "
+style = "bg:#1c1c1c fg:#ff006e bold"
+format = '[ $symbol$branch ]($style)'
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Git Status - Small icons from Cyberpunk theme               │
+# ╰─────────────────────────────────────────────────────────────╯
+[git_status]
+style = "bg:#1c1c1c fg:#fabd2f bold"
+format = '([$all_status$ahead_behind ]($style))'
+conflicted = "⚠"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+untracked = "▪"
+modified = "●"
+staged = "✓"
+deleted = "✘"
+renamed = "»"
+diverged = "⇕"
+stashed = "$"
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Docker Context - Soft blue                                  │
+# ╰─────────────────────────────────────────────────────────────╯
+[docker_context]
+symbol = " "
+style = "bg:#1c1c1c fg:#7dcfff bold"
+format = '[ $symbol$context ]($style)'
+only_with_files = false
+detect_files = ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile']
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Command Duration - ENABLED by default for server work       │
+# ╰─────────────────────────────────────────────────────────────╯
+[cmd_duration]
+min_time = 2_000  # Show for commands > 2 seconds
+style = "bg:#1c1c1c fg:#d7875f"
+format = '[ 󱎫 $duration ]($style)'
+disabled = false
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Character - Nature green prompt                             │
+# ╰─────────────────────────────────────────────────────────────╯
+[character]
+success_symbol = '[❯](bold #87af87)'
+error_symbol = '[❯](bold #d75f5f)'
+vimcmd_symbol = '[❮](bold #87af87)'
+
+# ╭─────────────────────────────────────────────────────────────╮
+# │ Optional Language Indicators (disabled by default)          │
+# ╰─────────────────────────────────────────────────────────────╯
+
+[python]
+symbol = " "
+style = "bg:#1c1c1c fg:#87af87"
+format = '[ $symbol$version ]($style)'
+disabled = true
+
+[nodejs]
+symbol = " "
+style = "bg:#1c1c1c fg:#87af87"
+format = '[ $symbol$version ]($style)'
+disabled = true
+
+[golang]
+symbol = " "
+style = "bg:#1c1c1c fg:#7dcfff"
+format = '[ $symbol$version ]($style)'
+disabled = true
+
+[rust]
+symbol = " "
+style = "bg:#1c1c1c fg:#d7875f"
+format = '[ $symbol$version ]($style)'
+disabled = true

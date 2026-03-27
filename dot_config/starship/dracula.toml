@@ -1,0 +1,78 @@
+# dracula.toml — Dracula palette
+
+add_newline = true
+palette = "dracula"
+
+format = """
+$sudo\
+${custom.python_version}\
+$directory\
+$git_branch$git_status\
+$character\
+"""
+
+right_format = """
+$docker_context\
+$time\
+"""
+
+[palettes.dracula]
+bg         = "#282a36"
+current    = "#44475a"
+fg         = "#f8f8f2"
+comment    = "#6272a4"
+cyan       = "#8be9fd"
+green      = "#50fa7b"
+orange     = "#ffb86c"
+pink       = "#ff79c6"
+purple     = "#bd93f9"
+red        = "#ff5555"
+yellow     = "#f1fa8c"
+
+[character]
+success_symbol = "[❯](bold fg:green)"
+error_symbol   = "[❯](bold fg:red)"
+
+[directory]
+format            = "[ $path](bold fg:cyan)"
+truncation_length = 2
+truncation_symbol = "…/"
+home_symbol       = "~"
+
+[git_branch]
+symbol = " "
+style  = "fg:purple"
+format = "[ $symbol$branch]($style)"
+
+[git_status]
+format    = "[$all_status$ahead_behind](fg:pink)"
+modified  = "!"
+untracked = "?"
+staged    = "+"
+deleted   = "✘"
+ahead     = "⇡"
+behind    = "⇣"
+diverged  = "⇕"
+
+[time]
+disabled    = false
+time_format = "%R"
+style       = "fg:comment"
+format      = "[$time]($style)"
+
+[custom.python_version]
+description = "Active Python venv version"
+command     = "echo \"$(python --version | awk '{split($2, a, \".\"); print a[1] \".\" a[2]}')\""
+when        = '[[ -n "$VIRTUAL_ENV" ]]'
+style       = "fg:yellow"
+format      = "[ $output]($style) "
+
+[docker_context]
+symbol = " "
+format = "[$symbol$context](fg:cyan) "
+
+[sudo]
+style    = "bold fg:red"
+symbol   = " "
+format   = "[$symbol]($style)"
+disabled = false

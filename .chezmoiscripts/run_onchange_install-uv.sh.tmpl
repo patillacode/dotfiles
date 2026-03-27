@@ -1,0 +1,18 @@
+#!/bin/bash
+# run_onchange_install-uv.sh — install uv on Linux (macOS gets it via brew)
+# Reruns when this script changes
+# hash: {{ include ".chezmoiscripts/run_onchange_install-uv.sh.tmpl" | sha256sum }}
+
+{{ if eq .chezmoi.os "linux" -}}
+set -e
+
+if command -v uv &>/dev/null; then
+    echo "uv already installed: $(uv --version)"
+    exit 0
+fi
+
+echo "Installing uv..."
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+echo "uv installed: $(uv --version)"
+{{ end -}}

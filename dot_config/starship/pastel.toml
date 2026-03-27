@@ -1,0 +1,79 @@
+# pastel.toml — soft pastel palette, easy on the eyes
+
+add_newline = true
+palette = "pastel"
+
+format = """
+$sudo\
+${custom.python_version}\
+$directory\
+$git_branch$git_status\
+$character\
+"""
+
+right_format = """
+$docker_context\
+$time\
+"""
+
+[palettes.pastel]
+bg      = "#1e1e2e"
+pink    = "#f4b8e4"
+mauve   = "#ca9ee6"
+blue    = "#8caaee"
+sapph   = "#85c1dc"
+teal    = "#81c8be"
+green   = "#a6d189"
+yellow  = "#e5c890"
+peach   = "#ef9f76"
+red     = "#e78284"
+lavend  = "#babbf1"
+gray    = "#838ba7"
+
+[character]
+success_symbol = "[◆](bold fg:teal)"
+error_symbol   = "[◆](bold fg:red)"
+
+[directory]
+format            = "[ $path](bold fg:sapph)"
+truncation_length = 2
+truncation_symbol = "…/"
+home_symbol       = "~"
+
+[git_branch]
+symbol = " "
+style  = "fg:mauve"
+format = "[ $symbol$branch]($style)"
+
+[git_status]
+format    = "[$all_status$ahead_behind](fg:peach)"
+modified  = "~"
+untracked = "•"
+staged    = "✓"
+deleted   = "✗"
+ahead     = "↑"
+behind    = "↓"
+diverged  = "↕"
+
+[time]
+disabled    = false
+time_format = "%R"
+style       = "fg:gray"
+format      = "[$time]($style)"
+
+[custom.python_version]
+description = "Active Python venv version"
+command     = "echo \"$(python --version | awk '{split($2, a, \".\"); print a[1] \".\" a[2]}')\""
+when        = '[[ -n "$VIRTUAL_ENV" ]]'
+style       = "fg:yellow"
+format      = "[ $output]($style) "
+
+[docker_context]
+symbol = " "
+format = "[$symbol$context](fg:blue) "
+
+[sudo]
+style    = "bold fg:red"
+symbol   = " "
+format   = "[$symbol]($style)"
+disabled = false

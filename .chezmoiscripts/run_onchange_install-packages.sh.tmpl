@@ -1,0 +1,117 @@
+#!/bin/bash
+# run_onchange_install-packages.sh — reruns when package list changes
+# Package data hash: {{ .packages | toJson | sha256sum }}
+
+set -e
+
+{{- $activeProfiles := .profiles }}
+
+{{ if eq .chezmoi.os "darwin" -}}
+# ─── macOS: Homebrew formulae ────────────────────────────────
+FORMULAE=(
+{{- range $activeProfiles }}
+{{-   $pkgs := index $.packages.brew_formulae . }}
+{{-   range $pkgs }}
+    "{{ . }}"
+{{-   end }}
+{{- end }}
+)
+
+echo "Installing Homebrew formulae..."
+for pkg in "${FORMULAE[@]}"; do
+    if ! brew list --formula "$pkg" &>/dev/null; then
+        brew install "$pkg"
+    fi
+done
+
+# ─── macOS: Homebrew casks ───────────────────────────────────
+CASKS=(
+{{- range $activeProfiles }}
+{{-   $pkgs := index $.packages.brew_casks . }}
+{{-   range $pkgs }}
+    "{{ . }}"
+{{-   end }}
+{{- end }}
+)
+
+echo "Installing Homebrew casks..."
+for cask in "${CASKS[@]}"; do
+    if ! brew list --cask "$cask" &>/dev/null; then
+        brew install --cask "$cask"
+    fi
+done
+
+# ─── macOS: Nerd Fonts ───────────────────────────────────────
+echo "Installing Nerd Fonts..."
+for font in {{ range .packages.nerd_fonts }}"{{ . }}" {{ end }}; do
+    if ! brew list --cask "$font" &>/dev/null; then
+        brew install --cask "$font"
+    fi
+done
+
+{{ else if eq .chezmoi.os "linux" -}}
+{{- if .is_arch }}
+# ─── Arch Linux: pacman + yay packages ───────────────────────
+PACMAN_PKGS=(
+{{- range $activeProfiles }}
+{{-   $pkgs := index $.packages.pacman . }}
+{{-   range $pkgs }}
+    "{{ . }}"
+{{-   end }}
+{{- end }}
+)
+
+echo "Installing pacman packages..."
+sudo pacman -Sy --needed --noconfirm "${PACMAN_PKGS[@]}"
+
+if ! command -v yay &>/dev/null; then
+    echo "Installing yay (AUR helper)..."
+    sudo pacman -S --needed --noconfirm git base-devel
+    git clone https://aur.archlinux.org/yay.git /tmp/yay
+    (cd /tmp/yay && makepkg -si --noconfirm)
+    rm -rf /tmp/yay
+fi
+
+{{- else }}
+# ─── Linux: apt packages ─────────────────────────────────────
+APT_PKGS=(
+{{- range $activeProfiles }}
+{{-   $pkgs := index $.packages.apt . }}
+{{-   range $pkgs }}
+    "{{ . }}"
+{{-   end }}
+{{- end }}
+)
+
+echo "Installing apt packages..."
+sudo apt-get update -qq
+sudo apt-get install -y "${APT_PKGS[@]}"
+{{- end }}
+
+{{- if .use_homebrew }}
+# ─── Linux: Homebrew (optional) ──────────────────────────────
+if ! command -v brew &>/dev/null; then
+    echo "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+BREW_PKGS=(
+{{- range $activeProfiles }}
+{{-   $pkgs := index $.packages.brew_formulae . }}
+{{-   range $pkgs }}
+    "{{ . }}"
+{{-   end }}
+{{- end }}
+)
+
+echo "Installing Homebrew packages on Linux..."
+for pkg in "${BREW_PKGS[@]}"; do
+    if ! brew list --formula "$pkg" &>/dev/null; then
+        brew install "$pkg"
+    fi
+done
+{{- end }}
+
+{{ end -}}
+
+echo "Package installation complete."

@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# this script converts a video file to a gif file
+# it uses ffmpeg
+# it requires two arguments: input and output file names
+# it can take an option scale as -s <scale_value>
+
+# Help/Usage message
+function show_usage() {
+    echo ""
+    echo "Convert a video file to a gif file using ffmpeg."
+    echo ""
+    echo "Usage: vid2gif [options] <input_file> <output_file>"
+    echo ""
+    echo "Options:"
+    echo "  -s <scale>   will resize the output to <scale> pixels wide and automatically determine the height"
+    echo ""
+    echo "Example: vid2gif -s 640 input.mp4 output.gif"
+    echo ""
+}
+
+scale="480"
+
+while getopts "s:h" opt; do
+    case $opt in
+        s)
+            scale=$OPTARG
+            ;;
+        h)
+            show_usage
+            exit 0
+            ;;
+        \?)
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
+# check if ffmpeg is installed
+if ! [ -x "$(command -v ffmpeg)" ]; then
+    echo "Error: ffmpeg is not installed." >&2
+    exit 1
+fi
+
+# check if the number of arguments is correct
+if [ $# -lt 2 ]; then
+    show_usage
+    exit 1
+fi
+
+input=$1
+output=$2
+
+# add a few checks to ensure that the input file exists and that the output file is not already there
+if [ ! -f "$input" ]; then
+    echo "Input file does not exist: $input" >&2
+    exit 1
+fi
+
+if [ -f "$output" ]; then
+    echo "Output file already exists: $output" >&2
+    exit 1
+fi
+
+echo "$input - $output - scale: $scale"
+
+ffmpeg -i "$input" -vf "fps=10,scale=$scale:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "$output"

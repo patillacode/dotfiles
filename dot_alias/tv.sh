@@ -1,0 +1,15 @@
+# tv.sh
+
+# alias rtve='mpv https://iptv-org.github.io/iptv/index.m3u'
+alias tv_24horas='mpv http://hlsliveamdgl8-lh.akamaihd.net/i/hlsdvrlive_1@583030/master.m3u8'
+alias tv_eitb1='mpv https://cdn1.etbon.eus/etb1/index.m3u8'
+alias tv_eitb2='mpv https://cdn1.etbon.eus/etb2/index.m3u8'
+alias conquis='streamlink --player mpv --http-header "Referer=https://etbon.eus/" "https://fast-cdn-eitb.mediapro-dev.com/v1/channel/eitb-etbon-conquistador/dash.mpd" best'
+alias tv_la_resistencia_hd='mpv http://334269150112321286.go30818.xyz:80/play/FJBJV2N83F/bk45S75gBKa/321286.ts'
+alias tv_la_sexta='mpv http://334269150112321289.go30818.xyz:80/play/FJBJV2N83F/bk45S75gBKa/321289.ts'
+alias tv_nasa_media='mpv https://ntv2.akamaized.net/hls/live/2013923/NASA-NTV2-HLS/master.m3u8'
+alias tv_nasa_public='mpv https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master_2000.m3u8'
+alias tv_rtve='mpv https://rtvelivestream.akamaized.net/rtvesec/la1/la1_main_576.m3u8'
+alias tv_rtve2='http://334269150112321280.go30818.xyz:80/play/FJBJV2N83F/bk45S75gBKa/321280.ts'
+alias tv_teledeporte='mpv http://hlsliveamdgl1-lh.akamaihd.net/i/hlsdvrlive_1@39732/master.m3u8'
+alias tv_warner='mpv http://334269150112459778.go30818.xyz:80/play/FJBJV2N83F/bk45S75gBKa/459778.ts'

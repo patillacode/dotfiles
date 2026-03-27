@@ -1,0 +1,141 @@
+[branch]
+    sort = -committerdate
+
+[color]
+    ui = true
+
+[color "decorate"]
+    HEAD = red
+    branch = cyan
+    tag = yellow
+    remoteBranch = green
+
+[core]
+	attributesfile = ~/.config/git/attributes
+	compression = 9
+	excludesfile = ~/.config/git/excludes
+	pager = delta
+	preloadindex = true
+	whitespace = error
+
+[delta]
+    side-by-side = false
+    hyperlinks = true
+    hyperlinks-file-link-format = "zed://file/{path}:{line}"
+    true-color = always
+    features = patilla
+    whitespace-error-style = 22 reverse
+
+[delta "patilla"]
+    # General appearance
+    dark = true
+    syntax-theme = Monokai Extended
+    # File
+    file-style = "#FFFFFF" bold
+    file-added-label = [+]
+    file-copied-label = [==]
+    file-modified-label = [*]
+    file-removed-label = [-]
+    file-renamed-label = [->]
+    file-decoration-style = "#84786A" ul
+    # No hunk headers
+    hunk-header-style = omit
+    # Line numbers
+    line-numbers = true
+    line-numbers-left-style = "#84786A"
+    line-numbers-right-style = "#84786A"
+    line-numbers-minus-style = "#A02A11"
+    line-numbers-plus-style = "#479B36"
+    line-numbers-zero-style = "#84786A"
+    line-numbers-left-format = " {nm:>3} │"
+    line-numbers-right-format = " {np:>3} │"
+    # Diff contents
+    inline-hint-style = syntax
+    minus-style = syntax "#330011"
+    minus-emph-style = syntax "#80002a"
+    minus-non-emph-style = syntax auto
+    plus-style = syntax "#003300"
+    plus-emph-style = syntax "#007700"
+    plus-non-emph-style = syntax auto
+    whitespace-error-style = "#FB4934" reverse
+    # Commit hash
+    commit-decoration-style = normal box
+    commit-style = "#ffffff" bold
+    # Blame
+    blame-code-style = syntax
+    blame-format = "{author:>18} ({commit:>8}) {timestamp:<13} "
+    blame-palette = "#000000" "#1d2021" "#282828" "#3c3836"
+    # Merge conflicts
+    merge-conflict-begin-symbol = ⌃
+    merge-conflict-end-symbol = ⌄
+    merge-conflict-ours-diff-header-style = "#FABD2F" bold
+    merge-conflict-theirs-diff-header-style = "#FABD2F" bold overline
+    merge-conflict-ours-diff-header-decoration-style = ''
+    merge-conflict-theirs-diff-header-decoration-style = ''
+
+[diff]
+    context = 3
+    interHunkContext = 10
+    renames = copies
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+{{ if has "work" .profiles -}}
+[includeIf "gitdir/i:~/projects/work/nordhealth/**"]
+	path = ~/.config/git/nordhealth
+
+{{ end -}}
+[init]
+    defaultBranch = development
+
+[interactive]
+    diffFilter = delta --color-only --features=interactive
+    singlekey = true
+
+[log]
+    abbrevCommit = true
+    graph = true
+    graphColors = blue,yellow,cyan,green,magenta,red
+    showSignature = false
+
+[pull]
+    rebase = true
+    default = current
+
+[push]
+    autoSetupRemote = true
+    default = current
+    followTags = true
+    recurseSubmodules = on-demand
+
+[rebase]
+    autoStash = true
+    missingCommitsCheck = warn
+
+[status]
+    branch = true
+    showStash = true
+    showUntrackedFiles = all
+
+[submodule]
+    recurse = true
+
+[tag]
+    sort = -taggerdate
+
+[url "git@github.com:"]
+    insteadOf = "gh:"
+
+[url "git@github.com:patillacode/"]
+    insteadOf = "pc:"
+
+[url "ssh://git@forgejo.patilla.es:2223/patillacode/"]
+    insteadOf = "fg:"
+
+[user]
+	name = {{ .git.name | quote }}
+	email = {{ .git.email | quote }}

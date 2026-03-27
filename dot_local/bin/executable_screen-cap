@@ -1,0 +1,141 @@
+#!/bin/bash
+
+################################################################################
+# screen-cap - capture your screen
+#
+# This script allows you to capture your screen on Linux or macOS systems using
+# the appropriate tools available on each platform. On Linux, it uses 'slop'
+# and 'ffmpeg', while on macOS, it utilizes 'screencapture'. The script prompts
+# you to select a desktop area for recording and saves the recording as an MP4/MOV
+# file with customizable video quality.
+#
+# Usage: screen-cap [options] <output.mp4>
+#
+# Options:
+#   -v, --version        Display script version
+#   -h, --help           Display this help message
+#   -q, --quality <num>  (only for Linux) Specify the video quality in the range
+#                        0-51 (best/worst) (default: 28)
+#
+# Requirements:
+#   - For Linux: slop, ffmpeg
+#   - For macOS: screencapture
+################################################################################
+
+# Function to display script version
+show_version() {
+  echo "screen-cap - capture your screen - 0.0.1"
+}
+
+# Function to display script usage
+show_usage() {
+  echo "Usage: $0 [options] <output.mp4>"
+  echo "Options:"
+  echo "  -v, --version        Display script version"
+  echo "  -h, --help           Display this help message"
+  echo "  -q, --quality <num>  (only for Linux) Specify the video quality in range 0–51(best/worst)(default: 28)"
+}
+
+# Function to check if the required command exists
+check_command() {
+  if ! command -v $1 &> /dev/null
+  then
+    echo "$1 command not found. Please install $1."
+    exit 1
+  fi
+}
+
+# Function to check if an output filename was provided
+check_filename() {
+  if [ -z "$1" ]; then
+    echo "Usage: $0 [options] <output.mp4>"
+    exit 1
+  fi
+}
+
+run_checks() {
+  # Check the operating system
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    check_filename "$1"
+    filename="$1"
+    system="linux"
+    echo "Identified a Linux system... using 'slop' and 'ffmpeg'"
+    check_command "ffmpeg"
+    check_command "slop"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    system="macos"
+    commandtool="screencapture"
+    echo "Identified a macOS system... using 'screencapture'"
+    check_command "screencapture"
+  else
+    echo "Unsupported operating system."
+    exit 1
+  fi
+  handle_options "$@"
+}
+
+# Function to start the recording
+start_recording() {
+  if [[ $system == "linux" ]]; then
+    echo "Recording started. Press 'q' to stop recording."
+    ffmpeg -loglevel quiet \
+    -f x11grab \
+    -s ${width}x${height} \
+    -i ${DISPLAY}+$x,$y \
+    -f alsa -i pulse \
+    -c:v libx264 \
+    -crf $quality \
+    -preset ultrafast \
+    -tune zerolatency \
+    -pix_fmt yuv420p \
+    -f mp4 \
+    $filename
+  else
+    screencapture -vksU -
+  fi
+}
+
+# Function to handle command line options
+handle_options() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -v|--version)
+        show_version
+        exit 0
+        ;;
+      -h|--help)
+        show_usage
+        exit 0
+        ;;
+      -q|--quality)
+        shift
+        quality="$1"
+        echo "Quality set to $quality"
+        ;;
+      *)
+        break
+        ;;
+    esac
+    shift
+  done
+}
+
+# Default quality value
+quality=28
+
+run_checks "$@"
+
+if [[ "$system" == "linux" ]]; then
+  coords=$(slop -f "%x %y %w %h")
+  x=$(echo $coords | awk '{print $1}')
+  y=$(echo $coords | awk '{print $2}')
+  width=$(echo $coords | awk '{print $3}')
+  height=$(echo $coords | awk '{print $4}')
+  width=$((width / 2 * 2))
+  height=$((height / 2 * 2))
+  start_recording
+  echo "Recording stopped."
+elif [[ "$system" == "macos" ]]; then
+  start_recording
+  echo "Recording can be found in your desktop."
+fi

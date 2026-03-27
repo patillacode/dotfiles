@@ -1,0 +1,78 @@
+# gruvbox.toml — warm retro palette
+
+add_newline = true
+palette = "gruvbox"
+
+format = """
+$sudo\
+${custom.python_version}\
+$directory\
+$git_branch$git_status\
+$character\
+"""
+
+right_format = """
+$docker_context\
+$time\
+"""
+
+[palettes.gruvbox]
+bg       = "#282828"
+bg1      = "#3c3836"
+fg       = "#ebdbb2"
+red      = "#cc241d"
+green    = "#98971a"
+yellow   = "#d79921"
+blue     = "#458588"
+purple   = "#b16286"
+aqua     = "#689d6a"
+orange   = "#d65d0e"
+gray     = "#928374"
+
+[character]
+success_symbol = "[❯](bold fg:green)"
+error_symbol   = "[❯](bold fg:red)"
+
+[directory]
+format            = "[ $path](bold fg:yellow)"
+truncation_length = 2
+truncation_symbol = "…/"
+home_symbol       = "~"
+
+[git_branch]
+symbol = " "
+style  = "fg:aqua"
+format = "[ $symbol$branch]($style)"
+
+[git_status]
+format    = "[$all_status$ahead_behind](fg:orange)"
+modified  = "!"
+untracked = "?"
+staged    = "+"
+deleted   = "✘"
+ahead     = "⇡"
+behind    = "⇣"
+diverged  = "⇕"
+
+[time]
+disabled    = false
+time_format = "%R"
+style       = "fg:gray"
+format      = "[$time]($style)"
+
+[custom.python_version]
+description = "Active Python venv version"
+command     = "echo \"$(python --version | awk '{split($2, a, \".\"); print a[1] \".\" a[2]}')\""
+when        = '[[ -n "$VIRTUAL_ENV" ]]'
+style       = "fg:yellow"
+format      = "[ $output]($style) "
+
+[docker_context]
+symbol = " "
+format = "[$symbol$context](fg:blue) "
+
+[sudo]
+style  = "bold fg:red"
+symbol = " "
+format = "[$symbol]($style)"
+disabled = false

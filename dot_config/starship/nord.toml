@@ -1,0 +1,87 @@
+# nord.toml — Nord palette (arctic, north-bluish)
+
+add_newline = true
+palette = "nord"
+
+format = """
+$sudo\
+${custom.python_version}\
+$directory\
+$git_branch$git_status\
+$character\
+"""
+
+right_format = """
+$docker_context\
+$time\
+"""
+
+[palettes.nord]
+# Polar Night
+nord0 = "#2e3440"
+nord1 = "#3b4252"
+nord2 = "#434c5e"
+nord3 = "#4c566a"
+# Snow Storm
+nord4 = "#d8dee9"
+nord5 = "#e5e9f0"
+nord6 = "#eceff4"
+# Frost
+nord7  = "#8fbcbb"
+nord8  = "#88c0d0"
+nord9  = "#81a1c1"
+nord10 = "#5e81ac"
+# Aurora
+nord11 = "#bf616a"
+nord12 = "#d08770"
+nord13 = "#ebcb8b"
+nord14 = "#a3be8c"
+nord15 = "#b48ead"
+
+[character]
+success_symbol = "[❯](bold fg:nord14)"
+error_symbol   = "[❯](bold fg:nord11)"
+
+[directory]
+format            = "[ $path](bold fg:nord8)"
+truncation_length = 2
+truncation_symbol = "…/"
+home_symbol       = "~"
+
+[git_branch]
+symbol = " "
+style  = "fg:nord9"
+format = "[ $symbol$branch]($style)"
+
+[git_status]
+format    = "[$all_status$ahead_behind](fg:nord13)"
+modified  = "!"
+untracked = "?"
+staged    = "+"
+deleted   = "✘"
+ahead     = "⇡"
+behind    = "⇣"
+diverged  = "⇕"
+
+[time]
+disabled    = false
+time_format = "%R"
+style       = "fg:nord3"
+format      = "[$time]($style)"
+
+[custom.python_version]
+description = "Active Python venv version"
+command     = "echo \"$(python --version | awk '{split($2, a, \".\"); print a[1] \".\" a[2]}')\""
+when        = '[[ -n "$VIRTUAL_ENV" ]]'
+style       = "fg:nord13"
+format      = "[ $output]($style) "
+
+[docker_context]
+symbol = " "
+format = "[$symbol$context](fg:nord10) "
+
+[sudo]
+style    = "bold fg:nord11"
+symbol   = " "
+format   = "[$symbol]($style)"
+disabled = false

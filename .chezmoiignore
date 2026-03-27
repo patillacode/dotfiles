@@ -1,0 +1,93 @@
+# ─── Meta files (never deploy) ───────────────────────────────
+README.md
+CLAUDE.md
+.stow-local-ignore
+.gitignore
+.DS_Store
+.aider*
+.cache_ggshield
+.env
+.zshrc.old
+backups/
+install.sh
+install-tools/
+other-configs/
+secrets/
+bash-utils/
+crontab.back
+docs/
+
+# ─── Shell-based exclusions ───────────────────────────────────
+{{ if ne .shell "zsh" -}}
+.zshrc
+.oh-my-zsh/
+{{ end -}}
+{{ if ne .shell "bash" -}}
+.bashrc
+{{ end -}}
+
+# ─── GUI-only (no ghostty on headless servers) ────────────────
+{{ if not .is_gui -}}
+dot_config/ghostty/
+dot_alias/ghostty.sh
+{{ end -}}
+
+# ─── personal-only ────────────────────────────────────────────
+{{ if not (has "personal" .profiles) -}}
+dot_alias/music.sh
+dot_alias/tv.sh
+dot_alias/twitch.sh
+dot_config/mpv/
+dot_config/yt-dlp/
+{{ end -}}
+
+# ─── work-only ────────────────────────────────────────────────
+{{ if not (has "work" .profiles) -}}
+dot_config/git/nordhealth
+dot_oh-my-zsh/custom/themes/nordhealth.zsh-theme
+{{ end -}}
+
+# ─── developer-only ───────────────────────────────────────────
+{{ if not (has "developer" .profiles) -}}
+dot_config/zed/
+dot_config/nvim/
+dot_claude/
+{{ end -}}
+
+# ─── Claude Code: never deploy runtime/machine-local files ────
+dot_claude/settings.local.json
+dot_claude/.credentials.json
+dot_claude/history.jsonl
+dot_claude/projects/
+dot_claude/todos/
+dot_claude/debug/
+dot_claude/plans/
+dot_claude/memory/
+dot_claude/sessions/
+dot_claude/session-env/
+dot_claude/cache/
+dot_claude/statsig/
+dot_claude/telemetry/
+dot_claude/file-history/
+dot_claude/shell-snapshots/
+dot_claude/tasks/
+dot_claude/paste-cache/
+dot_claude/backups/
+dot_claude/config/
+
+# ─── work-only Claude rules ───────────────────────────────────
+{{ if not (has "work" .profiles) -}}
+dot_claude/rules/work.md
+{{ end -}}
+# ─── personal-only Claude rules ──────────────────────────────
+{{ if not (has "personal" .profiles) -}}
+dot_claude/rules/personal.md
+{{ end -}}
+
+# ─── Granular per-machine exclusions ─────────────────────────
+{{ range .exclude_aliases -}}
+dot_alias/{{ . }}.sh
+{{ end -}}
+{{ range .exclude_configs -}}
+dot_config/{{ . }}/
+{{ end -}}

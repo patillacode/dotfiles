@@ -1,0 +1,52 @@
+// Place your key bindings in this file to override the defaults
+[
+    // bot panel toggle
+    // {
+    //     "key": "cmd+j",
+    //     "command": "workbench.action.togglePanel"
+    // },
+    // {
+    //     "key": "cmd+j",
+    //     "command": "workbench.action.togglePanel",
+    //     "when": "editorTextFocus"
+    // },
+    // avoid terminal being run when shift+enter
+    {
+        "key": "shift+enter",
+        "command": "type",
+        "args": {
+            "text": "\n"
+        },
+        "when": "textInputFocus"
+    },
+    // split editor
+    {
+        "key": "cmd+\\",
+        "command": "workbench.action.splitEditor"
+    },
+    {
+        "key": "cmd+f12",
+        "command": "editor.action.revealDefinitionAside",
+        "when": "editorHasDefinitionProvider && editorTextFocus && !isInEmbeddedEditor"
+    },
+    // duplicate
+    {
+        "key": "ctrl+shift+d",
+        "command": "duplicate.execute"
+    },
+    {
+        "key": "ctrl+`",
+        "command": "workbench.action.quickOpenPreviousRecentlyUsedEditor"
+    }
+    // switch between editor and terminal with ctrl+`
+    // {
+    //     "key": "ctrl+`",
+    //     "command": "workbench.action.terminal.focus",
+    //     "when": "textInputFocus"
+    // },
+    // {
+    //     "key": "ctrl+`",
+    //     "command": "workbench.action.focusActiveEditorGroup",
+    //     "when": "terminalFocus"
+    // },
+]

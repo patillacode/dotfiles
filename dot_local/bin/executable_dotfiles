@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+# dotfiles — chezmoi wrapper CLI
+# Usage: dotfiles <command> [args]
+
+set -e
+
+CHEZMOI="${CHEZMOI:-chezmoi}"
+SOURCE_DIR="$($CHEZMOI source-path 2>/dev/null || echo "$HOME/dotfiles")"
+
+usage() {
+    cat <<'EOF'
+dotfiles — manage your chezmoi dotfiles
+
+COMMANDS
+  sync              Pull latest changes from git and apply
+  push [msg]        Commit source changes and push to remote
+  apply [--dry-run] Apply configs (--dry-run to preview)
+  diff              Show pending changes
+  edit <file>       Edit a managed file in $EDITOR
+  theme             Interactive Starship theme selector (requires fzf)
+  info              Show active aliases, configs, tools, and settings
+  rollback          Restore a previous snapshot (requires fzf)
+  status            Show machine info, profiles, managed file count
+  doctor            Run chezmoi diagnostics
+  help              Show this message
+EOF
+}
+
+cmd_sync() {
+    echo "Pulling latest changes..."
+    git -C "$SOURCE_DIR" pull --rebase
+    echo "Applying..."
+    $CHEZMOI apply
+    echo "Done."
+}
+
+cmd_push() {
+    local msg="${1:-update dotfiles}"
+    git -C "$SOURCE_DIR" add -A
+    git -C "$SOURCE_DIR" commit -m "$msg" || true
+    git -C "$SOURCE_DIR" push
+    echo "Pushed."
+}
+
+cmd_apply() {
+    if [[ "$1" == "--dry-run" ]]; then
+        $CHEZMOI apply --dry-run --verbose
+    else
+        $CHEZMOI apply
+    fi
+}
+
+cmd_diff() {
+    $CHEZMOI diff
+}
+
+cmd_edit() {
+    if [[ -z "$1" ]]; then
+        echo "Usage: dotfiles edit <file>" >&2
+        exit 1
+    fi
+    $CHEZMOI edit "$1"
+}
+
+cmd_theme() {
+    if ! command -v fzf &>/dev/null; then
+        echo "fzf is required for interactive theme selection" >&2
+        exit 1
+    fi
+
+    local theme_dir
+    theme_dir="$($CHEZMOI source-path)"/dot_config/starship
+
+    local selected
+    selected=$(
+        find "$theme_dir" -name "*.toml" -not -name "*.tmpl" \
+            | xargs -I{} basename {} .toml \
+            | sort \
+            | fzf \
+                --prompt="Starship theme > " \
+                --preview="bat --color=always --style=plain '$theme_dir/{}.toml' 2>/dev/null || cat '$theme_dir/{}.toml'" \
+                --preview-window="right:60%"
+    ) || exit 0
+
+    echo "Switching to theme: $selected"
+
+    # Update chezmoi config
+    local config="$HOME/.config/chezmoi/chezmoi.toml"
+    if [[ -f "$config" ]]; then
+        sed -i.bak "s/theme = \".*\"/theme = \"$selected\"/" "$config" && rm -f "$config.bak"
+    fi
+
+    # Re-apply to deploy updated STARSHIP_CONFIG in .zshrc
+    $CHEZMOI apply
+
+    echo "Theme set to '$selected'. Open a new shell or run: source ~/.zshrc"
+}
+
+cmd_status() {
+    echo "=== dotfiles status ==="
+    echo "Source:   $SOURCE_DIR"
+    echo "Machine:  $($CHEZMOI data | command grep -o '"machine_name":"[^"]*"' | cut -d'"' -f4 2>/dev/null || hostname)"
+    echo "OS:       $(uname -s)"
+    echo "Profiles: $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")"
+    echo "Theme:    $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")"
+    echo "Managed:  $($CHEZMOI managed | wc -l | tr -d ' ') files"
+    echo ""
+    git -C "$SOURCE_DIR" log --oneline -3 2>/dev/null && echo ""
+    git -C "$SOURCE_DIR" status --short 2>/dev/null | head -10
+}
+
+cmd_info() {
+    local data
+    data=$($CHEZMOI data 2>/dev/null)
+
+    local machine profile theme shell_name
+    machine=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("machine_name","unknown"))' 2>/dev/null || hostname)
+    profile=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("profiles",["unknown"])[-1])' 2>/dev/null || echo "unknown")
+    theme=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")
+    shell_name=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("shell","unknown"))' 2>/dev/null || echo "unknown")
+
+    local aliases configs python_tools
+    aliases=$(echo "$data" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+profile = d.get("profiles", ["unknown"])[-1]
+all_aliases = d.get("profile_aliases", {}).get(profile, [])
+print("  " + "\n  ".join(all_aliases))
+' 2>/dev/null || echo "  (unavailable)")
+
+    configs=$(echo "$data" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+profile = d.get("profiles", ["unknown"])[-1]
+all_configs = d.get("profile_configs", {}).get(profile, [])
+print("  " + "\n  ".join(all_configs))
+' 2>/dev/null || echo "  (unavailable)")
+
+    python_tools=$(echo "$data" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+profiles = d.get("profiles", [])
+pkgs = d.get("packages", {}).get("python_tools", {})
+tools = []
+for p in profiles:
+    tools.extend(pkgs.get(p, []))
+print("  " + "\n  ".join(tools) if tools else "  (none)")
+' 2>/dev/null || echo "  (unavailable)")
+
+    echo "=== dotfiles info ==="
+    echo ""
+    echo "Machine:  $machine"
+    echo "Profile:  $profile"
+    echo "Shell:    $shell_name"
+    echo "Theme:    $theme"
+    echo ""
+    echo "Active aliases:"
+    echo "$aliases"
+    echo ""
+    echo "Active configs:"
+    echo "$configs"
+    echo ""
+    echo "Python tools:"
+    echo "$python_tools"
+    echo ""
+    echo "chezmoi:  $($CHEZMOI --version 2>/dev/null | head -1)"
+}
+
+cmd_rollback() {
+    local snapshot_dir="$HOME/.local/share/chezmoi-snapshots"
+
+    if [[ ! -d "$snapshot_dir" ]]; then
+        echo "No snapshots found at $snapshot_dir" >&2
+        exit 1
+    fi
+
+    if ! command -v fzf &>/dev/null; then
+        echo "fzf is required for interactive rollback" >&2
+        echo "Available snapshots:"
+        ls -1t "$snapshot_dir"
+        exit 1
+    fi
+
+    local selected
+    selected=$(
+        ls -1t "$snapshot_dir" \
+            | fzf \
+                --prompt="Restore snapshot > " \
+                --preview="ls '$snapshot_dir/{}/'" \
+                --preview-window="right:50%"
+    ) || exit 0
+
+    local snapshot_path="$snapshot_dir/$selected"
+    echo "Restoring snapshot: $selected"
+    echo ""
+
+    # Show what would change
+    echo "Files in snapshot:"
+    find "$snapshot_path" -type f | sed "s|$snapshot_path/||"
+    echo ""
+
+    read -r -p "Restore this snapshot? [y/N] " confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo "Aborted."
+        exit 0
+    fi
+
+    # Restore files from snapshot
+    find "$snapshot_path" -type f | while read -r src; do
+        local rel="${src#$snapshot_path/}"
+        local dst="$HOME/$rel"
+        mkdir -p "$(dirname "$dst")"
+        cp "$src" "$dst"
+    done
+
+    echo "Snapshot restored. Run 'chezmoi diff' to see current state."
+}
+
+cmd_doctor() {
+    $CHEZMOI doctor
+}
+
+# ─── dispatch ────────────────────────────────────────────────
+case "${1:-help}" in
+    sync)    cmd_sync ;;
+    push)    shift; cmd_push "$@" ;;
+    apply)   shift; cmd_apply "$@" ;;
+    diff)    cmd_diff ;;
+    edit)    shift; cmd_edit "$@" ;;
+    theme)    cmd_theme ;;
+    info)     cmd_info ;;
+    rollback) cmd_rollback ;;
+    status)   cmd_status ;;
+    doctor)   cmd_doctor ;;
+    help|-h|--help) usage ;;
+    *)
+        echo "Unknown command: $1" >&2
+        echo ""
+        usage
+        exit 1
+        ;;
+esac

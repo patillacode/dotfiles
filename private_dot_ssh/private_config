@@ -1,0 +1,43 @@
+# Added by OrbStack: 'orb' SSH host for Linux machines
+# This only works if it's at the top of ssh_config (before any Host blocks).
+# This won't be added again if you remove it.
+Include ~/.orbstack/ssh/config
+
+Host totoro
+  HostName totoro
+  User dvitto
+  IdentityFile ~/.ssh/id_ed25519_totoro
+  SetEnv TERM=xterm-256color
+
+Host ushuaia
+  HostName ushuaia
+  User korta
+  SetEnv TERM=xterm-256color
+
+Host bars
+  HostName bars
+  User dvitto
+  SetEnv TERM=xterm-256color
+
+Host nordhealth
+  HostName nordhealth
+  User gonz
+  SetEnv TERM=xterm-256color
+
+# Forgejo totoro
+Host forgejo.patilla.es
+    IdentityFile ~/.ssh/forgejo
+    IdentitiesOnly yes
+    Port 2223
+
+# Personal GitHub
+Host github.com
+    HostName github.com
+    User patillacode
+    IdentityFile ~/.ssh/id_rsa
+
+Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+#  IdentityFile ~/.ssh/id_rsa
+#  IdentityFile ~/.ssh/id_ed25519

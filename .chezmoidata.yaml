@@ -1,0 +1,226 @@
+# Profile alias files — which .alias/*.sh files each profile activates
+# Each list is the FULL resolved set (includes ancestors)
+profile_aliases:
+  base:
+    - atuin
+    - docker
+    - git
+    - misc
+    - system
+    - tmux
+    - utils
+  developer:
+    - atuin
+    - docker
+    - git
+    - misc
+    - system
+    - tmux
+    - utils
+    - ai
+  personal:
+    - atuin
+    - docker
+    - git
+    - misc
+    - system
+    - tmux
+    - utils
+    - ai
+    - ghostty
+    - music
+    - ssh
+    - tv
+    - twitch
+  work:
+    - atuin
+    - docker
+    - git
+    - misc
+    - system
+    - tmux
+    - utils
+    - ai
+    - ghostty
+    - ssh
+  server:
+    - atuin
+    - docker
+    - git
+    - misc
+    - system
+    - tmux
+    - utils
+
+# Profile configs — which .config/ subdirs each profile activates
+profile_configs:
+  base:
+    - atuin
+    - btop
+    - gh
+    - git
+    - ghostty
+    - starship
+    - tmux
+  developer:
+    - atuin
+    - btop
+    - gh
+    - git
+    - ghostty
+    - starship
+    - tmux
+    - claude
+    - nvim
+    - zed
+  personal:
+    - atuin
+    - btop
+    - gh
+    - git
+    - ghostty
+    - starship
+    - tmux
+    - claude
+    - nvim
+    - zed
+    - mpv
+    - yt-dlp
+  work:
+    - atuin
+    - btop
+    - gh
+    - git
+    - ghostty
+    - starship
+    - tmux
+    - claude
+    - nvim
+    - zed
+  server:
+    - atuin
+    - btop
+    - gh
+    - git
+    - starship
+    - tmux
+
+# Package lists per profile and OS
+packages:
+  brew_formulae:
+    base:
+      - atuin
+      - bat
+      - btop
+      - duf
+      - eza
+      - fastfetch
+      - fd
+      - fzf
+      - gh
+      - git-delta
+      - git-lfs
+      - jq
+      - ripgrep
+      - starship
+      - tmux
+      - wget
+    developer:
+      - gcc
+      - glow
+      - n
+      - neovim
+      - nvm
+      - uv
+    personal:
+      - cmatrix
+      - ffmpeg
+      - ffmpegthumbnailer
+      - figlet
+      - imagemagick
+      - mpv
+      - ollama
+      - poppler
+      - streamlink
+
+  brew_casks:
+    base:
+      - ghostty
+      - keepassxc
+      - raycast
+      - rectangle
+      - sf-symbols
+      - stats
+    personal:
+      - firefox
+      - jordanbaird-ice
+      - owncloud
+      - telegram
+      - transmission
+      - vlc
+      - zen
+    work:
+      - zen
+
+  apt:
+    base:
+      - bat
+      - btop
+      - curl
+      - fd-find
+      - fzf
+      - git
+      - jq
+      - neovim
+      - ripgrep
+      - tmux
+      - wget
+    developer:
+      - keepassxc
+    server:
+      - docker.io
+      - docker-compose
+
+  pacman:
+    base:
+      - atuin
+      - bat
+      - btop
+      - curl
+      - fd
+      - fzf
+      - git
+      - git-delta
+      - jq
+      - neovim
+      - ripgrep
+      - starship
+      - tmux
+      - wget
+    developer:
+      - gcc
+      - glow
+      - keepassxc
+      - n
+      - nvm
+    personal:
+      - cmatrix
+      - ffmpeg
+      - figlet
+      - imagemagick
+      - mpv
+      - ollama
+      - python-yt-dlp
+      - streamlink
+
+  python_tools:
+    developer:
+      - ruff
+      - prek
+    personal:
+      - yt-dlp
+
+  nerd_fonts:
+    - font-hack-nerd-font
+    - font-fira-code-nerd-font
+    - font-jetbrains-mono-nerd-font

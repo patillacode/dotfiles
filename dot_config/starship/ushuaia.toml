@@ -1,0 +1,30 @@
+[hostname]
+format = "[](fg:black)[$hostname](fg:red bg:black)[](fg:black) "
+disabled = false
+ssh_only = false
+
+[time]
+disabled = false
+time_format = "%R"
+style = "fg:green bg:black"
+format = '[](fg:black)[$time]($style)[](fg:black)'
+
+[git_branch]
+symbol = "[](fg:black)[](fg:red bg:black)"
+style = "fg:red bg:black"
+format = '[$symbol $branch]($style)'
+
+[git_status]
+untracked = "[ •](fg:yellow bg:black)"
+modified = "[ •](fg:cyan bg:black)"
+staged = "[ •](fg:green bg:black)"
+deleted = "[ •](fg:red bg:black)"
+ahead = "[ ↑](fg:yellow bg:black)"
+behind = "[ ↓](fg:yellow bg:black)"
+diverged = "[ 󰦻](fg:cyan bg:black)"
+conflicted = "[ ⊘](fg:red bg:black)"
+stashed = ""
+typechanged = ""
+renamed = ""
+up_to_date = ""
+format = '$all_status$ahead_behind[](fg:black)'

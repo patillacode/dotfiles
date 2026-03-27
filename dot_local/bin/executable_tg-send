@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# script to send a telegram message via a bot
+# usage: ./tg-send <bot_token> <chat_id> <message>
+# can also be sourced to use tg_send_msg() function directly
+
+# check if script is being sourced or run
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    __name__="__main__"
+else
+    __name__="__source__"
+fi
+
+# send function with parameters bot_token, chat_id and message
+tg_send_msg() {
+    local bot_token=$1
+    local chat_id=$2
+    local message=$3
+
+    local data="{\"chat_id\":\"$chat_id\",\"text\":\"$message\",\"disable_notification\": false}"
+    curl -s -o /dev/null -H 'Content-Type: application/json' -d "$data" -X POST https://api.telegram.org/bot$bot_token/sendMessage
+    echo "Message sent successfully."
+}
+
+main() {
+    if [ $# -ne 3 ]; then
+        echo "usage: tg-send <bot_token> <chat_id> <message>"
+        exit 1
+    fi
+
+    tg_send_msg "$1" "$2" "$3"
+    exit 0
+}
+
+# Only run `main` if this script is being run, NOT sourced/imported.
+if [ "$__name__" = "__main__" ]; then
+    main "$@"
+fi

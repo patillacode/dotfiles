@@ -1,0 +1,83 @@
+format = """
+$directory\
+$git_branch$git_status\
+$fill\
+${custom.python_version} \
+\n$character\
+"""
+
+right_format = """
+$time\
+"""
+
+add_newline = true
+
+[line_break]
+disabled = false
+
+[fill]
+symbol = " "
+
+[custom.venv]
+# symbol = " "
+description = "putting the python venv symbol in the prompt if there is a venv active"
+command = 'echo ""'
+when = '[[ -n "$VIRTUAL_ENV" ]]'
+style = "fg:yellow"
+format = " [$output]($style)"
+
+[username]
+style_user = "bright-yellow bold"
+style_root = "bright-red bold"
+format = "[$user]($style)"
+disabled = false
+show_always = true
+
+[hostname]
+# format = "[](fg:black)[@](fg:red bg:black)[$hostname](fg:yellow bg:black)[](fg:black) "
+format = "[](fg:black)[$hostname](fg:yellow bg:black)[](fg:black) "
+disabled = false
+ssh_only = false
+
+[character]
+success_symbol = "[ ➜](bold cyan)"
+error_symbol = "[ 􀅾](red)[ ](bold cyan)"
+
+[directory]
+format = " [$path](bold cyan)"
+truncation_length = 1
+truncation_symbol = ""
+home_symbol = " "
+# read_only = " "
+
+[git_branch]
+symbol = "[](fg:black)[](fg:red bg:black)"
+style = "fg:red bg:black"
+format = '[$symbol $branch]($style)'
+
+[git_status]
+untracked = "[ •](fg:yellow bg:black)"
+modified = "[ •](fg:cyan bg:black)"
+staged = "[ •](fg:green bg:black)"
+deleted = "[ •](fg:red bg:black)"
+ahead = "[ ↑](fg:yellow bg:black)"
+behind = "[ ↓](fg:yellow bg:black)"
+diverged = "[ 󰦻](fg:cyan bg:black)"
+conflicted = "[ ⊘](fg:red bg:black)"
+stashed = ""
+typechanged = ""
+renamed = ""
+up_to_date = ""
+format = '$all_status$ahead_behind[](fg:black)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "fg:green bg:black"
+format = '[](fg:black)[$time]($style)[](fg:black)'
+
+[custom.python_version]
+description = "putting the python verion in the prompt"
+command = "echo \" $(python --version | awk '{split($2, a, \".\"); print a[1] \".\" a[2]}')\""
+when = '[[ -n "$VIRTUAL_ENV" ]]'
+format = "[](fg:black)[$output](fg:yellow bg:black)[](fg:black)"

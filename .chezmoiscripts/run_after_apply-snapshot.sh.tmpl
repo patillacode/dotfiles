@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# run_after_apply-snapshot.sh — save a snapshot after every chezmoi apply
+# Keeps the last 10 snapshots in ~/.local/share/chezmoi-snapshots/
+
+set -e
+
+SNAPSHOT_ROOT="$HOME/.local/share/chezmoi-snapshots"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+SNAPSHOT_DIR="$SNAPSHOT_ROOT/$TIMESTAMP"
+KEEP=10
+
+mkdir -p "$SNAPSHOT_DIR"
+
+# Snapshot all chezmoi-managed files (excludes private/secret files for safety)
+chezmoi managed --path-style absolute 2>/dev/null | while read -r file; do
+    [[ -f "$file" ]] || continue
+    # Skip files with secrets (private_ prefix in source)
+    rel="${file#$HOME/}"
+    dst="$SNAPSHOT_DIR/$rel"
+    mkdir -p "$(dirname "$dst")"
+    cp "$file" "$dst" 2>/dev/null || true
+done
+
+# Save chezmoi config (without secrets)
+cp "$HOME/.config/chezmoi/chezmoi.toml" "$SNAPSHOT_DIR/.chezmoi.toml" 2>/dev/null || true
+
+# Prune: keep only the last $KEEP snapshots
+snapshot_count=$(ls -1 "$SNAPSHOT_ROOT" | wc -l | tr -d ' ')
+if (( snapshot_count > KEEP )); then
+    ls -1t "$SNAPSHOT_ROOT" | tail -n +"$((KEEP + 1))" | while read -r old; do
+        rm -rf "${SNAPSHOT_ROOT:?}/$old"
+    done
+fi
+
+echo "chezmoi: snapshot saved → $SNAPSHOT_DIR"

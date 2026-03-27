@@ -1,0 +1,42 @@
+#!/bin/bash
+# run_onchange_install-python-tools.sh — reruns when tool list changes
+# Tool data hash: {{ .packages.python_tools | toJson | sha256sum }}
+
+set -e
+
+{{- $activeProfiles := .profiles }}
+{{- $tools := list }}
+{{- range $activeProfiles }}
+{{-   $profileTools := index $.packages.python_tools . }}
+{{-   range $profileTools }}
+{{-     $tools = append $tools . }}
+{{-   end }}
+{{- end }}
+
+{{ if not $tools -}}
+# No Python tools for profile {{ last .profiles }} — nothing to do
+exit 0
+{{ end -}}
+
+# ─── uv ──────────────────────────────────────────────────────
+if ! command -v uv &>/dev/null; then
+    echo "Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# ─── Python tools ────────────────────────────────────────────
+TOOLS=(
+{{- range $tools }}
+    "{{ . }}"
+{{- end }}
+)
+
+echo "Installing Python tools via uv..."
+for tool in "${TOOLS[@]}"; do
+    if ! uv tool list 2>/dev/null | grep -q "^$tool "; then
+        uv tool install "$tool"
+    fi
+done
+
+echo "Python tools installation complete."

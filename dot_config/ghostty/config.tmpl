@@ -1,0 +1,138 @@
+# To get the default values
+# ghostty +show-config --default --docs
+
+auto-update-channel = tip
+
+# Styling
+## theme
+# theme = bamboo.conf
+# theme = catppuccin-macchiato.conf
+# theme = everforest.conf
+# theme = hardhacker-patilla.conf
+# theme = night-owl.conf
+# theme = nord.conf
+# theme = poimandres.conf
+# theme = posterpole.conf
+theme = tokyonight-storm.conf
+# theme = ultima.conf
+
+## opacity
+background-opacity = 0.9
+background-blur-radius = 20
+unfocused-split-opacity = 0.7
+
+## background image
+background-image=~/owncloud/images/backgrounds/that_look.png
+#background-image=~/owncloud/images/backgrounds/moon_compressed.jpg
+#background-image=~/owncloud/images/backgrounds/high_tech_earth.jpg
+background-image-opacity=0.21
+background-image-fit=cover
+background-image-position=center
+
+## colors
+bold-is-bright = true
+selection-foreground = cyan
+selection-background = black
+# pastel cyan color
+split-divider-color = #8be9fd
+
+## padding
+window-padding-x = 9
+window-padding-y = 3
+
+## cursor
+cursor-color = f7768e
+cursor-style = block
+cursor-click-to-move = true
+
+## titlebar
+macos-titlebar-style = tabs
+window-decoration = true
+
+## fonts
+font-family = {{ .font.family }}
+font-family-bold = {{ .font.family }}
+font-family-italic = {{ .font.family }}
+font-family-bold-italic = {{ .font.family }}
+font-size = {{ .font.size }}
+font-feature = -liga
+font-thicken = false
+window-inherit-font-size = false
+
+# Miscellaneous
+shell-integration-features = cursor,sudo,no-title
+mouse-hide-while-typing = true
+link-url = true
+window-inherit-working-directory = true
+focus-follows-mouse = true
+copy-on-select = true
+quit-after-last-window-closed = true
+auto-update = download
+window-height = 100
+window-width = 112
+window-position-x = 2500
+window-position-y = 0
+
+# Keybindings
+## Reload config
+keybind = super+shift+r=reload_config
+## Quick terminal
+keybind = super+shift+t=toggle_quick_terminal
+keybind = global:super+\=toggle_quick_terminal
+quick-terminal-position = center
+quick-terminal-animation-duration = 0.6
+quick-terminal-autohide = false
+quick-terminal-space-behavior = remain
+# Splits
+keybind = super+enter=equalize_splits
+# Copy/Paste
+keybind = super+c=copy_to_clipboard
+keybind = super+v=paste_from_clipboard
+# Fullscreen
+keybind = super+shift+f=toggle_fullscreen
+# Find
+keybind = super+alt+shift+j=write_screen_file:paste
+# Set titles
+keybind = super+shift+t=prompt_surface_title
+
+# FOR SSH COMPATIBILITY
+# https://ghostty.org/docs/help/terminfo
+# infocmp -x | ssh YOUR-SERVER -- tic -x -
+shell-integration-features = ssh-terminfo,ssh-env
+
+# Shaders
+custom-shader-animation = true
+# https://github.com/hackrmomo/ghostty-shaders
+# custom-shader = shaders/animated-gradient-shader.glsl
+# custom-shader = shaders/bettercrt.glsl
+# custom-shader = shaders/bloom.glsl
+# custom-shader = shaders/crt.glsl
+# custom-shader = shaders/cubes.glsl
+# custom-shader = shaders/dither.glsl
+# custom-shader = shaders/drunkard.glsl
+# custom-shader = shaders/fireworks-rockets.glsl
+# custom-shader = shaders/fireworks.glsl
+# custom-shader = shaders/flicker.glsl
+# custom-shader = shaders/gears-and-belts.glsl
+# custom-shader = shaders/glitchy.glsl
+# custom-shader = shaders/glow.glsl
+# custom-shader = shaders/glow-rgbsplit-twitchy.glsl
+# custom-shader = shaders/gradient-background.glsl
+# custom-shader = shaders/inside-the-matrix.glsl
+# custom-shader = shaders/just-snow.glsl
+# custom-shader = shaders/matrix-hallway.glsl
+# custom-shader = shaders/negative.glsl
+# custom-shader = shaders/old-film.glsl
+# custom-shader = shaders/pixels.glsl
+# custom-shader = shaders/retro-terminal.glsl
+# custom-shader = shaders/scanline.glsl
+# custom-shader = shaders/smoke-and-ghost.glsl
+# custom-shader = shaders/sparks-from-fire.glsl
+# custom-shader = shaders/spotlight.glsl
+# custom-shader = shaders/starfield-colors.glsl
+# custom-shader = shaders/starfield.glsl
+# custom-shader = shaders/static.glsl
+# custom-shader = shaders/tft.glsl
+# custom-shader = shaders/underwater.glsl
+# custom-shader = shaders/water.glsl
+keybind = shift+enter=text:\n

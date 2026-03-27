@@ -1,0 +1,58 @@
+{
+    "icecream": {
+        "prefix": "ice",
+        "body": [
+            "from icecream import ic",
+            "ic($1)"
+        ],
+        "description": "icecream"
+    },
+    "property": {
+        "prefix": "prop",
+        "body": [
+            "@property",
+            "def $1(self):",
+            "    return self.$1"
+        ],
+        "description": "property"
+    },
+    "dict-comp": {
+        "prefix": "dc",
+        "body": [
+            "{${1:key}: ${2:value} for ${3:item} in ${4:iterable}}"
+        ],
+        "description": "Dictionary comprehension"
+    },
+    "list-comp": {
+        "prefix": "lc",
+        "body": [
+            "[${1:expression} for ${2:item} in ${3:iterable}]"
+        ],
+        "description": "List comprehension"
+    },
+    "for-loop": {
+        "prefix": "for",
+        "body": [
+            "for ${1:item} in ${2:iterable}:",
+            "    ${3:pass}"
+        ],
+        "description": "Simple for loop"
+    },
+    "newdict": {
+        "prefix": "dd",
+        "body": [
+            "${1:name} = {",
+            "    \"${2:key}\": ${3:value},",
+            "    $4",
+            "}"
+        ],
+        "description": "Create a new dictionary"
+    },
+    "newlist": {
+        "prefix": "ll",
+        "body": [
+            "${1:name} = [${2:items}]"
+        ],
+        "description": "Create a new list"
+    }
+}

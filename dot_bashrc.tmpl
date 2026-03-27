@@ -1,0 +1,42 @@
+# .bashrc — managed by chezmoi
+# Machine: {{ .machine_name }} | Profile: {{ last .profiles }} | Shell: {{ .shell }}
+
+# Source global definitions
+[[ -f /etc/bashrc ]] && source /etc/bashrc
+
+###########
+# SECRETS #
+###########
+
+# Local env (not managed by chezmoi, machine-specific)
+[[ -f "$HOME/.env" ]] && source "$HOME/.env"
+
+###########
+# ALIASES #
+###########
+
+{{- $activeProfile := last .profiles }}
+{{- $aliases := index .profile_aliases $activeProfile }}
+{{ range $aliases }}
+[[ -f "$HOME/.alias/{{ . }}.sh" ]] && source "$HOME/.alias/{{ . }}.sh"
+{{- end }}
+
+###########
+# Exports #
+###########
+
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+# local bin (uv tools)
+export PATH="$PATH:$HOME/.local/bin"
+
+##########
+# Prompt #
+##########
+
+# Starship — theme selectable via chezmoi data
+export STARSHIP_CONFIG="$HOME/.config/starship/{{ .starship.theme }}.toml"
+eval "$(starship init {{ .shell }})"
+
+eval "$(atuin init {{ .shell }})"
