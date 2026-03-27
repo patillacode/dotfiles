@@ -38,6 +38,32 @@ chezmoi init --source ~/dotfiles ssh://git@forgejo.patilla.es:2223/patillacode/d
 chezmoi apply
 ```
 
+### Migrating from the old Stow setup
+
+If the machine currently has the old GNU Stow dotfiles, remove the symlinks first:
+
+```bash
+# From the old dotfiles directory
+cd ~/dotfiles
+stow --delete .
+
+# Remove the old repo
+cd ~
+rm -rf ~/dotfiles
+```
+
+Then proceed with the normal fresh install one-liner below.
+
+If the machine has an older chezmoi setup instead:
+
+```bash
+chezmoi purge   # removes ~/dotfiles source dir and ~/.config/chezmoi config
+```
+
+Then proceed with the fresh install one-liner.
+
+---
+
 ### Prerequisites
 
 - **Secrets:** A [KeePassXC](https://keepassxc.org) database with a `dotfiles/github-pat` entry (Password field = your GitHub PAT). The `keepassxc-cli` binary must be on your PATH — it ships with KeePassXC on macOS, and is installed automatically via packages on Linux developer profiles.
