@@ -46,6 +46,11 @@
 
 sourceDir = "{{ .chezmoi.homeDir }}/dotfiles"
 
+{{ if $keepassDb -}}
+[keepassxc]
+    database = {{ $keepassDb | quote }}
+
+{{ end -}}
 [data]
     machine_name = {{ $machineName | quote }}
     os = {{ .chezmoi.os | quote }}
