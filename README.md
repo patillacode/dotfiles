@@ -2,7 +2,8 @@
 
 Personal dotfiles managed with [chezmoi](https://chezmoi.io). Supports macOS (zsh), Debian/Ubuntu Linux, and Arch Linux with a profile-based system — one repo, multiple machines.
 
-**Primary remote:** `ssh://git@forgejo.patilla.es:2223/patillacode/dotfiles.git`
+**Primary remote:** `https://forgejo.patilla.es/patillacode/dotfiles.git`
+
 **Mirror:** `https://github.com/patillacode/dotfiles`
 
 ---
@@ -26,7 +27,7 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io). Supports macOS (zs
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles \
-  ssh://git@forgejo.patilla.es:2223/patillacode/dotfiles.git
+  https://forgejo.patilla.es/patillacode/dotfiles.git
 ```
 
 This installs chezmoi, clones the repo, runs the interactive setup, and applies everything.
@@ -34,7 +35,7 @@ This installs chezmoi, clones the repo, runs the interactive setup, and applies 
 ### Manual (existing chezmoi install)
 
 ```bash
-chezmoi init --source ~/dotfiles ssh://git@forgejo.patilla.es:2223/patillacode/dotfiles.git
+chezmoi init --source ~/dotfiles https://forgejo.patilla.es/patillacode/dotfiles.git
 chezmoi apply
 ```
 
