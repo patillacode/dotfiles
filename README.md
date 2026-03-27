@@ -25,7 +25,7 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io). Supports macOS (zs
 ### One-liner (new machine)
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply \
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles \
   ssh://git@forgejo.patilla.es:2223/patillacode/dotfiles.git
 ```
 
@@ -34,7 +34,7 @@ This installs chezmoi, clones the repo, runs the interactive setup, and applies 
 ### Manual (existing chezmoi install)
 
 ```bash
-chezmoi init ssh://git@forgejo.patilla.es:2223/patillacode/dotfiles.git
+chezmoi init --source ~/dotfiles ssh://git@forgejo.patilla.es:2223/patillacode/dotfiles.git
 chezmoi apply
 ```
 
