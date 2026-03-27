@@ -7,10 +7,10 @@
 #   2. Add a line below: export KEY="{{ `{{` }} keepassxcAttribute "dotfiles/entry-name" "Password" {{ `}}` }}"
 #   3. Run: chezmoi apply
 #
-# Required KeePassXC entry: dotfiles/github-pat (Password field = your token)
+# Required KeePassXC entry: Code/dotfiles/github-pat (Password field = your token)
 
 {{ if .keepassxc.database -}}
-export GITHUB_TOKEN="{{ keepassxcAttribute "dotfiles/github-pat" "Password" }}"
+export GITHUB_TOKEN="{{ keepassxcAttribute "Code/dotfiles/github-pat" "Password" }}"
 {{ else -}}
 # KeePassXC database not configured — set keepassxc.database in chezmoi.toml to enable secret injection.
 # Run: chezmoi edit-config
