@@ -6,7 +6,6 @@ CLAUDE.md
 .DS_Store
 .aider*
 .cache_ggshield
-.env
 .zshrc.old
 backups/
 install.sh
