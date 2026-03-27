@@ -4,7 +4,7 @@
 #
 # To add a new secret:
 #   1. Add entry in KeePassXC under group "dotfiles"
-#   2. Add a line below: export KEY="{{ keepassxcAttribute "dotfiles/entry-name" "Password" }}"
+#   2. Add a line below: export KEY="{{ `{{` }} keepassxcAttribute "dotfiles/entry-name" "Password" {{ `}}` }}"
 #   3. Run: chezmoi apply
 #
 # Required KeePassXC entry: dotfiles/github-pat (Password field = your token)
