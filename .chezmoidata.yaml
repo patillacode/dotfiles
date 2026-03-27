@@ -177,9 +177,7 @@ packages:
       - wget
     developer:
       - keepassxc
-    server:
-      - docker.io
-      - docker-compose
+    server: []
 
   pacman:
     base:
