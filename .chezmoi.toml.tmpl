@@ -44,6 +44,8 @@
 {{- $fontFamily := promptStringOnce . "font_family" "Font family" "Hack Nerd Font Propo" -}}
 {{- $fontSize := promptIntOnce . "font_size" "Font size" 17 -}}
 
+sourceDir = "{{ .chezmoi.homeDir }}/dotfiles"
+
 [data]
     machine_name = {{ $machineName | quote }}
     os = {{ .chezmoi.os | quote }}
