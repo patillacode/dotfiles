@@ -163,6 +163,9 @@ packages:
       - zen
 
   apt:
+    # Installed via apt ONLY when Homebrew is not active (use_homebrew = false).
+    # These mirror brew_formulae.base — on Homebrew machines, brew provides them instead.
+    # Keep both lists in sync if you add a new base tool.
     base:
       - bat
       - btop
@@ -175,9 +178,10 @@ packages:
       - ripgrep
       - tmux
       - wget
-    developer:
-      - keepassxc
-    server:
+
+    # Always installed via apt regardless of Homebrew.
+    # Use this for tools that have no brew formula or must come from the system package manager.
+    always:
       - keepassxc
 
   pacman:
