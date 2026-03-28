@@ -110,6 +110,9 @@ if ! command -v brew &>/dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
+# Add brew to PATH for this script session (shellenv not yet loaded in a fresh install)
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
+
 BREW_PKGS=(
 {{- range $activeProfiles }}
 {{-   $pkgs := index $.packages.brew_formulae . }}
