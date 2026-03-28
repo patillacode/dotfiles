@@ -48,4 +48,6 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
 export STARSHIP_CONFIG="$HOME/.config/starship/{{ .starship.theme }}.toml"
 eval "$(starship init {{ .shell }})"
 
+. "$HOME/.atuin/bin/env"
+[[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
 eval "$(atuin init {{ .shell }})"
