@@ -21,6 +21,7 @@ COMMANDS
   info              Show active aliases, configs, tools, and settings
   rollback          Restore a previous snapshot (requires fzf)
   status            Show machine info, profiles, managed file count
+  secrets           Inject secrets from KeePassXC into ~/.env
   doctor            Run chezmoi diagnostics
   help              Show this message
 EOF
@@ -216,6 +217,35 @@ cmd_rollback() {
     echo "Snapshot restored. Run 'chezmoi diff' to see current state."
 }
 
+cmd_secrets() {
+    local db
+    db=$(chezmoi data 2>/dev/null | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("keepassxc",{}).get("database",""))' 2>/dev/null)
+
+    if [[ -z "$db" ]]; then
+        echo "Error: keepassxc.database not set in chezmoi config." >&2
+        echo "Run: chezmoi edit-config" >&2
+        exit 1
+    fi
+
+    if ! command -v keepassxc-cli &>/dev/null; then
+        echo "Error: keepassxc-cli not found." >&2
+        exit 1
+    fi
+
+    echo "Injecting secrets from KeePassXC into ~/.env..."
+    local github_token
+    github_token=$(keepassxc-cli show -q -a Password "$db" "Code/dotfiles/github-pat")
+
+    cat > "$HOME/.env" <<EOF
+# ~/.env — secrets injected by 'dotfiles secrets'
+# Do not edit manually; re-run 'dotfiles secrets' to refresh.
+export GITHUB_TOKEN="$github_token"
+EOF
+
+    chmod 600 "$HOME/.env"
+    echo "Done. ~/.env updated."
+}
+
 cmd_doctor() {
     $CHEZMOI doctor
 }
@@ -231,6 +261,7 @@ case "${1:-help}" in
     info)     cmd_info ;;
     rollback) cmd_rollback ;;
     status)   cmd_status ;;
+    secrets)  cmd_secrets ;;
     doctor)   cmd_doctor ;;
     help|-h|--help) usage ;;
     *)
