@@ -51,6 +51,7 @@ profile_aliases:
     - system
     - tmux
     - utils
+    - ai
 
 # Profile configs — which .config/ subdirs each profile activates
 profile_configs:
