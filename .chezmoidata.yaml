@@ -52,6 +52,7 @@ profile_aliases:
     - tmux
     - utils
     - ai
+    - ssh
 
 # Profile configs — which .config/ subdirs each profile activates
 profile_configs:
@@ -105,6 +106,8 @@ profile_configs:
     - git
     - starship
     - tmux
+    - nvim
+    - claude
 
 # Package lists per profile and OS
 packages:
@@ -170,11 +173,14 @@ packages:
     base:
       - bat
       - btop
+      - build-essential
       - curl
+      - duf
       - eza
       - fd-find
       - fzf
       - git
+      - git-lfs
       - jq
       - neovim
       - ripgrep

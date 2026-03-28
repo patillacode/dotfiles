@@ -35,6 +35,11 @@ export RTK_TELEMETRY_DISABLED=1
 # local bin
 export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 
+{{ if .use_homebrew -}}
+# Homebrew (Linux)
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
+{{ end -}}
+
 ##########
 # Prompt #
 ##########
