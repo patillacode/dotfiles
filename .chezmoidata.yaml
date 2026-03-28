@@ -135,6 +135,7 @@ packages:
       - n
       - neovim
       - nvm
+      - rtk
       - uv
     personal:
       - cmatrix

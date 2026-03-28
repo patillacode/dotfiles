@@ -20,5 +20,18 @@
     "skill-creator@claude-plugins-official": true,
     "github@claude-plugins-official": true
   },
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/rtk-rewrite.sh"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -49,6 +49,7 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
+shift $((OPTIND - 1))
 input=$1
 output=$2
 
