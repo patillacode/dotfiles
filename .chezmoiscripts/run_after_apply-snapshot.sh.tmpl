@@ -12,17 +12,28 @@ KEEP=10
 mkdir -p "$SNAPSHOT_DIR"
 
 # Snapshot all chezmoi-managed files (excludes private/secret files for safety)
+file_count=0
 chezmoi managed --path-style absolute 2>/dev/null | while read -r file; do
     [[ -f "$file" ]] || continue
-    # Skip files with secrets (private_ prefix in source)
     rel="${file#$HOME/}"
     dst="$SNAPSHOT_DIR/$rel"
     mkdir -p "$(dirname "$dst")"
     cp "$file" "$dst" 2>/dev/null || true
 done
+file_count=$(find "$SNAPSHOT_DIR" -type f -not -name '.metadata' | wc -l | tr -d ' ')
 
 # Save chezmoi config (without secrets)
 cp "$HOME/.config/chezmoi/chezmoi.toml" "$SNAPSHOT_DIR/.chezmoi.toml" 2>/dev/null || true
+
+# Save metadata for rollback display
+commit_info=$(git -C "$HOME/dotfiles" log -1 --format="%h %s" 2>/dev/null || echo "unknown")
+cat > "$SNAPSHOT_DIR/.metadata" <<META
+date: $(date +"%Y-%m-%d %H:%M:%S")
+commit: $commit_info
+files: $file_count
+machine: {{ .machine_name }}
+profile: {{ last .profiles }}
+META
 
 # Prune: keep only the last $KEEP snapshots
 snapshot_count=$(ls -1 "$SNAPSHOT_ROOT" | wc -l | tr -d ' ')

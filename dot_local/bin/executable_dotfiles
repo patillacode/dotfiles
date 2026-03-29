@@ -7,42 +7,59 @@ set -e
 CHEZMOI="${CHEZMOI:-chezmoi}"
 SOURCE_DIR="$($CHEZMOI source-path 2>/dev/null || echo "$HOME/dotfiles")"
 
+# ─── Colors ─────────────────────────────────────────────────
+BOLD="\033[1m"
+DIM="\033[2m"
+CYAN="\033[0;36m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+NC="\033[0m"
+
+_header()  { echo -e "${BOLD}${CYAN}$1${NC}"; }
+_section() { echo -e "\n${BOLD}$1${NC}"; }
+_ok()      { echo -e "  ${GREEN}✓${NC} $1"; }
+_warn()    { echo -e "  ${YELLOW}⚠${NC} $1"; }
+_fail()    { echo -e "  ${RED}✗${NC} $1"; }
+_item()    { printf "  ${CYAN}%-20s${NC} %s\n" "$1" "$2"; }
+_dim()     { echo -e "  ${DIM}$1${NC}"; }
+
 usage() {
-    cat <<'EOF'
-dotfiles — manage your chezmoi dotfiles
+    _header "dotfiles — manage your chezmoi dotfiles"
+    echo -e "  ${DIM}Aliases: dt, dots${NC}"
 
-Aliases: dt, dots
+    _section "SYNC & DEPLOY"
+    _item "sync" "Pull latest changes from git and apply"
+    _item "push [msg]" "Commit source changes and push to remote"
+    _item "apply [--dry-run]" "Apply configs (--dry-run to preview)"
+    _item "diff" "Show pending changes"
+    _item "edit <file>" "Edit a managed file in \$EDITOR"
 
-SYNC & DEPLOY
-  sync              Pull latest changes from git and apply
-  push [msg]        Commit source changes and push to remote
-  apply [--dry-run] Apply configs (--dry-run to preview)
-  diff              Show pending changes
-  edit <file>       Edit a managed file in $EDITOR
+    _section "CUSTOMIZATION"
+    _item "theme" "Interactive Starship theme selector (fzf)"
+    _item "secrets" "Inject secrets from KeePassXC into ~/.env"
 
-CUSTOMIZATION
-  theme             Interactive Starship theme selector (fzf)
-  secrets           Inject secrets from KeePassXC into ~/.env
+    _section "INFO"
+    _item "status" "Machine info, profiles, managed file count"
+    _item "info" "Active aliases, configs, tools, and settings"
+    _item "utils" "List all utility scripts and functions"
+    _item "doctor" "Run chezmoi diagnostics"
 
-INFO
-  status            Machine info, profiles, managed file count
-  info              Active aliases, configs, tools, and settings
-  utils             List available utility scripts
-  doctor            Run chezmoi diagnostics
-
-RECOVERY
-  rollback          Restore a previous snapshot (fzf)
-
-  help              Show this message
-EOF
+    _section "RECOVERY"
+    _item "rollback" "Restore a previous snapshot (fzf)"
+    echo ""
 }
 
 cmd_sync() {
+    _header "Syncing dotfiles..."
+    echo ""
     echo "Pulling latest changes..."
     git -C "$SOURCE_DIR" pull --rebase
+    echo ""
     echo "Applying..."
     $CHEZMOI apply
-    echo "Done."
+    echo ""
+    _ok "Done."
 }
 
 cmd_push() {
@@ -50,7 +67,7 @@ cmd_push() {
     git -C "$SOURCE_DIR" add -A
     git -C "$SOURCE_DIR" commit -m "$msg" || true
     git -C "$SOURCE_DIR" push
-    echo "Pushed."
+    _ok "Pushed."
 }
 
 cmd_apply() {
@@ -67,7 +84,7 @@ cmd_diff() {
 
 cmd_edit() {
     if [[ -z "$1" ]]; then
-        echo "Usage: dotfiles edit <file>" >&2
+        echo -e "${RED}Usage:${NC} dotfiles edit <file>" >&2
         exit 1
     fi
     $CHEZMOI edit "$1"
@@ -75,7 +92,7 @@ cmd_edit() {
 
 cmd_theme() {
     if ! command -v fzf &>/dev/null; then
-        echo "fzf is required for interactive theme selection" >&2
+        _fail "fzf is required for interactive theme selection"
         exit 1
     fi
 
@@ -95,29 +112,36 @@ cmd_theme() {
 
     echo "Switching to theme: $selected"
 
-    # Update chezmoi config
     local config="$HOME/.config/chezmoi/chezmoi.toml"
     if [[ -f "$config" ]]; then
         sed -i.bak "s/theme = \".*\"/theme = \"$selected\"/" "$config" && rm -f "$config.bak"
     fi
 
-    # Re-apply to deploy updated STARSHIP_CONFIG in .zshrc
     $CHEZMOI apply
 
-    echo "Theme set to '$selected'. Open a new shell or run: source ~/.zshrc"
+    _ok "Theme set to '$selected'. Open a new shell or run: source ~/.zshrc"
 }
 
 cmd_status() {
-    echo "=== dotfiles status ==="
-    echo "Source:   $SOURCE_DIR"
-    echo "Machine:  $($CHEZMOI data | command grep -o '"machine_name":"[^"]*"' | cut -d'"' -f4 2>/dev/null || hostname)"
-    echo "OS:       $(uname -s)"
-    echo "Profiles: $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")"
-    echo "Theme:    $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")"
-    echo "Managed:  $($CHEZMOI managed | wc -l | tr -d ' ') files"
+    _header "dotfiles status"
     echo ""
-    git -C "$SOURCE_DIR" log --oneline -3 2>/dev/null && echo ""
-    git -C "$SOURCE_DIR" status --short 2>/dev/null | head -10
+    echo -e "  Source:    ${CYAN}$SOURCE_DIR${NC}"
+    echo -e "  Machine:   $($CHEZMOI data | command grep -o '"machine_name":"[^"]*"' | cut -d'"' -f4 2>/dev/null || hostname)"
+    echo -e "  OS:        $(uname -s)"
+    echo -e "  Profiles:  $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")"
+    echo -e "  Theme:     $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")"
+    echo -e "  Managed:   $($CHEZMOI managed | wc -l | tr -d ' ') files"
+
+    _section "Recent commits"
+    git -C "$SOURCE_DIR" log --oneline -3 2>/dev/null | sed 's/^/  /'
+    echo ""
+    local changes
+    changes=$(git -C "$SOURCE_DIR" status --short 2>/dev/null | head -10)
+    if [[ -n "$changes" ]]; then
+        _section "Uncommitted changes"
+        echo "$changes" | sed 's/^/  /'
+        echo ""
+    fi
 }
 
 cmd_info() {
@@ -130,24 +154,34 @@ cmd_info() {
     theme=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")
     shell_name=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("shell","unknown"))' 2>/dev/null || echo "unknown")
 
-    local aliases configs python_tools
-    aliases=$(echo "$data" | python3 -c '
+    _header "dotfiles info"
+    echo ""
+    echo -e "  Machine:   ${CYAN}$machine${NC}"
+    echo -e "  Profile:   $profile"
+    echo -e "  Shell:     $shell_name"
+    echo -e "  Theme:     $theme"
+    echo -e "  chezmoi:   $($CHEZMOI --version 2>/dev/null | head -1)"
+
+    _section "Active aliases"
+    echo "$data" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 profile = d.get("profiles", ["unknown"])[-1]
-all_aliases = d.get("profile_aliases", {}).get(profile, [])
-print("  " + "\n  ".join(all_aliases))
-' 2>/dev/null || echo "  (unavailable)")
+for a in d.get("profile_aliases", {}).get(profile, []):
+    print("  " + a)
+' 2>/dev/null || echo "  (unavailable)"
 
-    configs=$(echo "$data" | python3 -c '
+    _section "Active configs"
+    echo "$data" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 profile = d.get("profiles", ["unknown"])[-1]
-all_configs = d.get("profile_configs", {}).get(profile, [])
-print("  " + "\n  ".join(all_configs))
-' 2>/dev/null || echo "  (unavailable)")
+for c in d.get("profile_configs", {}).get(profile, []):
+    print("  " + c)
+' 2>/dev/null || echo "  (unavailable)"
 
-    python_tools=$(echo "$data" | python3 -c '
+    _section "Python tools"
+    echo "$data" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 profiles = d.get("profiles", [])
@@ -155,59 +189,86 @@ pkgs = d.get("packages", {}).get("python_tools", {})
 tools = []
 for p in profiles:
     tools.extend(pkgs.get(p, []))
-print("  " + "\n  ".join(tools) if tools else "  (none)")
-' 2>/dev/null || echo "  (unavailable)")
-
-    echo "=== dotfiles info ==="
+print("\n".join("  " + t for t in tools) if tools else "  (none)")
+' 2>/dev/null || echo "  (unavailable)"
     echo ""
-    echo "Machine:  $machine"
-    echo "Profile:  $profile"
-    echo "Shell:    $shell_name"
-    echo "Theme:    $theme"
-    echo ""
-    echo "Active aliases:"
-    echo "$aliases"
-    echo ""
-    echo "Active configs:"
-    echo "$configs"
-    echo ""
-    echo "Python tools:"
-    echo "$python_tools"
-    echo ""
-    echo "chezmoi:  $($CHEZMOI --version 2>/dev/null | head -1)"
 }
 
 cmd_rollback() {
     local snapshot_dir="$HOME/.local/share/chezmoi-snapshots"
 
-    if [[ ! -d "$snapshot_dir" ]]; then
-        echo "No snapshots found at $snapshot_dir" >&2
+    if [[ ! -d "$snapshot_dir" ]] || [[ -z "$(ls -A "$snapshot_dir" 2>/dev/null)" ]]; then
+        _fail "No snapshots found at $snapshot_dir"
         exit 1
     fi
 
+    # Build a list with metadata for display
+    local entries=""
+    for snap in $(ls -1t "$snapshot_dir"); do
+        local meta="$snapshot_dir/$snap/.metadata"
+        if [[ -f "$meta" ]]; then
+            local date commit files
+            date=$(grep '^date:' "$meta" | cut -d' ' -f2-)
+            commit=$(grep '^commit:' "$meta" | cut -d' ' -f2-)
+            files=$(grep '^files:' "$meta" | cut -d' ' -f2-)
+            entries+="$snap  ${date}  ${files} files  ${commit}"$'\n'
+        else
+            # Legacy snapshots without metadata
+            local file_count
+            file_count=$(find "$snapshot_dir/$snap" -type f | wc -l | tr -d ' ')
+            entries+="$snap  (no metadata)  ${file_count} files"$'\n'
+        fi
+    done
+
     if ! command -v fzf &>/dev/null; then
-        echo "fzf is required for interactive rollback" >&2
-        echo "Available snapshots:"
-        ls -1t "$snapshot_dir"
+        _header "Available snapshots"
+        echo ""
+        echo "$entries" | while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "  $line"
+        done
+        echo ""
+        _warn "fzf is required for interactive rollback"
         exit 1
     fi
+
+    _header "Select a snapshot to restore"
+    echo ""
 
     local selected
     selected=$(
-        ls -1t "$snapshot_dir" \
+        echo "$entries" | sed '/^$/d' \
             | fzf \
-                --prompt="Restore snapshot > " \
-                --preview="ls '$snapshot_dir/{}/'" \
+                --prompt="Restore > " \
+                --preview="
+                    snap=\$(echo {} | awk '{print \$1}')
+                    meta=\"$snapshot_dir/\$snap/.metadata\"
+                    if [ -f \"\$meta\" ]; then
+                        echo '── Metadata ──'
+                        cat \"\$meta\"
+                        echo ''
+                    fi
+                    echo '── Files ──'
+                    find \"$snapshot_dir/\$snap\" -type f -not -name '.metadata' -not -name '.chezmoi.toml' \
+                        | sed \"s|$snapshot_dir/\$snap/||\" | sort | head -40
+                " \
                 --preview-window="right:50%"
     ) || exit 0
 
-    local snapshot_path="$snapshot_dir/$selected"
-    echo "Restoring snapshot: $selected"
-    echo ""
+    local snap_name
+    snap_name=$(echo "$selected" | awk '{print $1}')
+    local snapshot_path="$snapshot_dir/$snap_name"
 
-    # Show what would change
-    echo "Files in snapshot:"
-    find "$snapshot_path" -type f | sed "s|$snapshot_path/||"
+    echo ""
+    if [[ -f "$snapshot_path/.metadata" ]]; then
+        _section "Snapshot details"
+        sed 's/^/  /' "$snapshot_path/.metadata"
+    fi
+
+    _section "Files to restore"
+    find "$snapshot_path" -type f -not -name '.metadata' -not -name '.chezmoi.toml' \
+        | sed "s|$snapshot_path/||" | sort | while read -r f; do
+            echo -e "  ${DIM}$f${NC}"
+        done
     echo ""
 
     read -r -p "Restore this snapshot? [y/N] " confirm
@@ -216,15 +277,15 @@ cmd_rollback() {
         exit 0
     fi
 
-    # Restore files from snapshot
-    find "$snapshot_path" -type f | while read -r src; do
+    echo ""
+    find "$snapshot_path" -type f -not -name '.metadata' -not -name '.chezmoi.toml' | while read -r src; do
         local rel="${src#$snapshot_path/}"
         local dst="$HOME/$rel"
         mkdir -p "$(dirname "$dst")"
         cp "$src" "$dst"
     done
 
-    echo "Snapshot restored. Run 'chezmoi diff' to see current state."
+    _ok "Snapshot restored. Run 'chezmoi diff' to see current state."
 }
 
 cmd_secrets() {
@@ -232,17 +293,18 @@ cmd_secrets() {
     db=$(chezmoi data 2>/dev/null | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("keepassxc",{}).get("database",""))' 2>/dev/null)
 
     if [[ -z "$db" ]]; then
-        echo "Error: keepassxc.database not set in chezmoi config." >&2
-        echo "Run: chezmoi edit-config" >&2
+        _fail "keepassxc.database not set in chezmoi config."
+        _dim "Run: chezmoi edit-config"
         exit 1
     fi
 
     if ! command -v keepassxc-cli &>/dev/null; then
-        echo "Error: keepassxc-cli not found." >&2
+        _fail "keepassxc-cli not found."
         exit 1
     fi
 
-    echo "Database: $db"
+    _header "dotfiles secrets"
+    _dim "Database: $db"
     echo ""
 
     # ── Unlock once ─────────────────────────────────────────────
@@ -250,30 +312,31 @@ cmd_secrets() {
     echo ""
     echo ""
 
-    # Verify the password works
     if ! echo "$kp_pass" | keepassxc-cli ls -q "$db" "/" &>/dev/null; then
-        echo "Error: failed to unlock database." >&2
+        _fail "Failed to unlock database."
         exit 1
     fi
 
-    # Helper: query keepassxc without re-prompting
+    _ok "Database unlocked"
+    echo ""
+
     kp_show() { echo "$kp_pass" | keepassxc-cli show -q -a "$1" "$db" "$2" 2>/dev/null; }
     kp_ls()   { echo "$kp_pass" | keepassxc-cli ls -q "$db" "$1" 2>/dev/null; }
 
     # ── GitHub token ────────────────────────────────────────────
-    echo "[1/2] GitHub token (Code/dotfiles/github-pat)"
+    _section "[1/2] GitHub token"
+    _dim "Entry: Code/dotfiles/github-pat"
     local github_token
     github_token=$(kp_show Password "Code/dotfiles/github-pat")
     if [[ -n "$github_token" ]]; then
-        echo "  ✓ GITHUB_TOKEN"
+        _ok "GITHUB_TOKEN"
     else
-        echo "  ✗ not found — skipping"
+        _fail "Not found — skipping"
     fi
-    echo ""
 
     # ── Telegram bots ──────────────────────────────────────────
-    echo "[2/2] Telegram bots (Code/dotfiles/tg-*)"
-    echo "  Each entry: Password = bot token, Notes = chat definitions"
+    _section "[2/2] Telegram bots"
+    _dim "Scanning Code/dotfiles/tg-* entries..."
     echo ""
 
     local entries
@@ -283,17 +346,17 @@ cmd_secrets() {
     local tg_count=0
 
     if [[ -z "$entries" ]]; then
-        echo "  No tg-* entries found under Code/dotfiles/"
+        _warn "No tg-* entries found"
         echo ""
-        echo "  To add a Telegram bot:"
-        echo "    1. Create a KeePassXC entry: Code/dotfiles/tg-<name>"
-        echo "    2. Set Password = bot token"
-        echo "    3. In Notes, add one chat per line:"
-        echo "       chat-family: -123456"
-        echo "       chat-personal: 789012"
-        echo "    4. Re-run 'dotfiles secrets'"
+        _dim "To add a Telegram bot:"
+        _dim "  1. Create KeePassXC entry: Code/dotfiles/tg-<name>"
+        _dim "  2. Set Password = bot token"
+        _dim "  3. In Notes, add one chat per line:"
+        _dim "     chat-family: -123456"
+        _dim "     chat-personal: 789012"
+        _dim "  4. Re-run 'dotfiles secrets'"
         echo ""
-        echo "  To discover chat IDs: tg-send --discover <bot>"
+        _dim "To discover chat IDs: tg-send --discover <bot>"
     else
         while IFS= read -r entry; do
             local bot_name="${entry#tg-}"
@@ -305,15 +368,14 @@ cmd_secrets() {
             bot_token=$(kp_show Password "$path")
 
             if [[ -z "$bot_token" ]]; then
-                echo "  ✗ $bot_name — missing Password (bot token)"
+                _fail "$bot_name — missing Password (bot token)"
                 continue
             fi
 
             tg_env+="export TG_BOT_${bot_upper}=\"${bot_token}\"
 "
-            echo "  ✓ bot: $bot_name → TG_BOT_${bot_upper}"
+            _ok "bot: $bot_name → TG_BOT_${bot_upper}"
 
-            # Parse chat definitions from Notes field
             local notes
             notes=$(kp_show Notes "$path")
 
@@ -321,7 +383,7 @@ cmd_secrets() {
             chat_lines=$(echo "$notes" | grep -E '^chat-')
 
             if [[ -z "$chat_lines" ]]; then
-                echo "    ⚠ no chats defined in Notes (add 'chat-<name>: <id>' lines)"
+                _warn "  no chats in Notes (add 'chat-<name>: <id>' lines)"
             else
                 while IFS= read -r line; do
                     local chat_name chat_id chat_upper
@@ -333,7 +395,7 @@ cmd_secrets() {
                     if [[ -n "$chat_name" && -n "$chat_id" ]]; then
                         tg_env+="export TG_CHAT_${bot_upper}_${chat_upper}=\"${chat_id}\"
 "
-                        echo "    ✓ chat: $chat_name → TG_CHAT_${bot_upper}_${chat_upper}"
+                        _ok "  chat: $chat_name → TG_CHAT_${bot_upper}_${chat_upper}"
                         tg_count=$((tg_count + 1))
                     fi
                 done <<< "$chat_lines"
@@ -341,10 +403,8 @@ cmd_secrets() {
         done <<< "$entries"
     fi
 
-    echo ""
-
     # ── Write ~/.env ────────────────────────────────────────────
-    echo "Writing ~/.env..."
+    _section "Writing ~/.env"
 
     cat > "$HOME/.env" <<EOF
 # ~/.env — secrets injected by 'dotfiles secrets'
@@ -355,7 +415,7 @@ EOF
 
     if [[ -n "$tg_env" ]]; then
         echo "" >> "$HOME/.env"
-        echo "# Telegram channels (tg-send <name> <message>)" >> "$HOME/.env"
+        echo "# Telegram bots (tg-send <bot> <chat> <message>)" >> "$HOME/.env"
         echo "$tg_env" >> "$HOME/.env"
     fi
 
@@ -365,18 +425,17 @@ EOF
     local token_count=0
     [[ -n "$github_token" ]] && token_count=1
     echo ""
-    echo "Done. ~/.env updated:"
-    echo "  Tokens:   $token_count"
-    echo "  Channels: $tg_count"
+    _ok "~/.env updated  —  $token_count token(s), $tg_count chat(s)"
+    _dim "Run 'source ~/.env' or open a new shell to load."
     echo ""
-    echo "Run 'source ~/.env' or open a new shell to load."
 }
 
 cmd_utils() {
+    _header "Utility scripts & functions"
+    _dim "Run any script with -h for detailed usage."
+
+    _section "SCRIPTS (~/.local/bin)"
     local src_bin="$SOURCE_DIR/dot_local/bin"
-    echo "UTILITY SCRIPTS (~/.local/bin)"
-    echo "Run any script with -h for detailed usage."
-    echo ""
     for script in "$src_bin"/executable_*; do
         [ -f "$script" ] || continue
         local name
@@ -384,29 +443,26 @@ cmd_utils() {
         [ "$name" = "dotfiles" ] && continue
         local desc=""
         desc=$(sed -n 's/^# *[a-zA-Z0-9_-]* — //p' "$script" 2>/dev/null | head -1)
-        printf "  %-20s %s\n" "$name" "${desc:-(no description)}"
+        _item "$name" "${desc:-(no description)}"
     done
 
-    echo ""
-    echo "FZF FUNCTIONS (sourced from ~/.alias/fzf.sh)"
-    echo ""
-    printf "  %-20s %s\n" "fbr" "switch git branch"
-    printf "  %-20s %s\n" "flog" "browse git log with diff preview"
-    printf "  %-20s %s\n" "fga" "stage changed files interactively"
-    printf "  %-20s %s\n" "dexec [shell]" "exec into a running container"
-    printf "  %-20s %s\n" "dstop" "stop containers (multi-select)"
-    printf "  %-20s %s\n" "dlogs" "tail logs of a running container"
-    printf "  %-20s %s\n" "drmi" "remove images (multi-select)"
-    printf "  %-20s %s\n" "fkill [signal]" "kill processes (multi-select)"
-    printf "  %-20s %s\n" "fcd [dir]" "cd into subdirectories with preview"
-    printf "  %-20s %s\n" "fssh" "ssh into a host from ~/.ssh/config"
-    printf "  %-20s %s\n" "fenv" "browse environment variable values"
-    printf "  %-20s %s\n" "fedit" "edit config files"
+    _section "FZF FUNCTIONS (~/.alias/fzf.sh)"
+    _item "fbr" "switch git branch"
+    _item "flog" "browse git log with diff preview"
+    _item "fga" "stage changed files interactively"
+    _item "dexec [shell]" "exec into a running container"
+    _item "dstop" "stop containers (multi-select)"
+    _item "dlogs" "tail logs of a running container"
+    _item "drmi" "remove images (multi-select)"
+    _item "fkill [signal]" "kill processes (multi-select)"
+    _item "fcd [dir]" "cd into subdirectories with preview"
+    _item "fssh" "ssh into a host from ~/.ssh/config"
+    _item "fenv" "browse environment variable values"
+    _item "fedit" "edit config files"
 
+    _section "SHELL FUNCTIONS (~/.alias/system.sh)"
+    _item "mkcd <dir>" "mkdir + cd in one step"
     echo ""
-    echo "SHELL FUNCTIONS (from ~/.alias/system.sh)"
-    echo ""
-    printf "  %-20s %s\n" "mkcd <dir>" "mkdir + cd in one step"
 }
 
 cmd_doctor() {
@@ -429,7 +485,7 @@ case "${1:-help}" in
     doctor)   cmd_doctor ;;
     help|-h|--help) usage ;;
     *)
-        echo "Unknown command: $1" >&2
+        echo -e "${RED}Unknown command:${NC} $1" >&2
         echo ""
         usage
         exit 1
