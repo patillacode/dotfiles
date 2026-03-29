@@ -21,7 +21,8 @@ SAFE_CMD=$(echo "$CMD" | tr '\n' ' ' | sed "s/\"[^\"]*\"//g; s/'[^']*'//g")
 MATCHED=""
 
 # rm with any recursive flag (-r, -R, -rf, -fr, -Rf, --recursive)
-if echo "$SAFE_CMD" | grep -qE '\brm\b' && echo "$SAFE_CMD" | grep -qE '(^|\s)-[a-zA-Z]*[rR]|\s--recursive'; then
+# Must be a standalone rm command, not a git subcommand (git rm is recoverable)
+if echo "$SAFE_CMD" | grep -qE '(^|[;&|]\s*)(sudo\s+)?rm\b' && echo "$SAFE_CMD" | grep -qE '(^|\s)-[a-zA-Z]*[rR]|\s--recursive'; then
   MATCHED="rm -r (recursive delete)"
 
 # git reset --hard
