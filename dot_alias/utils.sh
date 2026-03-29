@@ -3,3 +3,8 @@
 alias icons="sudo $HOME/projects/icon-replacer/replace_icons.sh -f -q"
 alias ttt="cd $HOME/projects/topstopstops"
 alias ttf="cd $HOME/projects/topstopstops-front"
+
+# cup (totoro service manager)
+alias cup-check='cd $HOME/services/cup && just check && cd -'
+alias cup-notify='cd $HOME/services/cup && just notify'
+alias cup='cup-check'
