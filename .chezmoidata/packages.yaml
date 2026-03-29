@@ -38,7 +38,6 @@ trait_packages:
     - glow
     - n
     - neovim
-    - nvm
     - rtk
     - uv
   personal:
@@ -63,8 +62,8 @@ trait_packages:
 
 # Python tools per trait (installed via uv)
 trait_python_tools:
-  developer: [ruff, prek]
-  personal: [yt-dlp]
+  developer: [ ruff, prek ]
+  personal: [ yt-dlp ]
 
 # Nerd fonts (brew casks, macOS only)
 nerd_fonts:
@@ -75,4 +74,4 @@ nerd_fonts:
 # apt-specific extras — packages that only exist on apt, not brew.
 # Installed on Linux when Homebrew is NOT active.
 apt_extras:
-  base: [build-essential, curl, git]
+  base: [ build-essential, curl, git ]
