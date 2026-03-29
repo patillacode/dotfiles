@@ -1,0 +1,27 @@
+#!/bin/bash
+# port-check — check if a host:port is reachable
+
+usage() {
+    echo "Usage: port-check <host> <port>"
+    echo ""
+    echo "Check if a TCP port is open on the given host."
+    echo ""
+    echo "Example: port-check localhost 8080"
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
+
+if [ $# -lt 2 ]; then
+    usage
+    exit 1
+fi
+
+host="$1"
+port="$2"
+
+if (echo >/dev/tcp/"$host"/"$port") 2>/dev/null; then
+    echo "$host:$port is open"
+else
+    echo "$host:$port is closed"
+    exit 1
+fi

@@ -1,7 +1,18 @@
 #!/bin/bash
+# ffmpeg-trim — trim a video clip by start and end time
+
+usage() {
+    echo "Usage: ffmpeg-trim <input> <start> <end>"
+    echo ""
+    echo "Trim a video between two timestamps. Output: <input>-trimmed.<ext>"
+    echo ""
+    echo "Example: ffmpeg-trim video.mp4 00:01:30 00:02:45"
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
 
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 input_file start_time stop_time"
+    usage
     exit 1
 fi
 
@@ -12,4 +23,4 @@ output_file="${input_file%.*}-trimmed.${input_file##*.}"
 
 ffmpeg -i "$input_file" -ss "$start_time" -to "$stop_time" -c copy "$output_file"
 
-echo "Trimmed audio saved to: $output_file"
+echo "Saved to: $output_file"

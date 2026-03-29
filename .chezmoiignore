@@ -40,6 +40,9 @@ dot_config/mpv/
 dot_config/yt-dlp/
 {{ end -}}
 
+# ─── Machine-local data (never manage) ───────────────────────
+.config/yt-dlp/cookies/
+
 # ─── work-only ────────────────────────────────────────────────
 {{ if not (has "work" .profiles) -}}
 dot_config/git/nordhealth

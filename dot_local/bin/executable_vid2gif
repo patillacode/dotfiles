@@ -1,69 +1,52 @@
 #!/bin/bash
+# vid2gif — convert a video file to a GIF
 
-# this script converts a video file to a gif file
-# it uses ffmpeg
-# it requires two arguments: input and output file names
-# it can take an option scale as -s <scale_value>
-
-# Help/Usage message
-function show_usage() {
+usage() {
+    echo "Usage: vid2gif [-s <scale>] <input> <output>"
     echo ""
-    echo "Convert a video file to a gif file using ffmpeg."
-    echo ""
-    echo "Usage: vid2gif [options] <input_file> <output_file>"
+    echo "Convert a video to GIF using ffmpeg."
     echo ""
     echo "Options:"
-    echo "  -s <scale>   will resize the output to <scale> pixels wide and automatically determine the height"
+    echo "  -s <width>   Resize to <width> pixels wide (default: 480)"
     echo ""
     echo "Example: vid2gif -s 640 input.mp4 output.gif"
-    echo ""
 }
 
 scale="480"
 
 while getopts "s:h" opt; do
     case $opt in
-        s)
-            scale=$OPTARG
-            ;;
-        h)
-            show_usage
-            exit 0
-            ;;
-        \?)
-            show_usage
-            exit 1
-            ;;
+        s) scale=$OPTARG ;;
+        h) usage; exit 0 ;;
+        \?) usage; exit 1 ;;
     esac
 done
 
-# check if ffmpeg is installed
-if ! [ -x "$(command -v ffmpeg)" ]; then
+shift $((OPTIND - 1))
+
+[[ "$1" == "--help" ]] && { usage; exit 0; }
+
+if ! command -v ffmpeg &>/dev/null; then
     echo "Error: ffmpeg is not installed." >&2
     exit 1
 fi
 
-# check if the number of arguments is correct
 if [ $# -lt 2 ]; then
-    show_usage
+    usage
     exit 1
 fi
 
-shift $((OPTIND - 1))
 input=$1
 output=$2
 
-# add a few checks to ensure that the input file exists and that the output file is not already there
 if [ ! -f "$input" ]; then
-    echo "Input file does not exist: $input" >&2
+    echo "Not found: $input" >&2
     exit 1
 fi
 
 if [ -f "$output" ]; then
-    echo "Output file already exists: $output" >&2
+    echo "Already exists: $output" >&2
     exit 1
 fi
-
-echo "$input - $output - scale: $scale"
 
 ffmpeg -i "$input" -vf "fps=10,scale=$scale:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "$output"

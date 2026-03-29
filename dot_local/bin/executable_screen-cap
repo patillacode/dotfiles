@@ -1,8 +1,6 @@
 #!/bin/bash
-
+# screen-cap — record your screen (macOS)
 ################################################################################
-# screen-cap - capture your screen
-#
 # This script allows you to capture your screen on Linux or macOS systems using
 # the appropriate tools available on each platform. On Linux, it uses 'slop'
 # and 'ffmpeg', while on macOS, it utilizes 'screencapture'. The script prompts

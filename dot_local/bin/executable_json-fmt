@@ -1,0 +1,24 @@
+#!/bin/bash
+# json-fmt — pretty-print and validate JSON
+
+usage() {
+    echo "Usage: json-fmt [file]"
+    echo ""
+    echo "Pretty-print JSON from a file or stdin."
+    echo ""
+    echo "Examples: json-fmt data.json"
+    echo "          curl -s api.example.com | json-fmt"
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
+
+if ! command -v jq &>/dev/null; then
+    echo "Error: jq is not installed." >&2
+    exit 1
+fi
+
+if [ $# -eq 0 ]; then
+    jq '.'
+else
+    jq '.' "$1"
+fi

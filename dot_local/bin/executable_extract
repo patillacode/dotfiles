@@ -1,0 +1,41 @@
+#!/bin/bash
+# extract — universal archive extractor
+
+usage() {
+    echo "Usage: extract <archive> [archive2 ...]"
+    echo ""
+    echo "Supported: tar, tar.gz, tar.bz2, tar.xz, tar.zst, gz, bz2,"
+    echo "           xz, zst, zip, 7z, rar"
+    echo ""
+    echo "Example: extract backup.tar.gz photos.zip"
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
+
+if [ $# -lt 1 ]; then
+    usage
+    exit 1
+fi
+
+for file in "$@"; do
+    if [ ! -f "$file" ]; then
+        echo "Not found: $file" >&2
+        continue
+    fi
+
+    case "$file" in
+        *.tar.bz2) tar xjf "$file"    ;;
+        *.tar.gz)  tar xzf "$file"    ;;
+        *.tar.xz)  tar xJf "$file"    ;;
+        *.tar.zst) tar --zstd -xf "$file" ;;
+        *.tar)     tar xf "$file"     ;;
+        *.bz2)     bunzip2 "$file"    ;;
+        *.gz)      gunzip "$file"     ;;
+        *.xz)      unxz "$file"       ;;
+        *.zip)     unzip "$file"      ;;
+        *.7z)      7z x "$file"       ;;
+        *.rar)     unrar x "$file"    ;;
+        *.zst)     unzstd "$file"     ;;
+        *)         echo "Unknown format: $file" >&2 ;;
+    esac
+done

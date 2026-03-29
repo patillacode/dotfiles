@@ -1,0 +1,28 @@
+#!/bin/bash
+# bak — create a timestamped backup of a file
+
+usage() {
+    echo "Usage: bak <file> [file2 ...]"
+    echo ""
+    echo "Create a timestamped .bak copy of each file."
+    echo ""
+    echo "Example: bak config.yaml"
+    echo "         → config.yaml.bak.20260329-110000"
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
+
+if [ $# -lt 1 ]; then
+    usage
+    exit 1
+fi
+
+for file in "$@"; do
+    if [ ! -e "$file" ]; then
+        echo "Not found: $file" >&2
+        continue
+    fi
+    dest="${file}.bak.$(date +%Y%m%d-%H%M%S)"
+    cp -r "$file" "$dest"
+    echo "$dest"
+done

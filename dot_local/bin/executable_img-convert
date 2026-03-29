@@ -1,8 +1,5 @@
 #!/bin/bash
-
-# Image Converter Script
-# Uses macOS's built-in sips command for image format conversion and transformation
-# Supports batch processing and interactive mode
+# img-convert — convert image formats using sips (macOS)
 
 set -euo pipefail
 

@@ -1,0 +1,18 @@
+#!/bin/bash
+# myip — show public and local IP addresses
+
+usage() {
+    echo "Usage: myip"
+    echo ""
+    echo "Show public (via ifconfig.me) and local IP addresses."
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
+
+echo "Public: $(curl -s ifconfig.me)"
+
+if command -v ip &>/dev/null; then
+    echo "Local:  $(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')"
+elif command -v ipconfig &>/dev/null; then
+    echo "Local:  $(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)"
+fi

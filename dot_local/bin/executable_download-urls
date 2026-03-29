@@ -1,12 +1,20 @@
 #!/bin/bash
+# download-urls — batch download URLs with yt-dlp
 
-# download-urls.sh
-# Script to download URLs from a file using yt-dlp with random delays between downloads
-# Usage: ./download-urls.sh /path/to/urls.txt [username] [password]
+usage() {
+    echo "Usage: download-urls <urls.txt> [username] [password]"
+    echo ""
+    echo "Download each URL in the file using yt-dlp, with random"
+    echo "delays (1-5 min) between downloads."
+    echo ""
+    echo "Example: download-urls playlist.txt"
+    echo "         download-urls list.txt user pass123"
+}
 
-# Check if at least a file was provided as an argument
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
+
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 /path/to/urls.txt [username] [password]"
+    usage
     exit 1
 fi
 
@@ -14,56 +22,38 @@ URL_FILE="$1"
 USERNAME="$2"
 PASSWORD="$3"
 
-# Check if the file exists
 if [ ! -f "$URL_FILE" ]; then
-    echo "Error: File '$URL_FILE' not found!"
+    echo "Error: File '$URL_FILE' not found!" >&2
     exit 1
 fi
 
-# Check if yt-dlp is installed
-if ! command -v yt-dlp &> /dev/null; then
-    echo "Error: yt-dlp is not installed or not in your PATH"
+if ! command -v yt-dlp &>/dev/null; then
+    echo "Error: yt-dlp is not installed." >&2
     exit 1
 fi
 
-# Main process
 echo "Starting download process using URLs from $URL_FILE"
 echo "Press Ctrl+C to stop the process at any time"
 
-# Count total non-empty lines in the file
 total_urls=$(grep -c -v "^\s*$" "$URL_FILE")
 current_url=0
 
-# Read the file line by line
 while IFS= read -r url || [ -n "$url" ]; do
-    # Skip empty lines
-    if [ -z "$url" ]; then
-        continue
-    fi
-
-    # Increment counter
+    [ -z "$url" ] && continue
     ((current_url++))
-
-    # Trim whitespace
     url=$(echo "$url" | xargs)
 
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Processing URL ($current_url/$total_urls): $url"
 
-    # Run yt-dlp with credentials if provided
     if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
         yt-dlp --username "$USERNAME" --password "$PASSWORD" "$url"
     else
         yt-dlp "$url"
     fi
 
-    # Check if this is not the last URL
     if [ "$current_url" -lt "$total_urls" ]; then
-        # Generate random delay between 1-5 minutes (60-300 seconds)
         delay=$((RANDOM % 240 + 60))
-        minutes=$((delay / 60))
-        seconds=$((delay % 60))
-
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Download completed. Waiting for $minutes minutes and $seconds seconds before next URL..."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Done. Waiting $((delay / 60))m $((delay % 60))s..."
         sleep $delay
     fi
 

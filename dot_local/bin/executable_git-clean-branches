@@ -1,19 +1,26 @@
-#! /bin/bash
+#!/bin/bash
+# git-clean-branches — delete merged local branches
+
+usage() {
+    echo "Usage: git-clean-branches"
+    echo ""
+    echo "Delete all local branches except protected ones"
+    echo "(main, master, develop, dev, staging, production, prod)."
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
 
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Define the non_removeable_branches array
 non_removeable_branches=("develop" "dev" "master" "main" "staging" "stage" "production" "prod")
 
-# Get the list of local branches
 local_branches=$(git branch | awk '{print $NF}')
 
 echo -e "\n${CYAN}Cleaning up your git branches...${NC}"
 
-# Check if each local branch is in non_removeable_branches array
 for branch in $local_branches; do
   found=false
   for non_removeable_branch in "${non_removeable_branches[@]}"; do

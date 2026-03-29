@@ -11,18 +11,28 @@ usage() {
     cat <<'EOF'
 dotfiles — manage your chezmoi dotfiles
 
-COMMANDS
+Aliases: dt, dots
+
+SYNC & DEPLOY
   sync              Pull latest changes from git and apply
   push [msg]        Commit source changes and push to remote
   apply [--dry-run] Apply configs (--dry-run to preview)
   diff              Show pending changes
   edit <file>       Edit a managed file in $EDITOR
-  theme             Interactive Starship theme selector (requires fzf)
-  info              Show active aliases, configs, tools, and settings
-  rollback          Restore a previous snapshot (requires fzf)
-  status            Show machine info, profiles, managed file count
+
+CUSTOMIZATION
+  theme             Interactive Starship theme selector (fzf)
   secrets           Inject secrets from KeePassXC into ~/.env
+
+INFO
+  status            Machine info, profiles, managed file count
+  info              Active aliases, configs, tools, and settings
+  utils             List available utility scripts
   doctor            Run chezmoi diagnostics
+
+RECOVERY
+  rollback          Restore a previous snapshot (fzf)
+
   help              Show this message
 EOF
 }
@@ -232,18 +242,171 @@ cmd_secrets() {
         exit 1
     fi
 
-    echo "Injecting secrets from KeePassXC into ~/.env..."
+    echo "Database: $db"
+    echo ""
+
+    # ── Unlock once ─────────────────────────────────────────────
+    read -r -s -p "KeePassXC master password: " kp_pass
+    echo ""
+    echo ""
+
+    # Verify the password works
+    if ! echo "$kp_pass" | keepassxc-cli ls -q "$db" "/" &>/dev/null; then
+        echo "Error: failed to unlock database." >&2
+        exit 1
+    fi
+
+    # Helper: query keepassxc without re-prompting
+    kp_show() { echo "$kp_pass" | keepassxc-cli show -q -a "$1" "$db" "$2" 2>/dev/null; }
+    kp_ls()   { echo "$kp_pass" | keepassxc-cli ls -q "$db" "$1" 2>/dev/null; }
+
+    # ── GitHub token ────────────────────────────────────────────
+    echo "[1/2] GitHub token (Code/dotfiles/github-pat)"
     local github_token
-    github_token=$(keepassxc-cli show -q -a Password "$db" "Code/dotfiles/github-pat")
+    github_token=$(kp_show Password "Code/dotfiles/github-pat")
+    if [[ -n "$github_token" ]]; then
+        echo "  ✓ GITHUB_TOKEN"
+    else
+        echo "  ✗ not found — skipping"
+    fi
+    echo ""
+
+    # ── Telegram bots ──────────────────────────────────────────
+    echo "[2/2] Telegram bots (Code/dotfiles/tg-*)"
+    echo "  Each entry: Password = bot token, Notes = chat definitions"
+    echo ""
+
+    local entries
+    entries=$(kp_ls "Code/dotfiles/" | grep '^tg-')
+
+    local tg_env=""
+    local tg_count=0
+
+    if [[ -z "$entries" ]]; then
+        echo "  No tg-* entries found under Code/dotfiles/"
+        echo ""
+        echo "  To add a Telegram bot:"
+        echo "    1. Create a KeePassXC entry: Code/dotfiles/tg-<name>"
+        echo "    2. Set Password = bot token"
+        echo "    3. In Notes, add one chat per line:"
+        echo "       chat-family: -123456"
+        echo "       chat-personal: 789012"
+        echo "    4. Re-run 'dotfiles secrets'"
+        echo ""
+        echo "  To discover chat IDs: tg-send --discover <bot>"
+    else
+        while IFS= read -r entry; do
+            local bot_name="${entry#tg-}"
+            local bot_upper
+            bot_upper=$(echo "$bot_name" | tr '[:lower:]' '[:upper:]')
+            local path="Code/dotfiles/$entry"
+
+            local bot_token
+            bot_token=$(kp_show Password "$path")
+
+            if [[ -z "$bot_token" ]]; then
+                echo "  ✗ $bot_name — missing Password (bot token)"
+                continue
+            fi
+
+            tg_env+="export TG_BOT_${bot_upper}=\"${bot_token}\"
+"
+            echo "  ✓ bot: $bot_name → TG_BOT_${bot_upper}"
+
+            # Parse chat definitions from Notes field
+            local notes
+            notes=$(kp_show Notes "$path")
+
+            local chat_lines
+            chat_lines=$(echo "$notes" | grep -E '^chat-')
+
+            if [[ -z "$chat_lines" ]]; then
+                echo "    ⚠ no chats defined in Notes (add 'chat-<name>: <id>' lines)"
+            else
+                while IFS= read -r line; do
+                    local chat_name chat_id chat_upper
+                    chat_name=$(echo "$line" | cut -d: -f1 | sed 's/^ *//')
+                    chat_name="${chat_name#chat-}"
+                    chat_id=$(echo "$line" | cut -d: -f2- | sed 's/^ *//')
+                    chat_upper=$(echo "$chat_name" | tr '[:lower:]' '[:upper:]')
+
+                    if [[ -n "$chat_name" && -n "$chat_id" ]]; then
+                        tg_env+="export TG_CHAT_${bot_upper}_${chat_upper}=\"${chat_id}\"
+"
+                        echo "    ✓ chat: $chat_name → TG_CHAT_${bot_upper}_${chat_upper}"
+                        tg_count=$((tg_count + 1))
+                    fi
+                done <<< "$chat_lines"
+            fi
+        done <<< "$entries"
+    fi
+
+    echo ""
+
+    # ── Write ~/.env ────────────────────────────────────────────
+    echo "Writing ~/.env..."
 
     cat > "$HOME/.env" <<EOF
 # ~/.env — secrets injected by 'dotfiles secrets'
 # Do not edit manually; re-run 'dotfiles secrets' to refresh.
-export GITHUB_TOKEN="$github_token"
 EOF
 
+    [[ -n "$github_token" ]] && echo "export GITHUB_TOKEN=\"$github_token\"" >> "$HOME/.env"
+
+    if [[ -n "$tg_env" ]]; then
+        echo "" >> "$HOME/.env"
+        echo "# Telegram channels (tg-send <name> <message>)" >> "$HOME/.env"
+        echo "$tg_env" >> "$HOME/.env"
+    fi
+
     chmod 600 "$HOME/.env"
-    echo "Done. ~/.env updated."
+
+    # ── Summary ─────────────────────────────────────────────────
+    local token_count=0
+    [[ -n "$github_token" ]] && token_count=1
+    echo ""
+    echo "Done. ~/.env updated:"
+    echo "  Tokens:   $token_count"
+    echo "  Channels: $tg_count"
+    echo ""
+    echo "Run 'source ~/.env' or open a new shell to load."
+}
+
+cmd_utils() {
+    local src_bin="$SOURCE_DIR/dot_local/bin"
+    echo "UTILITY SCRIPTS (~/.local/bin)"
+    echo "Run any script with -h for detailed usage."
+    echo ""
+    for script in "$src_bin"/executable_*; do
+        [ -f "$script" ] || continue
+        local name
+        name=$(basename "$script" | sed 's/^executable_//')
+        [ "$name" = "dotfiles" ] && continue
+        local desc=""
+        desc=$(sed -n 's/^# *[a-zA-Z0-9_-]* — //p' "$script" 2>/dev/null | head -1)
+        printf "  %-20s %s\n" "$name" "${desc:-(no description)}"
+    done
+
+    echo ""
+    echo "FZF FUNCTIONS (sourced from ~/.alias/fzf.sh)"
+    echo ""
+    printf "  %-20s %s\n" "fbr" "switch git branch"
+    printf "  %-20s %s\n" "flog" "browse git log with diff preview"
+    printf "  %-20s %s\n" "fga" "stage changed files interactively"
+    printf "  %-20s %s\n" "dexec [shell]" "exec into a running container"
+    printf "  %-20s %s\n" "dstop" "stop containers (multi-select)"
+    printf "  %-20s %s\n" "dlogs" "tail logs of a running container"
+    printf "  %-20s %s\n" "drmi" "remove images (multi-select)"
+    printf "  %-20s %s\n" "fkill [signal]" "kill processes (multi-select)"
+    printf "  %-20s %s\n" "fcd [dir]" "cd into subdirectories with preview"
+    printf "  %-20s %s\n" "fssh" "ssh into a host from ~/.ssh/config"
+    printf "  %-20s %s\n" "fenv" "browse environment variable values"
+    printf "  %-20s %s\n" "fedit" "edit config files"
+
+    echo ""
+    echo "SHELL FUNCTIONS (from ~/.alias/system.sh)"
+    echo ""
+    printf "  %-20s %s\n" "mkcd <dir>" "mkdir + cd in one step"
 }
 
 cmd_doctor() {
@@ -262,6 +425,7 @@ case "${1:-help}" in
     rollback) cmd_rollback ;;
     status)   cmd_status ;;
     secrets)  cmd_secrets ;;
+    utils)    cmd_utils ;;
     doctor)   cmd_doctor ;;
     help|-h|--help) usage ;;
     *)

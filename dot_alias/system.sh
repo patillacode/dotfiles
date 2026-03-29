@@ -12,10 +12,13 @@ get_port() {
     lsof -i tcp:$1
 }
 
+alias brc="source $HOME/.bashrc && echo -e '\n${YELLOW}󰚩${CYAN} .bashrc reloaded ${YELLOW}󰚩${NC}'"
 alias brew-cask-list-ordered="$HOME/projects/bash/brew_cask_list.sh"
 alias brew-list-ordered="$HOME/projects/bash/brew_list.sh"
 alias cat="bat"
 alias df="duf"
+alias dots="dotfiles"
+alias dt="dotfiles"
 alias f="fzf --preview \"bat --color=always {}\" --bind 'enter:become(nvim {}),ctrl-o:become(zed {})'"
 alias fff="fastfetch"
 alias j="just"
@@ -33,3 +36,5 @@ alias top="btop"
 alias v="nvim"
 alias venv="python -m venv venv"
 alias zrc="source $HOME/.zshrc && echo -e '\n${YELLOW}󰚩${CYAN} .zshrc reloaded ${YELLOW}󰚩${NC}'"
+
+mkcd() { mkdir -p "$1" && cd "$1"; }

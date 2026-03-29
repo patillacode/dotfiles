@@ -1,23 +1,12 @@
 # PatillaCode Dotfiles
 
-Personal dotfiles managed with [chezmoi](https://chezmoi.io). Supports macOS (zsh), Debian/Ubuntu Linux, and Arch Linux with a profile-based system — one repo, multiple machines.
+Personal dotfiles managed with [chezmoi](https://chezmoi.io).
+
+Supports macOS (zsh), Debian/Ubuntu Linux, and Arch Linux with a profile-based system — one repo, multiple machines.
 
 **Primary remote:** `https://forgejo.patilla.es/patillacode/dotfiles.git`
 
 **Mirror:** `https://github.com/patillacode/dotfiles`
-
----
-
-## Machines
-
-| Name          | OS           | Shell | Profile  | Starship   |
-|---------------|--------------|-------|----------|------------|
-| bars          | macOS        | zsh   | personal | simple     |
-| nordhealth    | macOS        | zsh   | work     | (at init)  |
-| totoro        | Debian       | bash  | server   | totoro     |
-| archbook      | Arch Linux   | zsh   | personal | (at init)  |
-| tops-staging  | Ubuntu       | bash  | server   | tops       |
-| ushuaia       | Ubuntu       | bash  | server   | ushuaia    |
 
 ---
 
@@ -26,13 +15,22 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io). Supports macOS (zs
 ### One-liner (new machine)
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles \
-  https://forgejo.patilla.es/patillacode/dotfiles.git
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles https://forgejo.patilla.es/patillacode/dotfiles.git
 ```
 
 This installs chezmoi, clones the repo, runs the interactive setup, and applies everything.
 
-### Manual (existing chezmoi install)
+### Manual
+
+Install chezmoi
+
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)"
+# or
+brew install chezmoi
+````
+
+Then initialize the repo and run the setup wizard:
 
 ```bash
 chezmoi init --source ~/dotfiles https://forgejo.patilla.es/patillacode/dotfiles.git
@@ -53,7 +51,7 @@ cd ~
 rm -rf ~/dotfiles
 ```
 
-Then proceed with the normal fresh install one-liner below.
+Then proceed with the normal fresh install one-liner above.
 
 If the machine has an older chezmoi setup instead:
 
@@ -90,25 +88,31 @@ Answers are saved in `~/.config/chezmoi/chezmoi.toml` and reused on subsequent r
 
 ## Daily Usage
 
-```bash
-dotfiles sync          # pull latest changes + apply
-dotfiles push [msg]    # commit source changes + push to remote
-dotfiles apply         # apply configs to $HOME
-dotfiles diff          # preview what would change
-dotfiles status        # show machine, profiles, managed file count
-dotfiles theme         # interactive Starship theme picker (requires fzf)
-dotfiles doctor        # run chezmoi diagnostics
-dotfiles edit <file>   # edit a managed file (opens in $EDITOR)
-```
-
-Or use chezmoi directly:
+Aliases: `dt` and `dots` are shorthand for `dotfiles`.
 
 ```bash
-chezmoi apply
-chezmoi diff
-chezmoi edit ~/.zshrc
-chezmoi doctor
+# Sync & deploy
+dotfiles sync              # pull latest changes + apply
+dotfiles push [msg]        # commit source changes + push to remote
+dotfiles apply [--dry-run] # apply configs to $HOME
+dotfiles diff              # preview what would change
+dotfiles edit <file>       # edit a managed file (opens in $EDITOR)
+
+# Customization
+dotfiles theme             # interactive Starship theme picker (fzf)
+dotfiles secrets           # inject secrets from KeePassXC into ~/.env
+
+# Info
+dotfiles status            # machine info, profiles, managed file count
+dotfiles info              # active aliases, configs, tools
+dotfiles utils             # list all utility scripts and fzf functions
+dotfiles doctor            # run chezmoi diagnostics
+
+# Recovery
+dotfiles rollback          # restore a previous snapshot (fzf)
 ```
+
+Or use chezmoi directly: `chezmoi apply`, `chezmoi diff`, `chezmoi edit ~/.zshrc`.
 
 ---
 
@@ -238,15 +242,22 @@ dotfiles/
 │   ├── starship/                # 13 .toml themes
 │   ├── zed/                     # settings.json.tmpl
 │   └── atuin/ btop/ gh/ mpv/ nvim/ tmux/ yt-dlp/
-├── dot_local/bin/
-│   ├── executable_dotfiles      # → ~/.local/bin/dotfiles (CLI wrapper)
+├── dot_local/bin/               # → ~/.local/bin/ (all executable)
+│   ├── executable_dotfiles      # CLI wrapper for chezmoi
+│   ├── executable_bak           # timestamped file backup
+│   ├── executable_extract       # universal archive extractor
+│   ├── executable_json-fmt      # pretty-print JSON (jq wrapper)
+│   ├── executable_myip          # show public + local IP
+│   ├── executable_port-check    # check if host:port is open
+│   ├── executable_vid-compress  # shrink video file size
+│   ├── executable_vid-convert   # convert video formats
+│   ├── executable_vid2gif       # convert video to GIF
+│   ├── executable_ffmpeg-trim   # trim a video clip
+│   ├── executable_img-convert   # convert image formats
+│   ├── executable_screen-cap    # screen recording
 │   ├── executable_git-clean-branches
-│   ├── executable_img-convert
-│   ├── executable_vid2gif
-│   ├── executable_ffmpeg-trim
-│   ├── executable_tg-send
-│   ├── executable_screen-cap
-│   └── executable_download-urls
+│   ├── executable_tg-send       # send Telegram messages
+│   └── executable_download-urls # batch yt-dlp downloader
 ├── dot_oh-my-zsh/               # → ~/.oh-my-zsh/ (custom themes)
 ├── dot_vim/ + dot_vimrc         # vim config
 ├── dot_zshrc.tmpl               # → ~/.zshrc
@@ -270,6 +281,86 @@ dotfiles/
 
 **Personal:** mpv · yt-dlp · ollama · streamlink · ffmpeg
 
-**Scripts:** `git-clean-branches` · `img-convert` · `vid2gif` · `ffmpeg-trim` · `tg-send` · `screen-cap` · `download-urls`
+---
 
-**Secrets:** KeePassXC integration — secrets are injected at `chezmoi apply` time, never stored in the repo.
+## Secrets
+
+Secrets are injected on demand via `dotfiles secrets` — never during normal `apply`/`diff`/`sync`. The command prompts for your KeePassXC master password once, then pulls all configured secrets into `~/.env`.
+
+Currently managed secrets:
+- **GitHub token** — from `Code/dotfiles/github-pat` (Password field)
+- **Telegram bots** — auto-discovered from `Code/dotfiles/tg-*` entries
+
+### Telegram bot setup
+
+1. Create a KeePassXC entry `Code/dotfiles/tg-<botname>` with the bot token as Password
+2. In the Notes field, define chats (one per line):
+   ```
+   chat-family: -1002457345563
+   chat-personal: 789012345
+   ```
+3. Run `dotfiles secrets` to inject into `~/.env`
+4. Send messages: `tg-send <bot> <chat> <message>`
+
+Use `tg-send --discover <bot>` to find chat IDs — send a message to the bot first, then discover will list recent chats with their IDs.
+
+---
+
+## Utility Scripts & Functions
+
+All scripts are in `~/.local/bin/` (on `$PATH`), available on every machine. Run any script with `-h` for detailed usage. Run `dotfiles utils` for a full list.
+
+### Files & system
+
+| Command | Description |
+|---------|-------------|
+| `bak <file>` | Timestamped backup (`file.bak.20260329-110000`) |
+| `extract <archive>` | Universal extractor (tar/zip/gz/bz2/xz/7z/rar/zst) |
+| `mkcd <dir>` | Create directory and cd into it (shell function) |
+| `json-fmt [file]` | Pretty-print JSON from file or stdin |
+| `myip` | Show public and local IP addresses |
+| `port-check <host> <port>` | Check if host:port is reachable |
+
+### Media
+
+| Command | Description |
+|---------|-------------|
+| `vid-convert <in> <out>` | Convert video formats (tries stream copy first) |
+| `vid-compress <in> [out]` | Shrink video keeping reasonable quality |
+| `vid2gif [-s width] <in> <out>` | Convert video to GIF |
+| `ffmpeg-trim <in> <start> <end>` | Trim a video clip |
+| `img-convert` | Convert image formats (macOS sips) |
+| `screen-cap` | Screen recording (macOS) |
+
+### Messaging & downloads
+
+| Command | Description |
+|---------|-------------|
+| `tg-send <bot> <chat> <msg>` | Send Telegram message via named bot and chat |
+| `tg-send --discover <bot>` | List recent chats a bot can see |
+| `download-urls <file>` | Batch download URLs with yt-dlp |
+
+### Git & dev
+
+| Command | Description |
+|---------|-------------|
+| `git-clean-branches` | Delete all non-protected local branches |
+
+### fzf functions
+
+Interactive fzf-powered helpers sourced from `~/.alias/fzf.sh` (all profiles).
+
+| Function | Description |
+|----------|-------------|
+| `fbr` | Switch git branch (sorted by recent, includes remotes) |
+| `flog` | Browse git log with diff preview |
+| `fga` | Stage changed files interactively |
+| `dexec [shell]` | Exec into a running docker container |
+| `dstop` | Stop docker containers (multi-select) |
+| `dlogs` | Tail docker container logs |
+| `drmi` | Remove docker images (multi-select) |
+| `fkill [signal]` | Kill processes (multi-select) |
+| `fcd [dir]` | cd into subdirectories with preview |
+| `fssh` | SSH into a host from `~/.ssh/config` |
+| `fenv` | Browse environment variable values |
+| `fedit` | Edit config files in `~/.config/` or `~/.alias/` |

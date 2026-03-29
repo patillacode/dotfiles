@@ -4,6 +4,7 @@ profile_aliases:
   base:
     - atuin
     - docker
+    - fzf
     - git
     - misc
     - system
@@ -12,6 +13,7 @@ profile_aliases:
   developer:
     - atuin
     - docker
+    - fzf
     - git
     - misc
     - system
@@ -21,6 +23,7 @@ profile_aliases:
   personal:
     - atuin
     - docker
+    - fzf
     - git
     - misc
     - system
@@ -35,6 +38,7 @@ profile_aliases:
   work:
     - atuin
     - docker
+    - fzf
     - git
     - misc
     - system
@@ -46,6 +50,7 @@ profile_aliases:
   server:
     - atuin
     - docker
+    - fzf
     - git
     - misc
     - system

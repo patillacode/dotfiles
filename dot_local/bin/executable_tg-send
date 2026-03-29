@@ -1,38 +1,184 @@
 #!/bin/bash
+# tg-send — send a Telegram message via bot API
 
-# script to send a telegram message via a bot
-# usage: ./tg-send <bot_token> <chat_id> <message>
-# can also be sourced to use tg_send_msg() function directly
+# Load secrets
+[[ -f "$HOME/.env" ]] && source "$HOME/.env"
 
-# check if script is being sourced or run
-if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-    __name__="__main__"
-else
-    __name__="__source__"
-fi
+usage() {
+    cat <<'HEADER'
+tg-send — send a Telegram message via bot API
 
-# send function with parameters bot_token, chat_id and message
+USAGE
+  tg-send <bot> <chat> <message>    Send using named bot and chat
+  tg-send --discover <bot>          Show recent chats the bot can see
+  tg-send --raw <token> <id> <msg>  Send using raw token and chat id
+
+EXAMPLES
+  tg-send dorito family 'Hello!'
+  tg-send dorito alerts 'Server is down'
+  tg-send --discover dorito
+
+SETUP
+  1. Create KeePassXC entry: Code/dotfiles/tg-<bot>
+     Password = bot token
+  2. In Notes, add chats (one per line):
+     chat-family: -123456
+     chat-personal: 789012
+  3. Run 'dotfiles secrets' to inject into ~/.env
+  4. Use 'tg-send --discover <bot>' to find chat IDs
+
+HEADER
+
+    # List available bots and chats from env
+    local has_bots=false
+    while IFS='=' read -r var _; do
+        local bot="${var#TG_BOT_}"
+        local bot_lower
+        bot_lower=$(echo "$bot" | tr '[:upper:]' '[:lower:]')
+        if ! $has_bots; then
+            echo "AVAILABLE BOTS"
+            has_bots=true
+        fi
+        echo "  $bot_lower"
+        env | grep "^TG_CHAT_${bot}_" | while IFS='=' read -r cvar _; do
+            local chat="${cvar#TG_CHAT_${bot}_}"
+            echo "    - $(echo "$chat" | tr '[:upper:]' '[:lower:]')"
+        done
+    done < <(env | grep '^TG_BOT_' | sort)
+
+    if ! $has_bots; then
+        echo "No bots configured. Run 'dotfiles secrets' first."
+    fi
+}
+
 tg_send_msg() {
     local bot_token=$1
     local chat_id=$2
     local message=$3
 
-    local data="{\"chat_id\":\"$chat_id\",\"text\":\"$message\",\"disable_notification\": false}"
-    curl -s -o /dev/null -H 'Content-Type: application/json' -d "$data" -X POST https://api.telegram.org/bot$bot_token/sendMessage
-    echo "Message sent successfully."
+    local response http_code
+    response=$(curl -s -w "\n%{http_code}" -H 'Content-Type: application/json' \
+        -d "{\"chat_id\":\"$chat_id\",\"text\":\"$message\",\"disable_notification\":false}" \
+        -X POST "https://api.telegram.org/bot${bot_token}/sendMessage")
+    http_code=$(echo "$response" | tail -1)
+
+    if [[ "$http_code" == "200" ]]; then
+        echo "Message sent."
+    else
+        echo "Error (HTTP $http_code):" >&2
+        echo "$response" | sed '$d' >&2
+        return 1
+    fi
 }
 
-main() {
-    if [ $# -ne 3 ]; then
-        echo "usage: tg-send <bot_token> <chat_id> <message>"
+cmd_discover() {
+    local bot_name
+    bot_name=$(echo "$1" | tr '[:lower:]' '[:upper:]')
+    local bot_var="TG_BOT_${bot_name}"
+    local bot_token="${!bot_var}"
+
+    if [[ -z "$bot_token" ]]; then
+        echo "Error: bot '$1' not found. Run 'dotfiles secrets' first." >&2
         exit 1
     fi
 
-    tg_send_msg "$1" "$2" "$3"
-    exit 0
+    echo "Fetching recent chats for bot '$1'..."
+    echo "Tip: send a message to the bot or add it to a group first."
+    echo ""
+
+    local response
+    response=$(curl -s "https://api.telegram.org/bot${bot_token}/getUpdates")
+
+    if ! echo "$response" | python3 -c '
+import sys, json
+data = json.load(sys.stdin)
+if not data.get("ok"):
+    print("API error:", data.get("description", "unknown"))
+    sys.exit(1)
+results = data.get("result", [])
+if not results:
+    print("No recent updates. Send a message to the bot first.")
+    sys.exit(0)
+seen = {}
+for r in results:
+    for key in ("message", "my_chat_member", "channel_post"):
+        msg = r.get(key)
+        if msg and "chat" in msg:
+            chat = msg["chat"]
+            cid = chat["id"]
+            if cid not in seen:
+                name = chat.get("title") or chat.get("first_name", "")
+                ctype = chat.get("type", "")
+                seen[cid] = (name, ctype)
+print("  CHAT ID           TYPE         NAME")
+print("  " + "-" * 45)
+for cid, (name, ctype) in sorted(seen.items(), key=lambda x: x[1][0]):
+    print(f"  {cid:>15}  {ctype:<12} {name}")
+' 2>&1; then
+        echo "Failed to parse response." >&2
+        exit 1
+    fi
+
+    echo ""
+    echo "Add the chat ID to the KeePassXC entry Notes as:"
+    echo "  chat-<name>: <chat_id>"
+    echo "Then run 'dotfiles secrets' to inject."
 }
 
-# Only run `main` if this script is being run, NOT sourced/imported.
-if [ "$__name__" = "__main__" ]; then
-    main "$@"
-fi
+main() {
+    [[ "$1" == "-h" || "$1" == "--help" || $# -eq 0 ]] && { usage; exit 0; }
+
+    # Discover mode
+    if [[ "$1" == "--discover" ]]; then
+        [[ -z "$2" ]] && { echo "Usage: tg-send --discover <bot>" >&2; exit 1; }
+        cmd_discover "$2"
+        exit 0
+    fi
+
+    # Raw mode
+    if [[ "$1" == "--raw" ]]; then
+        shift
+        [[ $# -ne 3 ]] && { echo "Usage: tg-send --raw <token> <chat_id> <message>" >&2; exit 1; }
+        tg_send_msg "$1" "$2" "$3"
+        exit 0
+    fi
+
+    # Named mode: tg-send <bot> <chat> <message>
+    if [[ $# -eq 3 ]]; then
+        local bot_upper chat_upper
+        bot_upper=$(echo "$1" | tr '[:lower:]' '[:upper:]')
+        chat_upper=$(echo "$2" | tr '[:lower:]' '[:upper:]')
+
+        local bot_var="TG_BOT_${bot_upper}"
+        local chat_var="TG_CHAT_${bot_upper}_${chat_upper}"
+        local bot_token="${!bot_var}"
+        local chat_id="${!chat_var}"
+
+        if [[ -z "$bot_token" ]]; then
+            echo "Error: bot '$1' not found." >&2
+            echo "Run 'dotfiles secrets' or 'tg-send -h' to see available bots." >&2
+            exit 1
+        fi
+        if [[ -z "$chat_id" ]]; then
+            echo "Error: chat '$2' not found for bot '$1'." >&2
+            echo ""
+            echo "Available chats for $1:"
+            env | grep "^TG_CHAT_${bot_upper}_" | while IFS='=' read -r cvar _; do
+                local chat="${cvar#TG_CHAT_${bot_upper}_}"
+                echo "  - $(echo "$chat" | tr '[:upper:]' '[:lower:]')"
+            done
+            echo ""
+            echo "To discover new chats: tg-send --discover $1" >&2
+            exit 1
+        fi
+
+        tg_send_msg "$bot_token" "$chat_id" "$3"
+        exit 0
+    fi
+
+    echo "Error: expected 3 arguments: <bot> <chat> <message>" >&2
+    echo "Run 'tg-send -h' for help." >&2
+    exit 1
+}
+
+main "$@"
