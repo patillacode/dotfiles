@@ -26,12 +26,18 @@ chezmoi diff
 chezmoi doctor
 
 # dotfiles CLI wrapper (installed to ~/.local/bin/dotfiles)
+# Aliases: dt, dots
 dotfiles sync          # git pull + apply
 dotfiles push [msg]    # commit + git push
 dotfiles apply         # apply configs
 dotfiles diff          # show pending changes
+dotfiles edit <file>   # open a managed file in $EDITOR
 dotfiles theme         # interactive Starship theme selector (fzf)
+dotfiles secrets       # inject secrets from KeePassXC into ~/.env
 dotfiles status        # machine info, traits, managed count
+dotfiles info          # active aliases, configs, tools
+dotfiles utils         # list utility scripts and fzf functions
+dotfiles rollback      # restore a previous snapshot (fzf)
 dotfiles doctor        # run chezmoi diagnostics
 ```
 
@@ -85,6 +91,27 @@ Per-machine overrides: `include_aliases`, `exclude_aliases`, `include_configs`,
 - GUI app → `desktop` in `.chezmoidata/packages.yaml`
 - All machines → `base` in `.chezmoidata/packages.yaml`
 - New alias file → create in `dot_alias/`, add to the right trait in `.chezmoidata/aliases.yaml`
+
+Package YAML format (supports cross-platform name differences and casks):
+```yaml
+trait_packages:
+  developer:
+    - new-tool                            # same name on brew & apt
+    - { name: x, apt: x-dev }            # different apt name
+    - { name: y, type: cask }            # brew cask (macOS only)
+    - { name: z, type: cask, apt: z-app } # cask on macOS, apt name on Linux
+```
+
+Packages are installed automatically when the hash of the package list changes on `chezmoi apply`.
+
+Per-machine overrides without changing traits — edit `~/.config/chezmoi/chezmoi.toml`:
+```toml
+[data]
+    include_aliases = ["music"]   # add alias outside active traits
+    exclude_aliases = ["tv"]      # skip an alias from active traits
+    include_configs = ["mpv"]     # deploy config outside active traits
+    exclude_configs = ["zed"]     # skip a config from active traits
+```
 
 Then run `chezmoi apply`.
 

@@ -24,6 +24,43 @@ This file applies to all Claude Code sessions on this machine ({{ .machine_name 
 - No feature flags or abstractions for one-time use
 - Trust internal code; only validate at system boundaries (user input, external APIs)
 
+## RTK
+
+@RTK.md
+
 ## Rules
 
 See `~/.claude/rules/` for additional context-specific instructions.
+{{ if eq .claude.variant "work" }}
+---
+
+## Daily Driver
+
+My personal assistant lives at `~/assistant/`. If I ask you to open it or say "go to daily driver", cd there.
+
+Available commands: `/morning` `/daily-status` `/eod` `/weekly-update` `/mrs` `/note` `/triage` `/resolve-code-review` — run `/assistant-help` for the full reference.
+
+## Writing Style
+
+If I ask you to draft any written communication (Slack message, PR description, ticket comment, email), read `~/assistant/context/style.md` first and write in my voice. If style.md is empty or missing, ask me for a sample before drafting.
+
+## Decision Logging
+
+If we make a significant technical decision during any session, offer once to log it to `~/assistant/decisions/log.md`. Format: date, decision, context, tradeoffs considered, outcome.
+
+## Code Reviews
+
+I work on nordhealth/ProvetCloud (Django/Python backend). When reviewing code:
+- Be direct and specific
+- Reference line numbers
+- Skip generic praise
+- Flag security, performance, and correctness issues first
+
+## Linear
+
+I use Linear for all task tracking. My issues are always the ones assigned to me. When querying Linear for "my issues", filter by assignee = current user.
+
+## Work Plugins (not in dotfiles)
+
+The `global-resources@ai-resources` and `pcloud-app@ai-resources` plugins are configured locally via `~/.claude/settings.local.json` — they require the nordhealth marketplace and cannot be in the shared dotfiles.
+{{ end -}}
