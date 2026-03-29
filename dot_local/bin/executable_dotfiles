@@ -355,7 +355,7 @@ cmd_secrets() {
     kp_ls()   { echo "$kp_pass" | keepassxc-cli ls -q "$db" "$1" 2>/dev/null; }
 
     # ── GitHub token ────────────────────────────────────────────
-    _section "[1/2] GitHub token"
+    _section "[1/3] GitHub token"
     _dim "Entry: Code/dotfiles/github-pat"
     local github_token
     github_token=$(kp_show Password "Code/dotfiles/github-pat")
@@ -365,8 +365,19 @@ cmd_secrets() {
         _fail "Not found — skipping"
     fi
 
+    # ── Forgejo token ──────────────────────────────────────────
+    _section "[2/3] Forgejo token"
+    _dim "Entry: Code/dotfiles/forgejo-token"
+    local forgejo_token
+    forgejo_token=$(kp_show Password "Code/dotfiles/forgejo-token")
+    if [[ -n "$forgejo_token" ]]; then
+        _ok "FORGEJO_TOKEN"
+    else
+        _fail "Not found — skipping"
+    fi
+
     # ── Telegram bots ──────────────────────────────────────────
-    _section "[2/2] Telegram bots"
+    _section "[3/3] Telegram bots"
     _dim "Scanning Code/dotfiles/tg-* entries..."
     echo ""
 
@@ -443,6 +454,7 @@ cmd_secrets() {
 EOF
 
     [[ -n "$github_token" ]] && echo "export GITHUB_TOKEN=\"$github_token\"" >> "$HOME/.env"
+    [[ -n "$forgejo_token" ]] && echo "export FORGEJO_TOKEN=\"$forgejo_token\"" >> "$HOME/.env"
 
     if [[ -n "$tg_env" ]]; then
         echo "" >> "$HOME/.env"
@@ -454,7 +466,8 @@ EOF
 
     # ── Summary ─────────────────────────────────────────────────
     local token_count=0
-    [[ -n "$github_token" ]] && token_count=1
+    [[ -n "$github_token" ]] && token_count=$((token_count + 1))
+    [[ -n "$forgejo_token" ]] && token_count=$((token_count + 1))
     echo ""
     _ok "~/.env updated  —  $token_count token(s), $tg_count chat(s)"
     _dim "Run 'source ~/.env' or open a new shell to load."
