@@ -1,0 +1,9 @@
+# Trait configs — which ~/.config/*/ directories each trait adds.
+# Each trait lists ONLY what it adds. No duplication.
+# The full list is resolved at template time by iterating active traits.
+trait_configs:
+  base: [atuin, btop, gh, git, starship, tmux]
+  desktop: [ghostty]
+  developer: [claude, nvim, zed]
+  personal: [mpv, yt-dlp]
+  work: []

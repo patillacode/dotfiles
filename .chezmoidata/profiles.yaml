@@ -1,0 +1,15 @@
+# Trait definitions — each trait is an independent capability.
+# "Where do I put this?" → pick the trait that answers the right question.
+#
+#   base       — does this machine exist?        (all machines)
+#   desktop    — does it have a screen?           (bars, nordhealth)
+#   developer  — do I code on it?                 (bars, nordhealth)
+#   personal   — is it mine for fun?              (bars)
+#   work       — is it for work?                  (nordhealth)
+
+# Presets for the init wizard (maps choice → trait list)
+profile_presets:
+  personal: [base, desktop, developer, personal]
+  work: [base, desktop, developer, work]
+  server: [base]
+  server-dev: [base, developer]

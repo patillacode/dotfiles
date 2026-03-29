@@ -1,0 +1,78 @@
+# Trait packages — unified cross-platform package definitions.
+# Each package defined once. Optional per-OS name overrides via 'apt' key.
+# Casks use 'type: cask'. Default type is 'formula'.
+#
+# Simple string     → formula, same name everywhere
+# { name: x }       → formula with name x
+# { name: x, apt: y }  → formula named x on brew, y on apt
+# { name: x, type: cask }  → brew cask (macOS only)
+# { name: x, type: cask, apt: y }  → cask on macOS, y on apt
+
+trait_packages:
+  base:
+    - atuin
+    - bat
+    - btop
+    - duf
+    - eza
+    - fastfetch
+    - { name: fd, apt: fd-find }
+    - fzf
+    - gh
+    - git-delta
+    - git-lfs
+    - jq
+    - ripgrep
+    - starship
+    - tmux
+    - wget
+  desktop:
+    - { name: ghostty, type: cask }
+    - { name: keepassxc, type: cask, apt: keepassxc }
+    - { name: raycast, type: cask }
+    - { name: rectangle, type: cask }
+    - { name: sf-symbols, type: cask }
+    - { name: stats, type: cask }
+  developer:
+    - gcc
+    - glow
+    - n
+    - neovim
+    - nvm
+    - rtk
+    - uv
+  personal:
+    - cmatrix
+    - ffmpeg
+    - ffmpegthumbnailer
+    - figlet
+    - imagemagick
+    - mpv
+    - ollama
+    - poppler
+    - streamlink
+    - { name: firefox, type: cask }
+    - { name: jordanbaird-ice, type: cask }
+    - { name: owncloud, type: cask }
+    - { name: telegram, type: cask }
+    - { name: transmission, type: cask }
+    - { name: vlc, type: cask }
+    - { name: zen, type: cask }
+  work:
+    - { name: zen, type: cask }
+
+# Python tools per trait (installed via uv)
+trait_python_tools:
+  developer: [ruff, prek]
+  personal: [yt-dlp]
+
+# Nerd fonts (brew casks, macOS only)
+nerd_fonts:
+  - font-hack-nerd-font
+  - font-fira-code-nerd-font
+  - font-jetbrains-mono-nerd-font
+
+# apt-specific extras — packages that only exist on apt, not brew.
+# Installed on Linux when Homebrew is NOT active.
+apt_extras:
+  base: [build-essential, curl, git]

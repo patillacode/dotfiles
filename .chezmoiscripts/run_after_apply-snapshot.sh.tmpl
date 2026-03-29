@@ -32,7 +32,7 @@ date: $(date +"%Y-%m-%d %H:%M:%S")
 commit: $commit_info
 files: $file_count
 machine: {{ .machine_name }}
-profile: {{ last .profiles }}
+traits: {{ .profiles | join ", " }}
 META
 
 # Prune: keep only the last $KEEP snapshots

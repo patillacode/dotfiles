@@ -5,7 +5,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 ## Overview
 
 Personal dotfiles managed via **chezmoi**, targeting macOS (zsh) and Debian Linux (bash).
-Chezmoi copies files to `$HOME` using a profile-based system — no symlinks.
+Chezmoi copies files to `$HOME` using a trait-based system — no symlinks.
 
 ## Common Commands
 
@@ -31,7 +31,7 @@ dotfiles push [msg]    # commit + git push
 dotfiles apply         # apply configs
 dotfiles diff          # show pending changes
 dotfiles theme         # interactive Starship theme selector (fzf)
-dotfiles status        # machine info, profiles, managed count
+dotfiles status        # machine info, traits, managed count
 dotfiles doctor        # run chezmoi diagnostics
 ```
 
@@ -39,8 +39,12 @@ dotfiles doctor        # run chezmoi diagnostics
 
 ```
 dotfiles/
-├── .chezmoi.toml.tmpl          # Interactive init prompts (machine, profile, font…)
-├── .chezmoidata.yaml           # Shared data: profile_aliases, profile_configs, packages
+├── .chezmoi.toml.tmpl          # Interactive init prompts (machine, traits, font…)
+├── .chezmoidata/               # Split data files:
+│   ├── profiles.yaml           #   trait definitions + presets
+│   ├── aliases.yaml            #   trait_aliases (delta per trait)
+│   ├── configs.yaml            #   trait_configs (delta per trait)
+│   └── packages.yaml           #   unified cross-platform packages
 ├── .chezmoiignore              # Templated per-machine exclusions
 ├── .chezmoiscripts/            # Run scripts (bootstrap, packages, oh-my-zsh, python tools)
 ├── dot_alias/                  # ~/.alias/ — alias files, one per domain
@@ -54,18 +58,35 @@ dotfiles/
 └── install-tools/              # Legacy scripts (reference only, not deployed)
 ```
 
-## Profile System
+## Trait System
 
-Profiles are defined in `.chezmoidata.yaml`. The machine selects one profile in
-`.chezmoi.toml.tmpl` and gets a flattened ancestor chain:
+Each machine selects a set of independent traits. Each trait answers one question:
 
-| Profile    | Inherits         | Machines               |
-|------------|------------------|------------------------|
-| `personal` | base + developer | bars, trip laptops     |
-| `work`     | base + developer | nordhealth             |
-| `server`   | base             | totoro                 |
+| Trait       | Question                    | Machines            |
+|-------------|-----------------------------|---------------------|
+| `base`      | Does this machine exist?    | all                 |
+| `desktop`   | Does it have a screen?      | bars, nordhealth    |
+| `developer` | Do I code on it?            | bars, nordhealth    |
+| `personal`  | Is it mine for fun?         | bars                |
+| `work`      | Is it for work?             | nordhealth          |
 
-Profile gates in `.chezmoiignore` control which files are deployed per machine.
+Traits are defined in `.chezmoidata/profiles.yaml`. Each trait's aliases, configs,
+and packages are delta-only (list ONLY what the trait adds). The full set is resolved
+at template time by iterating all active traits.
+
+Trait gates in `.chezmoiignore` control which files are deployed per machine.
+Per-machine overrides: `include_aliases`, `exclude_aliases`, `include_configs`,
+`exclude_configs` in `chezmoi.toml`.
+
+## Adding Packages or Aliases
+
+**"Where do I put this?"** — pick the trait that matches:
+- Dev tool → `developer` in `.chezmoidata/packages.yaml`
+- GUI app → `desktop` in `.chezmoidata/packages.yaml`
+- All machines → `base` in `.chezmoidata/packages.yaml`
+- New alias file → create in `dot_alias/`, add to the right trait in `.chezmoidata/aliases.yaml`
+
+Then run `chezmoi apply`.
 
 ## Naming Conventions
 
@@ -77,24 +98,19 @@ Profile gates in `.chezmoiignore` control which files are deployed per machine.
 ## Key Configs
 
 - **Shell**: `dot_zshrc.tmpl` — oh-my-zsh + bars theme + Starship; aliases sourced
-  from `~/.alias/` based on active profile
+  from `~/.alias/` based on active traits
 - **Git**: `dot_config/git/config.tmpl` — delta pager, user from chezmoi vars;
-  `dot_config/git/nordhealth` for work identity (work profile only)
+  `dot_config/git/nordhealth` for work identity (work trait only)
 - **Starship**: `dot_config/starship/` — 10+ themes; active set via `chezmoi.toml`
   `data.starship.theme`; switch with `dotfiles theme`
 - **Ghostty**: `dot_config/ghostty/config.tmpl` — font from chezmoi vars
 - **Zed**: `dot_config/zed/settings.json.tmpl` — font from chezmoi vars
 - **Claude Code**: `dot_claude/` — settings.json, CLAUDE.md, rules/
 
-## Adding New Aliases
-
-Create a new file in `dot_alias/`, add it to the relevant profile(s) in
-`.chezmoidata.yaml` under `profile_aliases`, then run `chezmoi apply`.
-
 ## Machines
 
-| Name        | OS     | Shell | Profiles                    |
-|-------------|--------|-------|-----------------------------|
-| bars        | macOS  | zsh   | base, developer, personal   |
-| nordhealth  | macOS  | zsh   | base, developer, work       |
-| totoro      | Debian | bash  | base, server                |
+| Name        | OS     | Shell | Traits                                |
+|-------------|--------|-------|---------------------------------------|
+| bars        | macOS  | zsh   | base, desktop, developer, personal    |
+| nordhealth  | macOS  | zsh   | base, desktop, developer, work        |
+| totoro      | Debian | bash  | base, developer                       |

@@ -129,7 +129,7 @@ cmd_status() {
     echo -e "  Source:    ${CYAN}$SOURCE_DIR${NC}"
     echo -e "  Machine:   $($CHEZMOI data | command grep -o '"machine_name":"[^"]*"' | cut -d'"' -f4 2>/dev/null || hostname)"
     echo -e "  OS:        $(uname -s)"
-    echo -e "  Profiles:  $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")"
+    echo -e "  Traits:    $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")"
     echo -e "  Theme:     $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")"
     echo -e "  Managed:   $($CHEZMOI managed | wc -l | tr -d ' ') files"
 
@@ -149,16 +149,16 @@ cmd_info() {
     local data
     data=$($CHEZMOI data 2>/dev/null)
 
-    local machine profile theme shell_name
+    local machine traits theme shell_name
     machine=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("machine_name","unknown"))' 2>/dev/null || hostname)
-    profile=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("profiles",["unknown"])[-1])' 2>/dev/null || echo "unknown")
+    traits=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")
     theme=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")
     shell_name=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("shell","unknown"))' 2>/dev/null || echo "unknown")
 
     _header "dotfiles info"
     echo ""
     echo -e "  Machine:   ${CYAN}$machine${NC}"
-    echo -e "  Profile:   $profile"
+    echo -e "  Traits:    $traits"
     echo -e "  Shell:     $shell_name"
     echo -e "  Theme:     $theme"
     echo -e "  chezmoi:   $($CHEZMOI --version 2>/dev/null | head -1)"
@@ -167,29 +167,59 @@ cmd_info() {
     echo "$data" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
-profile = d.get("profiles", ["unknown"])[-1]
-for a in d.get("profile_aliases", {}).get(profile, []):
-    print("  " + a)
+traits = d.get("profiles", [])
+trait_aliases = d.get("trait_aliases", {})
+includes = d.get("include_aliases", [])
+excludes = set(d.get("exclude_aliases", []))
+seen = set()
+aliases = []
+for t in traits:
+    for a in trait_aliases.get(t, []):
+        if a not in seen:
+            seen.add(a)
+            aliases.append(a)
+for a in includes:
+    if a not in seen:
+        seen.add(a)
+        aliases.append(a)
+for a in aliases:
+    if a not in excludes:
+        print("  " + a)
 ' 2>/dev/null || echo "  (unavailable)"
 
     _section "Active configs"
     echo "$data" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
-profile = d.get("profiles", ["unknown"])[-1]
-for c in d.get("profile_configs", {}).get(profile, []):
-    print("  " + c)
+traits = d.get("profiles", [])
+trait_configs = d.get("trait_configs", {})
+includes = d.get("include_configs", [])
+excludes = set(d.get("exclude_configs", []))
+seen = set()
+configs = []
+for t in traits:
+    for c in trait_configs.get(t, []):
+        if c not in seen:
+            seen.add(c)
+            configs.append(c)
+for c in includes:
+    if c not in seen:
+        seen.add(c)
+        configs.append(c)
+for c in configs:
+    if c not in excludes:
+        print("  " + c)
 ' 2>/dev/null || echo "  (unavailable)"
 
     _section "Python tools"
     echo "$data" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
-profiles = d.get("profiles", [])
-pkgs = d.get("packages", {}).get("python_tools", {})
+traits = d.get("profiles", [])
+tool_map = d.get("trait_python_tools", {})
 tools = []
-for p in profiles:
-    tools.extend(pkgs.get(p, []))
+for t in traits:
+    tools.extend(tool_map.get(t, []))
 print("\n".join("  " + t for t in tools) if tools else "  (none)")
 ' 2>/dev/null || echo "  (unavailable)"
     echo ""
@@ -473,15 +503,30 @@ cmd_aliases() {
     active_aliases=$(echo "$data" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
-profile = d.get("profiles", ["base"])[-1]
-for a in d.get("profile_aliases", {}).get(profile, []):
-    print(a)
+traits = d.get("profiles", [])
+trait_aliases = d.get("trait_aliases", {})
+includes = d.get("include_aliases", [])
+excludes = set(d.get("exclude_aliases", []))
+seen = set()
+aliases = []
+for t in traits:
+    for a in trait_aliases.get(t, []):
+        if a not in seen:
+            seen.add(a)
+            aliases.append(a)
+for a in includes:
+    if a not in seen:
+        seen.add(a)
+        aliases.append(a)
+for a in aliases:
+    if a not in excludes:
+        print(a)
 ' 2>/dev/null)
 
-    local profile
-    profile=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("profiles",["base"])[-1])' 2>/dev/null)
+    local traits
+    traits=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null)
 
-    _header "Active aliases — profile: $profile"
+    _header "Active aliases — traits: $traits"
 
     while IFS= read -r alias_name; do
         local src_file="$SOURCE_DIR/dot_alias/${alias_name}.sh"

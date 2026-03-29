@@ -2,7 +2,7 @@
 
 Personal dotfiles managed with [chezmoi](https://chezmoi.io).
 
-Supports macOS (zsh), Debian/Ubuntu Linux, and Arch Linux with a profile-based system — one repo, multiple machines.
+Supports macOS (zsh) and Debian/Ubuntu Linux with a trait-based system — one repo, multiple machines.
 
 **Primary remote:** `https://forgejo.patilla.es/patillacode/dotfiles.git`
 
@@ -72,10 +72,10 @@ Then proceed with the fresh install one-liner.
 
 When running `chezmoi init` for the first time you'll be prompted for:
 
-1. **Machine name** — `bars`, `nordhealth`, `totoro`, `archbook`, or custom
-2. **Profile** — `1` personal · `2` work · `3` server
+1. **Machine name** — `bars`, `nordhealth`, `totoro`, or custom
+2. **Profile preset** — `1` personal · `2` work · `3` server · `4` custom (pick individual traits)
 3. **Shell** — `zsh` or `bash` (Linux only, auto-detected on macOS)
-4. **Homebrew on Linux** — whether to install Homebrew alongside apt/pacman
+4. **Homebrew on Linux** — whether to install Homebrew alongside apt
 5. **Starship theme** — choose from 13+ themes (default: `simple`)
 6. **Git name & email** — used in `~/.config/git/config`
 7. **KeePassXC database path** — full path to your `.kdbx` file
@@ -103,7 +103,7 @@ dotfiles theme             # interactive Starship theme picker (fzf)
 dotfiles secrets           # inject secrets from KeePassXC into ~/.env
 
 # Info
-dotfiles status            # machine info, profiles, managed file count
+dotfiles status            # machine info, traits, managed file count
 dotfiles info              # active aliases, configs, tools
 dotfiles utils             # list all utility scripts and fzf functions
 dotfiles doctor            # run chezmoi diagnostics
@@ -116,17 +116,22 @@ Or use chezmoi directly: `chezmoi apply`, `chezmoi diff`, `chezmoi edit ~/.zshrc
 
 ---
 
-## Profiles
+## Traits
 
-Profiles are defined in `.chezmoidata.yaml`. Each profile is a fully-resolved flat list (ancestors included):
+Traits are defined in `.chezmoidata/profiles.yaml`. Each trait is independent and answers one question:
 
-| Profile    | Gets                              |
-|------------|-----------------------------------|
-| `personal` | base + developer + personal files |
-| `work`     | base + developer + work files     |
-| `server`   | base + server files               |
+| Trait       | Question                    | Machines            |
+|-------------|-----------------------------|---------------------|
+| `base`      | Does this machine exist?    | all                 |
+| `desktop`   | Does it have a screen?      | bars, nordhealth    |
+| `developer` | Do I code on it?            | bars, nordhealth    |
+| `personal`  | Is it mine for fun?         | bars                |
+| `work`      | Is it for work?             | nordhealth          |
 
-Files are gated in `.chezmoiignore` — wrong-profile files are never deployed.
+Each trait only lists what it **adds** — no duplication. The full set is resolved at
+template time by iterating all active traits.
+
+Files are gated in `.chezmoiignore` — wrong-trait files are never deployed.
 
 ---
 
@@ -153,26 +158,22 @@ Available themes: `simple` · `minimal` · `zenful` · `nerd-font-symbols` · `g
 ### Add a new alias
 
 1. Create `dot_alias/<name>.sh` in the repo
-2. Add it to the relevant profile(s) in `.chezmoidata.yaml` under `profile_aliases`
+2. Add it to the right trait in `.chezmoidata/aliases.yaml` under `trait_aliases`
 3. Run `chezmoi apply` or `dotfiles push "add <name> alias"`
 
 ---
 
 ### Add a new package to auto-install
 
-Edit `.chezmoidata.yaml`:
+Edit `.chezmoidata/packages.yaml` — add to the right trait:
 
 ```yaml
-packages:
-  brew_formulae:
-    personal:          # or base / developer / work
-      - new-tool
-  apt:
-    base:
-      - new-tool
-  pacman:
-    base:
-      - new-tool
+trait_packages:
+  developer:         # or base / desktop / personal / work
+    - new-tool                             # formula, same name on brew & apt
+    - { name: x, apt: x-dev }             # different name on apt
+    - { name: y, type: cask }             # brew cask (macOS only)
+    - { name: z, type: cask, apt: z-app } # cask on macOS, apt name on Linux
 ```
 
 The package will be installed automatically next time `chezmoi apply` runs (the script reruns when the package list hash changes).
@@ -206,12 +207,14 @@ Then `chezmoi apply` — both Ghostty and Zed pick up the change.
 
 ### Use a per-machine override
 
-To include an alias or config outside your profile, edit `~/.config/chezmoi/chezmoi.toml`:
+To include an alias or config outside your traits, edit `~/.config/chezmoi/chezmoi.toml`:
 
 ```toml
 [data]
     include_aliases = ["music"]   # pull in music.sh even on a work machine
     exclude_aliases = ["tv"]      # skip tv.sh on a personal machine
+    include_configs = ["mpv"]     # deploy mpv config on a non-personal machine
+    exclude_configs = ["zed"]     # skip zed config on a developer machine
 ```
 
 Then `chezmoi apply`.
@@ -223,11 +226,15 @@ Then `chezmoi apply`.
 ```
 dotfiles/
 ├── .chezmoi.toml.tmpl           # init wizard (prompts)
-├── .chezmoidata.yaml            # shared data: profiles, packages
+├── .chezmoidata/                # split data files:
+│   ├── profiles.yaml            #   trait definitions + presets
+│   ├── aliases.yaml             #   trait_aliases (delta per trait)
+│   ├── configs.yaml             #   trait_configs (delta per trait)
+│   └── packages.yaml            #   unified cross-platform packages
 ├── .chezmoiignore               # per-machine file exclusions (templated)
 ├── .chezmoiscripts/
 │   ├── run_once_before_bootstrap.sh.tmpl
-│   ├── run_onchange_install-packages.sh.tmpl   # brew / apt / pacman
+│   ├── run_onchange_install-packages.sh.tmpl   # brew / apt
 │   ├── run_onchange_install-uv.sh.tmpl         # uv on Linux
 │   ├── run_onchange_install-oh-my-zsh.sh.tmpl
 │   ├── run_onchange_install-python-tools.sh.tmpl
@@ -348,7 +355,7 @@ All scripts are in `~/.local/bin/` (on `$PATH`), available on every machine. Run
 
 ### fzf functions
 
-Interactive fzf-powered helpers sourced from `~/.alias/fzf.sh` (all profiles).
+Interactive fzf-powered helpers sourced from `~/.alias/fzf.sh` (all machines).
 
 | Function | Description |
 |----------|-------------|

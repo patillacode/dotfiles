@@ -3,25 +3,40 @@
 
 {{- /* ─── OS / shell detection ─────────────────────────── */ -}}
 {{- $shell := "zsh" -}}
-{{- $isGui := true -}}
-{{- $isArch := false -}}
 {{- $useHomebrew := true -}}
 {{- if eq .chezmoi.os "linux" -}}
 {{-   $shell = promptStringOnce . "shell" "Shell (zsh/bash)" "bash" -}}
-{{-   $isGui = false -}}
-{{-   $isArch = (or (stat "/etc/arch-release") (lookPath "pacman")) | not | not -}}
 {{-   $useHomebrew = promptBoolOnce . "use_homebrew" "Install Homebrew on this Linux machine?" false -}}
 {{- end -}}
 
 {{- /* ─── Profile selection ──────────────────────────────── */ -}}
-{{- $profileChoice := promptStringOnce . "profile_choice" "Profile: 1=personal 2=work 3=server" "1" -}}
+{{- /*
+     Traits (pick a preset or build your own):
+       base       — core CLI tools, all machines
+       desktop    — GUI apps (ghostty, raycast, etc.)
+       developer  — dev tools (nvim, zed, uv, etc.)
+       personal   — entertainment (music, tv, mpv)
+       work       — work-specific (nordhealth git)
+*/ -}}
+{{- $preset := promptStringOnce . "profile_preset" "Profile preset: 1=personal 2=work 3=server 4=server-dev 5=custom" "1" -}}
 {{- $profiles := list "base" -}}
-{{- if eq $profileChoice "1" -}}
-{{-   $profiles = list "base" "developer" "personal" -}}
-{{- else if eq $profileChoice "2" -}}
-{{-   $profiles = list "base" "developer" "work" -}}
-{{- else if eq $profileChoice "3" -}}
-{{-   $profiles = list "base" "server" -}}
+{{- if eq $preset "1" -}}
+{{-   $profiles = list "base" "desktop" "developer" "personal" -}}
+{{- else if eq $preset "2" -}}
+{{-   $profiles = list "base" "desktop" "developer" "work" -}}
+{{- else if eq $preset "3" -}}
+{{-   $profiles = list "base" -}}
+{{- else if eq $preset "4" -}}
+{{-   $profiles = list "base" "developer" -}}
+{{- else if eq $preset "5" -}}
+{{-   $hasDesktop := promptBoolOnce . "trait_desktop" "Include desktop trait (GUI apps)?" true -}}
+{{-   $hasDeveloper := promptBoolOnce . "trait_developer" "Include developer trait (dev tools)?" true -}}
+{{-   $hasPersonal := promptBoolOnce . "trait_personal" "Include personal trait (entertainment)?" false -}}
+{{-   $hasWork := promptBoolOnce . "trait_work" "Include work trait?" false -}}
+{{-   if $hasDesktop }}{{ $profiles = append $profiles "desktop" }}{{ end -}}
+{{-   if $hasDeveloper }}{{ $profiles = append $profiles "developer" }}{{ end -}}
+{{-   if $hasPersonal }}{{ $profiles = append $profiles "personal" }}{{ end -}}
+{{-   if $hasWork }}{{ $profiles = append $profiles "work" }}{{ end -}}
 {{- end -}}
 
 {{- /* ─── Starship theme ──────────────────────────────────── */ -}}
@@ -36,7 +51,7 @@
 
 {{- /* ─── Claude Code ─────────────────────────────────────── */ -}}
 {{- $claudeVariant := "none" -}}
-{{- if or (has "developer" $profiles) (has "personal" $profiles) (has "work" $profiles) -}}
+{{- if has "developer" $profiles -}}
 {{-   $claudeVariant = promptStringOnce . "claude_variant" "Claude Code variant (personal/work/none)" "personal" -}}
 {{- end -}}
 
@@ -55,8 +70,6 @@ sourceDir = "{{ .chezmoi.homeDir }}/dotfiles"
     machine_name = {{ $machineName | quote }}
     os = {{ .chezmoi.os | quote }}
     shell = {{ $shell | quote }}
-    is_gui = {{ $isGui }}
-    is_arch = {{ $isArch }}
     use_homebrew = {{ $useHomebrew }}
     profiles = {{ $profiles | toJson }}
     exclude_aliases = []

@@ -1,19 +1,42 @@
 #!/bin/bash
 # run_onchange_install-packages.sh — reruns when package list changes
-# Package data hash: {{ .packages | toJson | sha256sum }}
+# Package data hash: {{ .trait_packages | toJson | sha256sum }}
 
 set -e
 
-{{- $activeProfiles := .profiles }}
+{{- /* ─── Resolve all packages from active traits ────────── */}}
+{{- $formulae := list }}
+{{- $casks := list }}
+{{- $aptPkgs := list }}
+{{- range .profiles }}
+{{-   $pkgs := index $.trait_packages . | default list }}
+{{-   range $pkgs }}
+{{-     if kindIs "string" . }}
+{{-       $formulae = append $formulae . }}
+{{-       $aptPkgs = append $aptPkgs . }}
+{{-     else }}
+{{-       $name := index . "name" }}
+{{-       $type := index . "type" | default "formula" }}
+{{-       $aptName := index . "apt" | default $name }}
+{{-       if eq $type "cask" }}
+{{-         $casks = append $casks $name }}
+{{-         if index . "apt" }}{{ $aptPkgs = append $aptPkgs $aptName }}{{ end }}
+{{-       else }}
+{{-         $formulae = append $formulae $name }}
+{{-         $aptPkgs = append $aptPkgs $aptName }}
+{{-       end }}
+{{-     end }}
+{{-   end }}
+{{- end }}
+{{- $formulae = $formulae | uniq }}
+{{- $casks = $casks | uniq }}
+{{- $aptPkgs = $aptPkgs | uniq }}
 
 {{ if eq .chezmoi.os "darwin" -}}
 # ─── macOS: Homebrew formulae ────────────────────────────────
 FORMULAE=(
-{{- range $activeProfiles }}
-{{-   $pkgs := index $.packages.brew_formulae . }}
-{{-   range $pkgs }}
+{{- range $formulae }}
     "{{ . }}"
-{{-   end }}
 {{- end }}
 )
 
@@ -26,11 +49,8 @@ done
 
 # ─── macOS: Homebrew casks ───────────────────────────────────
 CASKS=(
-{{- range $activeProfiles }}
-{{-   $pkgs := index $.packages.brew_casks . }}
-{{-   range $pkgs }}
+{{- range $casks }}
     "{{ . }}"
-{{-   end }}
 {{- end }}
 )
 
@@ -43,64 +63,34 @@ done
 
 # ─── macOS: Nerd Fonts ───────────────────────────────────────
 echo "Installing Nerd Fonts..."
-for font in {{ range .packages.nerd_fonts }}"{{ . }}" {{ end }}; do
+for font in {{ range .nerd_fonts }}"{{ . }}" {{ end }}; do
     if ! brew list --cask "$font" &>/dev/null; then
         brew install --cask "$font"
     fi
 done
 
 {{ else if eq .chezmoi.os "linux" -}}
-{{- if .is_arch }}
-# ─── Arch Linux: pacman + yay packages ───────────────────────
-PACMAN_PKGS=(
-{{- range $activeProfiles }}
-{{-   $pkgs := index $.packages.pacman . }}
-{{-   range $pkgs }}
-    "{{ . }}"
-{{-   end }}
-{{- end }}
-)
-
-echo "Installing pacman packages..."
-sudo pacman -Sy --needed --noconfirm "${PACMAN_PKGS[@]}"
-
-if ! command -v yay &>/dev/null; then
-    echo "Installing yay (AUR helper)..."
-    sudo pacman -S --needed --noconfirm git base-devel
-    git clone https://aur.archlinux.org/yay.git /tmp/yay
-    (cd /tmp/yay && makepkg -si --noconfirm)
-    rm -rf /tmp/yay
-fi
-
-{{- else }}
 # ─── Linux: apt packages ─────────────────────────────────────
 
 {{- if not .use_homebrew }}
 # Base packages — skipped when Homebrew is active (brew provides these instead)
-APT_BASE_PKGS=(
-{{- range $activeProfiles }}
-{{-   $pkgs := index $.packages.apt . }}
-{{-   range $pkgs }}
+APT_PKGS=(
+{{- range $aptPkgs }}
+    "{{ . }}"
+{{- end }}
+{{- range .profiles }}
+{{-   $extras := index $.apt_extras . | default list }}
+{{-   range $extras }}
     "{{ . }}"
 {{-   end }}
 {{- end }}
 )
-echo "Installing apt base packages..."
+echo "Installing apt packages..."
 sudo apt-get update -qq
-sudo apt-get install -y "${APT_BASE_PKGS[@]}"
+sudo apt-get install -y "${APT_PKGS[@]}"
 {{- else }}
 echo "Homebrew is active — skipping apt base packages (brew provides these)."
 sudo apt-get update -qq
-{{- end }}
-
-# Always-apt packages — installed regardless of Homebrew
-APT_ALWAYS_PKGS=(
-{{- range $.packages.apt.always }}
-    "{{ . }}"
-{{- end }}
-)
-echo "Installing always-apt packages..."
-sudo apt-get install -y "${APT_ALWAYS_PKGS[@]}"
 {{- end }}
 
 {{- if .use_homebrew }}
@@ -110,15 +100,12 @@ if ! command -v brew &>/dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Add brew to PATH for this script session (shellenv not yet loaded in a fresh install)
+# Add brew to PATH for this script session
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
 
 BREW_PKGS=(
-{{- range $activeProfiles }}
-{{-   $pkgs := index $.packages.brew_formulae . }}
-{{-   range $pkgs }}
+{{- range $formulae }}
     "{{ . }}"
-{{-   end }}
 {{- end }}
 )
 

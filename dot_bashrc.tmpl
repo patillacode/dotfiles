@@ -1,5 +1,5 @@
 # .bashrc — managed by chezmoi
-# Machine: {{ .machine_name }} | Profile: {{ last .profiles }} | Shell: {{ .shell }}
+# Machine: {{ .machine_name }} | Traits: {{ .profiles | join ", " }} | Shell: {{ .shell }}
 
 # Source global definitions
 [[ -f /etc/bashrc ]] && source /etc/bashrc
@@ -15,10 +15,19 @@
 # ALIASES #
 ###########
 
-{{- $activeProfile := last .profiles }}
-{{- $aliases := index .profile_aliases $activeProfile }}
-{{ range $aliases }}
+{{- /* Resolve aliases: iterate traits, collect deltas, apply overrides */ -}}
+{{- $aliases := list -}}
+{{- range .profiles -}}
+{{-   $items := index $.trait_aliases . | default list -}}
+{{-   $aliases = concat $aliases $items -}}
+{{- end -}}
+{{- range .include_aliases }}{{ $aliases = append $aliases . }}{{ end -}}
+{{- $excluded := .exclude_aliases -}}
+{{- $aliases = $aliases | uniq }}
+{{ range $aliases -}}
+{{ if not (has . $excluded) -}}
 [[ -f "$HOME/.alias/{{ . }}.sh" ]] && source "$HOME/.alias/{{ . }}.sh"
+{{ end -}}
 {{- end }}
 
 ###########

@@ -25,8 +25,8 @@ docs/
 .bashrc
 {{ end -}}
 
-# ─── GUI-only (no ghostty on headless servers) ────────────────
-{{ if not .is_gui -}}
+# ─── desktop-only (no GUI apps on headless machines) ─────────
+{{ if not (has "desktop" .profiles) -}}
 dot_config/ghostty/
 dot_alias/ghostty.sh
 {{ end -}}
