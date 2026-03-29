@@ -42,6 +42,7 @@ usage() {
     _section "INFO"
     _item "status" "Machine info, profiles, managed file count"
     _item "info" "Active aliases, configs, tools, and settings"
+    _item "aliases" "Show all active aliases and functions"
     _item "utils" "List all utility scripts and functions"
     _item "doctor" "Run chezmoi diagnostics"
 
@@ -460,8 +461,61 @@ cmd_utils() {
     _item "fenv" "browse environment variable values"
     _item "fedit" "edit config files"
 
-    _section "SHELL FUNCTIONS (~/.alias/system.sh)"
-    _item "mkcd <dir>" "mkdir + cd in one step"
+    echo ""
+    _dim "See also: dotfiles aliases"
+    echo ""
+}
+
+cmd_aliases() {
+    # Get active profile's alias list from chezmoi data
+    local data active_aliases
+    data=$($CHEZMOI data 2>/dev/null)
+    active_aliases=$(echo "$data" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+profile = d.get("profiles", ["base"])[-1]
+for a in d.get("profile_aliases", {}).get(profile, []):
+    print(a)
+' 2>/dev/null)
+
+    local profile
+    profile=$(echo "$data" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("profiles",["base"])[-1])' 2>/dev/null)
+
+    _header "Active aliases — profile: $profile"
+
+    while IFS= read -r alias_name; do
+        local src_file="$SOURCE_DIR/dot_alias/${alias_name}.sh"
+        [[ -f "$src_file" ]] || continue
+
+        # Get description from first comment line (# name.sh — description)
+        local desc
+        desc=$(sed -n 's/^# *[a-zA-Z0-9_.-]* — //p' "$src_file" 2>/dev/null | head -1)
+
+        _section "${alias_name}${desc:+ — $desc}"
+
+        # Extract aliases: "alias name=..." lines
+        grep -E '^alias ' "$src_file" 2>/dev/null | while IFS= read -r line; do
+            local aname aval
+            aname=$(echo "$line" | sed "s/^alias //" | cut -d= -f1)
+            aval=$(echo "$line" | cut -d= -f2- | sed "s/^['\"]//;s/['\"]$//")
+            # Truncate long values
+            if [[ ${#aval} -gt 50 ]]; then
+                aval="${aval:0:47}..."
+            fi
+            printf "  ${CYAN}%-22s${NC} ${DIM}%s${NC}\n" "$aname" "$aval"
+        done
+
+        # Extract functions: "name() {" or "function name()" lines
+        grep -E '^[a-zA-Z_][a-zA-Z0-9_]*\(\)|^function [a-zA-Z_]' "$src_file" 2>/dev/null | while IFS= read -r line; do
+            local fname
+            fname=$(echo "$line" | sed 's/().*//;s/^function //;s/ {//')
+            # Try to get the comment on the line before or the inline comment
+            local fdesc
+            fdesc=$(grep -B1 "^${fname}()\|^function ${fname}" "$src_file" 2>/dev/null | grep '^#' | sed 's/^# *//' | head -1)
+            printf "  ${CYAN}%-22s${NC} ${DIM}%s${NC}\n" "$fname()" "${fdesc:-(function)}"
+        done
+
+    done <<< "$active_aliases"
     echo ""
 }
 
@@ -481,6 +535,7 @@ case "${1:-help}" in
     rollback) cmd_rollback ;;
     status)   cmd_status ;;
     secrets)  cmd_secrets ;;
+    aliases)  cmd_aliases ;;
     utils)    cmd_utils ;;
     doctor)   cmd_doctor ;;
     help|-h|--help) usage ;;

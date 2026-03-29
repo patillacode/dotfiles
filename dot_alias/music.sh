@@ -1,4 +1,4 @@
-# music.sh
+# music.sh — mpv playlists and YouTube music
 
 alias xx="mpv https://youtu.be/65-r8BYWSjU https://youtu.be/Sl3xiIlNY3s"
 alias ml="cd $HOME/media/music/ && mpv --no-video --shuffle ."

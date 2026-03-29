@@ -1,4 +1,4 @@
-# git.sh
+# git.sh — git shortcuts
 
 alias ga="git add"
 alias gaa="git add --all"

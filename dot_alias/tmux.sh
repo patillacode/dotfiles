@@ -1,3 +1,4 @@
+# tmux.sh — terminal multiplexer shortcuts
 # alias t="tmux"
 # alias ta="tmux attach -t"
 # alias td="tmux detach"

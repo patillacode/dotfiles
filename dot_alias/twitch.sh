@@ -1,4 +1,4 @@
-# twitch.sh
+# twitch.sh — Twitch and YouTube live streams
 
 stream_twitch_channel() {
     streamlink --player mpv $1 best

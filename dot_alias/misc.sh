@@ -1,4 +1,4 @@
-# misc.sh
+# misc.sh — fun stuff and games
 
 figlet_all_fonts() {
     for font in $(pyfiglet -l); do

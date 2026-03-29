@@ -1,4 +1,4 @@
-# tv.sh
+# tv.sh — live TV streams
 
 # alias rtve='mpv https://iptv-org.github.io/iptv/index.m3u'
 alias tv_24horas='mpv http://hlsliveamdgl8-lh.akamaihd.net/i/hlsdvrlive_1@583030/master.m3u8'

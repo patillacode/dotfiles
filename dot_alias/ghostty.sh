@@ -1,4 +1,4 @@
-#!/bin/bash
+# ghostty.sh — terminal shaders and utilities
 
 function enable_shader() {
     shader_name=$1
