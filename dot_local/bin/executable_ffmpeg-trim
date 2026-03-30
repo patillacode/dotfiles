@@ -1,6 +1,9 @@
 #!/bin/bash
 # ffmpeg-trim — trim a video clip by start and end time
 
+# shellcheck source=/dev/null
+source "${HOME}/.local/lib/tui.sh"
+
 usage() {
     echo "Usage: ffmpeg-trim <input> <start> <end>"
     echo ""
@@ -23,4 +26,4 @@ output_file="${input_file%.*}-trimmed.${input_file##*.}"
 
 ffmpeg -i "$input_file" -ss "$start_time" -to "$stop_time" -c copy "$output_file"
 
-echo "Saved to: $output_file"
+_ok "Saved to: $output_file"

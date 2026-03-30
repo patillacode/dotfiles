@@ -1,6 +1,9 @@
 #!/bin/bash
 # vid-compress — shrink a video file while keeping reasonable quality
 
+# shellcheck source=/dev/null
+source "${HOME}/.local/lib/tui.sh"
+
 usage() {
     echo "Usage: vid-compress <input> [output]"
     echo ""
@@ -18,7 +21,7 @@ if [ $# -lt 1 ]; then
 fi
 
 if ! command -v ffmpeg &>/dev/null; then
-    echo "Error: ffmpeg is not installed." >&2
+    _fail "ffmpeg is not installed."
     exit 1
 fi
 
@@ -26,9 +29,9 @@ input="$1"
 output="${2:-${input%.*}-compressed.${input##*.}}"
 
 if [ ! -f "$input" ]; then
-    echo "Not found: $input" >&2
+    _fail "Not found: $input"
     exit 1
 fi
 
 ffmpeg -i "$input" -vcodec libx264 -crf 28 -preset medium -acodec aac -b:a 128k "$output"
-echo "Saved to: $output"
+_ok "Saved to: $output"

@@ -1,6 +1,9 @@
 #!/bin/bash
 # port-check — check if a host:port is reachable
 
+# shellcheck source=/dev/null
+source "${HOME}/.local/lib/tui.sh"
+
 usage() {
     echo "Usage: port-check <host> <port>"
     echo ""
@@ -20,8 +23,8 @@ host="$1"
 port="$2"
 
 if (echo >/dev/tcp/"$host"/"$port") 2>/dev/null; then
-    echo "$host:$port is open"
+    _ok "$host:$port is open"
 else
-    echo "$host:$port is closed"
+    _fail "$host:$port is closed"
     exit 1
 fi

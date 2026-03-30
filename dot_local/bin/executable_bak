@@ -1,6 +1,9 @@
 #!/bin/bash
 # bak — create a timestamped backup of a file
 
+# shellcheck source=/dev/null
+source "${HOME}/.local/lib/tui.sh"
+
 usage() {
     echo "Usage: bak <file> [file2 ...]"
     echo ""
@@ -19,10 +22,10 @@ fi
 
 for file in "$@"; do
     if [ ! -e "$file" ]; then
-        echo "Not found: $file" >&2
+        _fail "Not found: $file"
         continue
     fi
     dest="${file}.bak.$(date +%Y%m%d-%H%M%S)"
     cp -r "$file" "$dest"
-    echo "$dest"
+    _ok "$dest"
 done

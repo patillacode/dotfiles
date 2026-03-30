@@ -1,6 +1,9 @@
 #!/bin/bash
 # myip — show public and local IP addresses
 
+# shellcheck source=/dev/null
+source "${HOME}/.local/lib/tui.sh"
+
 usage() {
     echo "Usage: myip"
     echo ""
@@ -9,10 +12,10 @@ usage() {
 
 [[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
 
-echo "Public: $(curl -s ifconfig.me)"
+_item "public" "$(curl -s ifconfig.me)"
 
 if command -v ip &>/dev/null; then
-    echo "Local:  $(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')"
+    _item "local" "$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')"
 elif command -v ipconfig &>/dev/null; then
-    echo "Local:  $(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)"
+    _item "local" "$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)"
 fi

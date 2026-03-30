@@ -1,6 +1,9 @@
 #!/bin/bash
 # vid-convert — convert video between formats (e.g. mkv to mp4)
 
+# shellcheck source=/dev/null
+source "${HOME}/.local/lib/tui.sh"
+
 usage() {
     echo "Usage: vid-convert <input> <output>"
     echo ""
@@ -18,7 +21,7 @@ if [ $# -lt 2 ]; then
 fi
 
 if ! command -v ffmpeg &>/dev/null; then
-    echo "Error: ffmpeg is not installed." >&2
+    _fail "ffmpeg is not installed."
     exit 1
 fi
 
@@ -26,14 +29,14 @@ input="$1"
 output="$2"
 
 if [ ! -f "$input" ]; then
-    echo "Not found: $input" >&2
+    _fail "Not found: $input"
     exit 1
 fi
 
 if [ -f "$output" ]; then
-    echo "Already exists: $output" >&2
+    _warn "Already exists: $output"
     exit 1
 fi
 
 ffmpeg -i "$input" -c copy "$output" || ffmpeg -i "$input" "$output"
-echo "Saved to: $output"
+_ok "Saved to: $output"
