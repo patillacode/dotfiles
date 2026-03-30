@@ -138,10 +138,16 @@ if [[ "$system" == "linux" ]]; then
 elif [[ "$system" == "macos" ]]; then
   # Determine output file: use provided arg or prompt interactively
   # Find the non-option argument (output filename) from original args
-  macos_output=""
+  local macos_output=""
+  local skip_next=false
   for arg in "$@"; do
+    if $skip_next; then
+      skip_next=false
+      continue
+    fi
     case "$arg" in
-      -v|--version|-h|--help|-q|--quality) ;;
+      -v|--version|-h|--help) ;;
+      -q|--quality) skip_next=true ;;
       *) macos_output="$arg"; break ;;
     esac
   done

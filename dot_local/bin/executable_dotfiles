@@ -244,8 +244,6 @@ cmd_rollback() {
         exit 1
     fi
 
-    _require_gum
-
     _header "Select a snapshot to restore"
     echo ""
 

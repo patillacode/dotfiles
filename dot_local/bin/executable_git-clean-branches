@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # git-clean-branches — delete merged local branches
 
 source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
@@ -38,7 +38,7 @@ if [[ -z "$selected" ]]; then
     exit 0
 fi
 
-mapfile -t selected_arr <<< "$selected"
+IFS=$'\n' read -r -d '' -a selected_arr <<< "$selected" || true
 
 if ! _confirm "Delete ${#selected_arr[@]} branch(es)?"; then
     _dim "Aborted."
