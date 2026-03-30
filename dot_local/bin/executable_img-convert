@@ -3,67 +3,52 @@
 
 set -euo pipefail
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Print colored output
-print_color() {
-    local color=$1
-    local message=$2
-    echo -e "${color}${message}${NC}"
-}
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
 
 # Print usage information
 usage() {
-    echo -e "${BLUE}╭─────────────────────────────────────────────────────────────────────────────╮${NC}"
-    echo -e "${BLUE}│                          ${GREEN}🖼️  IMAGE CONVERTER${BLUE}                                │${NC}"
-    echo -e "${BLUE}│                 Transform and convert image formats using sips              │${NC}"
-    echo -e "${BLUE}╰─────────────────────────────────────────────────────────────────────────────╯${NC}"
+    _header "img-convert — convert image formats using sips"
     echo ""
-    echo -e "${YELLOW}USAGE:${NC}"
-    echo -e "  ${GREEN}$0${NC} ${BLUE}[OPTIONS]${NC} ${YELLOW}[INPUT_FILE]${NC} ${YELLOW}[OUTPUT_FILE]${NC}"
+    _section "USAGE:"
+    echo "  $0 [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]"
     echo ""
-    echo -e "${YELLOW}OPTIONS:${NC}"
-    echo -e "  ${GREEN}-f, --format FORMAT${NC}     Output format ${RED}(jpeg, png, gif, bmp, tiff, webp)${NC}"
-    echo -e "  ${GREEN}-q, --quality QUALITY${NC}   JPEG quality ${RED}(1-100, default: 85)${NC}"
-    echo -e "  ${GREEN}-w, --width WIDTH${NC}       Resize to width ${RED}(pixels)${NC}"
-    echo -e "  ${GREEN}-h, --height HEIGHT${NC}     Resize to height ${RED}(pixels)${NC}"
-    echo -e "  ${GREEN}-r, --rotate DEGREES${NC}    Rotate image ${RED}(90, 180, 270, or any angle)${NC}"
-    echo -e "  ${GREEN}-b, --batch${NC}             Batch mode - process all images in directory"
-    echo -e "  ${GREEN}-i, --interactive${NC}       Interactive mode"
-    echo -e "  ${GREEN}--help${NC}                  Show this help message"
+    _section "OPTIONS:"
+    _item "-f, --format FORMAT"   "Output format (jpeg, png, gif, bmp, tiff, webp)"
+    _item "-q, --quality QUALITY" "JPEG quality (1-100, default: 85)"
+    _item "-w, --width WIDTH"     "Resize to width (pixels)"
+    _item "-h, --height HEIGHT"   "Resize to height (pixels)"
+    _item "-r, --rotate DEGREES"  "Rotate image (90, 180, 270, or any angle)"
+    _item "-b, --batch"           "Batch mode - process all images in directory"
+    _item "-i, --interactive"     "Interactive mode"
+    _item "--help"                "Show this help message"
     echo ""
-    echo -e "${YELLOW}EXAMPLES:${NC}"
-    echo -e "  ${BLUE}# Convert single file${NC}"
-    echo -e "  ${GREEN}$0${NC} input.webp output.jpg"
-    echo -e "  ${GREEN}$0${NC} ${RED}-f png -q 90${NC} input.jpg output.png"
+    _section "EXAMPLES:"
+    _dim "# Convert single file"
+    echo "  $0 input.webp output.jpg"
+    echo "  $0 -f png -q 90 input.jpg output.png"
     echo ""
-    echo -e "  ${BLUE}# Resize and convert${NC}"
-    echo -e "  ${GREEN}$0${NC} ${RED}-f jpeg -w 800 -h 600${NC} input.png output.jpg"
+    _dim "# Resize and convert"
+    echo "  $0 -f jpeg -w 800 -h 600 input.png output.jpg"
     echo ""
-    echo -e "  ${BLUE}# Rotate and convert${NC}"
-    echo -e "  ${GREEN}$0${NC} ${RED}-f png -r 90${NC} input.jpg output.png"
+    _dim "# Rotate and convert"
+    echo "  $0 -f png -r 90 input.jpg output.png"
     echo ""
-    echo -e "  ${BLUE}# Interactive mode${NC}"
-    echo -e "  ${GREEN}$0${NC} ${RED}-i${NC}"
+    _dim "# Interactive mode"
+    echo "  $0 -i"
     echo ""
-    echo -e "  ${BLUE}# Batch convert all images to JPEG${NC}"
-    echo -e "  ${GREEN}$0${NC} ${RED}-b -f jpeg${NC}"
+    _dim "# Batch convert all images to JPEG"
+    echo "  $0 -b -f jpeg"
     echo ""
-    echo -e "${YELLOW}SUPPORTED FORMATS:${NC}"
-    echo -e "  ${GREEN}Input:${NC}  ${RED}JPEG, PNG, GIF, BMP, TIFF, WEBP, HEIC${NC}"
-    echo -e "  ${GREEN}Output:${NC} ${RED}JPEG, PNG, GIF, BMP, TIFF, WEBP${NC}"
+    _section "SUPPORTED FORMATS:"
+    _item "Input:"  "JPEG, PNG, GIF, BMP, TIFF, WEBP, HEIC"
+    _item "Output:" "JPEG, PNG, GIF, BMP, TIFF, WEBP"
     echo ""
 }
 
 # Check if sips is available
 check_sips() {
     if ! command -v sips &> /dev/null; then
-        print_color $RED "Error: sips command not found. This script requires macOS."
+        _fail "Error: sips command not found. This script requires macOS."
         exit 1
     fi
 }
@@ -84,8 +69,8 @@ validate_format() {
         fi
     done
 
-    print_color $RED "Error: Unsupported format '$format'"
-    print_color $YELLOW "Supported formats: $supported_formats"
+    _fail "Error: Unsupported format '$format'"
+    _warn "Supported formats: $supported_formats"
     return 1
 }
 
@@ -140,7 +125,7 @@ convert_file() {
     local output_file=$2
 
     if [[ ! -f "$input_file" ]]; then
-        print_color $RED "Error: Input file '$input_file' not found"
+        _fail "Error: Input file '$input_file' not found"
         return 1
     fi
 
@@ -152,10 +137,10 @@ convert_file() {
 
     # Build and execute sips command
     local sips_cmd=$(build_sips_command "$input_file" "$output_file")
-    print_color $BLUE "Executing: $sips_cmd"
+    _dim "Executing: $sips_cmd"
 
     if eval $sips_cmd > /dev/null 2>&1; then
-        print_color $GREEN "✓ Converted: $input_file → $output_file"
+        _ok "Converted: $input_file → $output_file"
 
         # Show file sizes
         local input_size=$(stat -f%z "$input_file" 2>/dev/null || echo "0")
@@ -164,85 +149,70 @@ convert_file() {
         local output_size_mb=$(echo "scale=2; $output_size/1024/1024" | bc 2>/dev/null || echo "0")
 
         if command -v bc &> /dev/null; then
-            print_color $YELLOW "  Input: ${input_size_mb}MB → Output: ${output_size_mb}MB"
+            _warn "Input: ${input_size_mb}MB → Output: ${output_size_mb}MB"
         fi
         return 0
     else
-        print_color $RED "✗ Failed to convert: $input_file"
+        _fail "Failed to convert: $input_file"
         return 1
     fi
 }
 
 # Interactive mode
 interactive_mode() {
-    print_color $BLUE "=== Interactive Image Converter ==="
-    echo
+    _require_gum
+    _header "Interactive Image Converter"
 
     # Get input file
-    while true; do
-        read -p "Enter input file path (or 'quit' to exit): " input_file
-        if [[ "$input_file" == "quit" ]]; then
-            exit 0
-        fi
-        if [[ -f "$input_file" ]]; then
-            break
-        else
-            print_color $RED "File not found. Please try again."
-        fi
-    done
+    input_file=$(gum file --header="Select input image")
 
     # Get output format
-    local supported_formats=$(get_supported_formats)
-    print_color $YELLOW "Supported formats: $supported_formats"
-    while true; do
-        read -p "Enter output format (default: jpeg): " format
-        format=${format:-jpeg}
-        if validate_format "$format"; then
-            OUTPUT_FORMAT=$format
-            break
-        fi
-    done
+    OUTPUT_FORMAT=$(_menu "Output format" jpeg png gif bmp tiff webp)
 
     # Get output filename
     local extension=$(get_extension "$OUTPUT_FORMAT")
     local default_output="${input_file%.*}.$extension"
-    read -p "Enter output file path (default: $default_output): " output_file
+    output_file=$(_input "Output filename" "$default_output")
     output_file=${output_file:-$default_output}
 
     # Optional settings
     if [[ "$OUTPUT_FORMAT" == "jpeg" ]]; then
-        read -p "JPEG quality (1-100, default: 85): " quality
+        local quality
+        quality=$(_input "JPEG quality (1-100)" "85")
         quality=${quality:-85}
         if [[ "$quality" =~ ^[0-9]+$ ]] && [[ "$quality" -ge 1 ]] && [[ "$quality" -le 100 ]]; then
             QUALITY=$quality
         fi
     fi
 
-    read -p "Resize width (pixels, optional): " width
+    local width
+    width=$(_input "Resize width (pixels, optional — leave blank to skip)" "")
     if [[ "$width" =~ ^[0-9]+$ ]]; then
         WIDTH=$width
     fi
 
-    read -p "Resize height (pixels, optional): " height
+    local height
+    height=$(_input "Resize height (pixels, optional — leave blank to skip)" "")
     if [[ "$height" =~ ^[0-9]+$ ]]; then
         HEIGHT=$height
     fi
 
-    read -p "Rotation angle (degrees, optional): " rotation
+    local rotation
+    rotation=$(_input "Rotation angle (degrees, optional — leave blank to skip)" "")
     if [[ "$rotation" =~ ^-?[0-9]+$ ]]; then
         ROTATION=$rotation
     fi
 
     # Convert
     echo
-    print_color $BLUE "Converting..."
+    _dim "Converting..."
     convert_file "$input_file" "$output_file"
 }
 
 # Batch mode
 batch_mode() {
     if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
-        print_color $RED "Error: Output format required for batch mode (-f/--format)"
+        _fail "Error: Output format required for batch mode (-f/--format)"
         exit 1
     fi
 
@@ -250,7 +220,7 @@ batch_mode() {
     local count=0
     local success=0
 
-    print_color $BLUE "=== Batch Mode: Converting to $OUTPUT_FORMAT ==="
+    _header "Batch mode: converting to $OUTPUT_FORMAT"
 
     # Find all image files
     shopt -s nullglob
@@ -260,7 +230,7 @@ batch_mode() {
 
             # Skip if already in target format
             if [[ "${file##*.}" == "$extension" ]] || [[ "${file##*.}" == "$OUTPUT_FORMAT" ]]; then
-                print_color $YELLOW "⚠ Skipping $file (already in $OUTPUT_FORMAT format)"
+                _warn "Skipping $file (already in $OUTPUT_FORMAT format)"
                 continue
             fi
 
@@ -273,7 +243,7 @@ batch_mode() {
     shopt -u nullglob
 
     echo
-    print_color $GREEN "Batch conversion complete: $success/$count files converted successfully"
+    _ok "Batch conversion complete: $success/$count files converted successfully"
 }
 
 # Main script
@@ -302,7 +272,7 @@ main() {
             -q|--quality)
                 QUALITY="$2"
                 if ! [[ "$QUALITY" =~ ^[0-9]+$ ]] || [[ "$QUALITY" -lt 1 ]] || [[ "$QUALITY" -gt 100 ]]; then
-                    print_color $RED "Error: Quality must be between 1-100"
+                    _fail "Error: Quality must be between 1-100"
                     exit 1
                 fi
                 shift 2
@@ -310,7 +280,7 @@ main() {
             -w|--width)
                 WIDTH="$2"
                 if ! [[ "$WIDTH" =~ ^[0-9]+$ ]]; then
-                    print_color $RED "Error: Width must be a positive integer"
+                    _fail "Error: Width must be a positive integer"
                     exit 1
                 fi
                 shift 2
@@ -318,7 +288,7 @@ main() {
             -h|--height)
                 HEIGHT="$2"
                 if ! [[ "$HEIGHT" =~ ^[0-9]+$ ]]; then
-                    print_color $RED "Error: Height must be a positive integer"
+                    _fail "Error: Height must be a positive integer"
                     exit 1
                 fi
                 shift 2
@@ -326,7 +296,7 @@ main() {
             -r|--rotate)
                 ROTATION="$2"
                 if ! [[ "$ROTATION" =~ ^-?[0-9]+$ ]]; then
-                    print_color $RED "Error: Rotation must be an integer (degrees)"
+                    _fail "Error: Rotation must be an integer (degrees)"
                     exit 1
                 fi
                 shift 2
@@ -344,7 +314,7 @@ main() {
                 exit 0
                 ;;
             -*)
-                print_color $RED "Unknown option: $1"
+                _fail "Unknown option: $1"
                 usage
                 exit 1
                 ;;
@@ -362,7 +332,7 @@ main() {
     else
         # Single file mode
         if [[ $# -lt 1 ]]; then
-            print_color $RED "Error: Input file required"
+            _fail "Error: Input file required"
             usage
             exit 1
         fi
@@ -376,7 +346,7 @@ main() {
                 local extension=$(get_extension "$OUTPUT_FORMAT")
                 output_file="${input_file%.*}.$extension"
             else
-                print_color $RED "Error: Output file or format must be specified"
+                _fail "Error: Output file or format must be specified"
                 usage
                 exit 1
             fi
@@ -389,7 +359,7 @@ main() {
                 jpg) OUTPUT_FORMAT="jpeg" ;;
                 jpeg|png|gif|bmp|tiff|webp) OUTPUT_FORMAT="${ext,,}" ;;
                 *)
-                    print_color $RED "Error: Cannot detect output format from filename"
+                    _fail "Error: Cannot detect output format from filename"
                     usage
                     exit 1
                     ;;
