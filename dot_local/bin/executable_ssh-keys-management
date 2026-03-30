@@ -62,13 +62,6 @@ _load_tokens() {
 _github_token()  { _load_tokens | grep '^GITHUB_TOKEN='  | cut -d= -f2-; }
 _forgejo_token() { _load_tokens | grep '^FORGEJO_TOKEN=' | cut -d= -f2-; }
 
-# Write an Authorization header to a temp file and echo the path.
-# Usage: -H @"$(_auth_header Bearer "$token")"
-_auth_header() {
-    local scheme="$1" token="$2"
-    printf 'Authorization: %s %s\n' "$scheme" "$token" > "$_TMPDIR/auth_header"
-    echo "$_TMPDIR/auth_header"
-}
 
 # Check if a public key is registered on a service.
 # Returns the key ID if found, empty string if not.
@@ -84,22 +77,18 @@ _check_registered() {
     esac
 
     local response http_code
-    local -a auth_headers
     if [[ "$service" == "github" ]]; then
-        auth_headers=(
-            -H @"$(_auth_header Bearer "$token")"
-            -H "Accept: application/vnd.github+json"
-            -H "X-GitHub-Api-Version: 2022-11-28"
-        )
+        http_code=$(curl -s -o "$_TMPDIR/api_resp" -w "%{http_code}" \
+            -H "Authorization: Bearer $token" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$url" 2>/dev/null) || return 1
     else
-        auth_headers=(
-            -H @"$(_auth_header token "$token")"
-            -H "Accept: application/json"
-        )
+        http_code=$(curl -s -o "$_TMPDIR/api_resp" -w "%{http_code}" \
+            -H "Authorization: token $token" \
+            -H "Accept: application/json" \
+            "$url" 2>/dev/null) || return 1
     fi
-    http_code=$(curl -s -o "$_TMPDIR/api_resp" -w "%{http_code}" \
-        "${auth_headers[@]}" \
-        "$url" 2>/dev/null) || return 1
 
     if [[ "$http_code" != "200" ]]; then
         return 1
@@ -143,20 +132,19 @@ _revoke_from_service() {
     esac
 
     local http_code
-    local -a del_headers
     if [[ "$service" == "github" ]]; then
-        del_headers=(
-            -H @"$(_auth_header Bearer "$token")"
-            -H "Accept: application/vnd.github+json"
-            -H "X-GitHub-Api-Version: 2022-11-28"
-        )
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "Authorization: Bearer $token" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$del_url" 2>/dev/null) || http_code="000"
     else
-        del_headers=(-H @"$(_auth_header token "$token")")
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "Authorization: token $token" \
+            "$del_url" 2>/dev/null) || http_code="000"
     fi
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-        -X DELETE \
-        "${del_headers[@]}" \
-        "$del_url" 2>/dev/null) || http_code="000"
 
     if [[ "$http_code" == "204" ]]; then
         _ok "Revoked from $service_label"
@@ -511,26 +499,24 @@ print(json.dumps({'title': os.environ['KEY_NAME'], 'key': os.environ['PUB_KEY']}
 ")
 
             local http_code
-            local -a post_headers
             if [[ "$service" == "github" ]]; then
-                post_headers=(
-                    -H @<(printf 'Authorization: Bearer %s' "$use_token")
-                    -H "Accept: application/vnd.github+json"
-                    -H "X-GitHub-Api-Version: 2022-11-28"
-                    -H "Content-Type: application/json"
-                )
+                http_code=$(curl -s -o "$_TMPDIR/reg_resp" -w "%{http_code}" \
+                    -X POST \
+                    -H "Authorization: Bearer $use_token" \
+                    -H "Accept: application/vnd.github+json" \
+                    -H "X-GitHub-Api-Version: 2022-11-28" \
+                    -H "Content-Type: application/json" \
+                    -d "$body" \
+                    "$api_url" 2>/dev/null) || http_code="000"
             else
-                post_headers=(
-                    -H @"$(_auth_header token "$use_token")"
-                    -H "Accept: application/json"
-                    -H "Content-Type: application/json"
-                )
+                http_code=$(curl -s -o "$_TMPDIR/reg_resp" -w "%{http_code}" \
+                    -X POST \
+                    -H "Authorization: token $use_token" \
+                    -H "Accept: application/json" \
+                    -H "Content-Type: application/json" \
+                    -d "$body" \
+                    "$api_url" 2>/dev/null) || http_code="000"
             fi
-            http_code=$(curl -s -o "$_TMPDIR/reg_resp" -w "%{http_code}" \
-                -X POST \
-                "${post_headers[@]}" \
-                -d "$body" \
-                "$api_url" 2>/dev/null) || http_code="000"
 
             if [[ "$http_code" == "201" ]]; then
                 _ok "Registered on $service_key"
