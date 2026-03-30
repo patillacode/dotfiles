@@ -1,6 +1,6 @@
 module dotfiles-dashboard
 
-go 1.26
+go 1.24
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.5

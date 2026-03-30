@@ -64,6 +64,10 @@ type Model struct {
 
 type tickMsg struct{}
 
+type headerRefreshMsg struct {
+	info HeaderInfo
+}
+
 func sourceDir() string {
 	if d := os.Getenv("CHEZMOI_SOURCE_DIR"); d != "" {
 		return d
@@ -72,7 +76,13 @@ func sourceDir() string {
 	return filepath.Join(home, "dotfiles")
 }
 
-func refreshHeader() HeaderInfo {
+func refreshHeaderCmd() tea.Cmd {
+	return func() tea.Msg {
+		return headerRefreshMsg{info: fetchHeaderInfo()}
+	}
+}
+
+func fetchHeaderInfo() HeaderInfo {
 	dir := sourceDir()
 	info := HeaderInfo{
 		OS: runtime.GOOS,
@@ -172,15 +182,15 @@ func initialModel() Model {
 	m := Model{
 		items:    all,
 		filtered: all,
-		header:   refreshHeader(),
 	}
 	return m
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
-		return tickMsg{}
-	})
+	return tea.Batch(
+		refreshHeaderCmd(),
+		tea.Tick(5*time.Second, func(t time.Time) tea.Msg { return tickMsg{} }),
+	)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -189,11 +199,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.termWidth = msg.Width
 		m.termHeight = msg.Height
 
+	case headerRefreshMsg:
+		m.header = msg.info
+		return m, nil
+
 	case tickMsg:
-		m.header = refreshHeader()
-		return m, tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
-			return tickMsg{}
-		})
+		return m, tea.Batch(
+			refreshHeaderCmd(),
+			tea.Tick(5*time.Second, func(t time.Time) tea.Msg { return tickMsg{} }),
+		)
 
 	case tea.KeyMsg:
 		switch msg.Type {
