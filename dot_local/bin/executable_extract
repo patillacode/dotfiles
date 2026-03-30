@@ -1,6 +1,8 @@
 #!/bin/bash
 # extract — universal archive extractor
 
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
+
 usage() {
     echo "Usage: extract <archive> [archive2 ...]"
     echo ""
@@ -19,23 +21,23 @@ fi
 
 for file in "$@"; do
     if [ ! -f "$file" ]; then
-        echo "Not found: $file" >&2
+        _fail "Not found: $file"
         continue
     fi
 
     case "$file" in
-        *.tar.bz2) tar xjf "$file"    ;;
-        *.tar.gz)  tar xzf "$file"    ;;
-        *.tar.xz)  tar xJf "$file"    ;;
-        *.tar.zst) tar --zstd -xf "$file" ;;
-        *.tar)     tar xf "$file"     ;;
-        *.bz2)     bunzip2 "$file"    ;;
-        *.gz)      gunzip "$file"     ;;
-        *.xz)      unxz "$file"       ;;
-        *.zip)     unzip "$file"      ;;
-        *.7z)      7z x "$file"       ;;
-        *.rar)     unrar x "$file"    ;;
-        *.zst)     unzstd "$file"     ;;
-        *)         echo "Unknown format: $file" >&2 ;;
+        *.tar.bz2) tar xjf "$file"        && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.tar.gz)  tar xzf "$file"        && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.tar.xz)  tar xJf "$file"        && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.tar.zst) tar --zstd -xf "$file" && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.tar)     tar xf "$file"         && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.bz2)     bunzip2 "$file"        && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.gz)      gunzip "$file"         && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.xz)      unxz "$file"           && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.zip)     unzip "$file"          && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.7z)      7z x "$file"           && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.rar)     unrar x "$file"        && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *.zst)     unzstd "$file"         && _ok "Extracted: $file" || _fail "Failed: $file" ;;
+        *)         _warn "Unknown format: $file" ;;
     esac
 done

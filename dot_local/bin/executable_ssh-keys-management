@@ -4,35 +4,12 @@
 
 set -euo pipefail
 
-# ─── Colors ─────────────────────────────────────────────────
-BOLD=$'\e[1m'
-DIM=$'\e[2m'
-CYAN=$'\e[0;36m'
-GREEN=$'\e[0;32m'
-YELLOW=$'\e[0;33m'
-RED=$'\e[0;31m'
-NC=$'\e[0m'
-
-_header()  { echo -e "${BOLD}${CYAN}$1${NC}"; }
-_section() { echo -e "\n${BOLD}$1${NC}"; }
-_ok()      { echo -e "  ${GREEN}✓${NC} $1"; }
-_warn()    { echo -e "  ${YELLOW}⚠${NC} $1"; }
-_fail()    { echo -e "  ${RED}✗${NC} $1"; }
-_item()    { printf "  ${CYAN}%-20s${NC} %s\n" "$1" "$2"; }
-_dim()     { echo -e "  ${DIM}$1${NC}"; }
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
+_section() { printf "\n${BOLD}%s${RESET}\n" "$1"; }
 
 # ─── Temp files ──────────────────────────────────────────────
 _TMPDIR=$(mktemp -d)
 trap 'rm -rf "$_TMPDIR"' EXIT
-
-# ─── Gum guard ───────────────────────────────────────────────
-_require_gum() {
-    if ! command -v gum &>/dev/null; then
-        _fail "gum is required but not installed."
-        _dim  "Install it with: brew install gum"
-        exit 1
-    fi
-}
 
 # ─── Helpers ─────────────────────────────────────────────────
 
@@ -205,12 +182,12 @@ cmd_status() {
             local gh_id
             gh_id=$(_check_registered "github" "$github_token" "$pubkey_content") || gh_id=""
             if [[ -n "$gh_id" ]]; then
-                _item "GitHub" "${GREEN}registered${NC} (id: $gh_id)"
+                _item "GitHub" "${GREEN}registered${RESET} (id: $gh_id)"
             else
-                _item "GitHub" "${DIM}not registered${NC}"
+                _item "GitHub" "${DIM}not registered${RESET}"
             fi
         else
-            _item "GitHub" "${DIM}no token in ~/.env${NC}"
+            _item "GitHub" "${DIM}no token in ~/.env${RESET}"
         fi
 
         # Forgejo registration
@@ -218,21 +195,21 @@ cmd_status() {
             local fj_id
             fj_id=$(_check_registered "forgejo" "$forgejo_token" "$pubkey_content") || fj_id=""
             if [[ -n "$fj_id" ]]; then
-                _item "Forgejo" "${GREEN}registered${NC} (id: $fj_id)"
+                _item "Forgejo" "${GREEN}registered${RESET} (id: $fj_id)"
             else
-                _item "Forgejo" "${DIM}not registered${NC}"
+                _item "Forgejo" "${DIM}not registered${RESET}"
             fi
         else
-            _item "Forgejo" "${DIM}no token in ~/.env${NC}"
+            _item "Forgejo" "${DIM}no token in ~/.env${RESET}"
         fi
 
         # Agent status
         local fingerprint
         fingerprint=$(ssh-keygen -l -f "$pub" 2>/dev/null | awk '{print $2}')
         if ssh-add -l 2>/dev/null | grep -qF "$fingerprint"; then
-            _item "Agent" "${GREEN}loaded${NC}"
+            _item "Agent" "${GREEN}loaded${RESET}"
         else
-            _item "Agent" "${DIM}not loaded${NC}"
+            _item "Agent" "${DIM}not loaded${RESET}"
         fi
     done
 

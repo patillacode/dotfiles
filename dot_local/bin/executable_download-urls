@@ -1,6 +1,8 @@
 #!/bin/bash
 # download-urls — batch download URLs with yt-dlp
 
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
+
 usage() {
     echo "Usage: download-urls <urls.txt> [username] [password]"
     echo ""
@@ -14,26 +16,33 @@ usage() {
 [[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
 
 if [ $# -lt 1 ]; then
-    usage
-    exit 1
+    if [ -t 0 ]; then
+        _require_gum
+        URL_FILE=$(_input "URL file path")
+        [ -z "$URL_FILE" ] && { usage; exit 1; }
+    else
+        usage
+        exit 1
+    fi
+else
+    URL_FILE="$1"
 fi
 
-URL_FILE="$1"
-USERNAME="$2"
-PASSWORD="$3"
+USERNAME="${2:-}"
+PASSWORD="${3:-}"
 
 if [ ! -f "$URL_FILE" ]; then
-    echo "Error: File '$URL_FILE' not found!" >&2
+    _fail "File '$URL_FILE' not found!"
     exit 1
 fi
 
 if ! command -v yt-dlp &>/dev/null; then
-    echo "Error: yt-dlp is not installed." >&2
+    _fail "yt-dlp is not installed."
     exit 1
 fi
 
-echo "Starting download process using URLs from $URL_FILE"
-echo "Press Ctrl+C to stop the process at any time"
+_header "Batch Download"
+_dim "URLs from $URL_FILE — press Ctrl+C to stop"
 
 total_urls=$(grep -c -v "^\s*$" "$URL_FILE")
 current_url=0
@@ -43,7 +52,7 @@ while IFS= read -r url || [ -n "$url" ]; do
     ((current_url++))
     url=$(echo "$url" | xargs)
 
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Processing URL ($current_url/$total_urls): $url"
+    _item "[$current_url/$total_urls]" "$url"
 
     if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
         yt-dlp --username "$USERNAME" --password "$PASSWORD" "$url"
@@ -53,10 +62,10 @@ while IFS= read -r url || [ -n "$url" ]; do
 
     if [ "$current_url" -lt "$total_urls" ]; then
         delay=$((RANDOM % 240 + 60))
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Done. Waiting $((delay / 60))m $((delay % 60))s..."
+        _dim "waiting ${delay}s before next download..."
         sleep $delay
     fi
 
 done < "$URL_FILE"
 
-echo "$(date '+%Y-%m-%d %H:%M:%S') - All downloads completed!"
+_ok "All downloads completed"
