@@ -69,8 +69,8 @@ style = "fg:green bg:black"
 format = '[](fg:black)[$time]($style)[](fg:black)'
 
 [custom.machine]
-description = "Machine label from STARSHIP_MACHINE_LABEL env var"
-command = 'echo "${STARSHIP_MACHINE_LABEL:-$(hostname -s)}"'
+description = "Machine label (set at chezmoi apply time)"
+command = 'echo "{{ .machine_name }}"'
 when = "true"
 format = "[](fg:black)[$output](fg:red bg:black)[](fg:black)"
 
