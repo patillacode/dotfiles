@@ -40,6 +40,9 @@ dot_config/mpv/
 dot_config/yt-dlp/
 {{ end -}}
 
+# ─── Dashboard source (built by run_onchange script) ─────────
+.local/bin/dotfiles-dashboard/
+
 # ─── Machine-local data (never manage) ───────────────────────
 .config/yt-dlp/cookies/
 

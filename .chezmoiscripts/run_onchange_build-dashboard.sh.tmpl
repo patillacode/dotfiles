@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+# This script runs when the dashboard source changes.
+# {{ include "dot_local/bin/dotfiles-dashboard/main.go" | sha256sum }}
+# {{ if has "developer" .profiles -}}
+set -euo pipefail
+
+DASHBOARD_SRC="# {{ .chezmoi.sourceDir }}/dot_local/bin/dotfiles-dashboard"
+DASHBOARD_BIN="$HOME/.local/bin/dotfiles-dashboard"
+
+if ! command -v go &>/dev/null; then
+    echo "go not found — skipping dashboard build"
+    exit 0
+fi
+
+echo "Building dotfiles-dashboard..."
+cd "$DASHBOARD_SRC"
+go build -o "$DASHBOARD_BIN" .
+echo "dotfiles-dashboard built → $DASHBOARD_BIN"
+# {{ end -}}

@@ -17,3 +17,6 @@ btop.log
 dot_config/yt-dlp/cookies/
 
 .worktrees/
+
+# Go build artifacts
+dot_local/bin/dotfiles-dashboard/dotfiles-dashboard
