@@ -22,7 +22,7 @@ $character"""
 disabled = false
 time_format = "%H:%M"
 style = "bg:#1c1c1c fg:#fabd2f bold"
-format = '[ $time ]($style)'
+format = '[](fg:black)[$time ]($style)'
 
 [username]
 show_always = false
@@ -44,7 +44,8 @@ disabled = false
 # ╰─────────────────────────────────────────────────────────────╯
 [directory]
 style = "bg:#1c1c1c fg:#a8b56c bold"
-format = "[$path ]($style)"
+# format = "[$path ]($style)"
+format = '[$path]($style)[](fg:#1c1c1c)'
 truncation_length = 0  # Show FULL path, no truncation
 truncate_to_repo = false
 # No directory substitutions - full explicit paths
@@ -52,27 +53,45 @@ truncate_to_repo = false
 # ╭─────────────────────────────────────────────────────────────╮
 # │ Git Branch - Cyberpunk magenta                              │
 # ╰─────────────────────────────────────────────────────────────╯
+# [git_branch]
+# symbol = ""
+# style = "bg:#1c1c1c fg:#ff006e bold"
+# format = '[$symbol$branch]($style)'
+
 [git_branch]
-symbol = ""
-style = "bg:#1c1c1c fg:#ff006e bold"
-format = '[$symbol$branch]($style)'
+symbol = "[](fg:#1c1c1c)[](fg:red bg:black)"
+style = "fg:red bg:#1c1c1c"
+format = '[$symbol $branch]($style)'
 
 # ╭─────────────────────────────────────────────────────────────╮
 # │ Git Status - Small icons from Cyberpunk theme               │
 # ╰─────────────────────────────────────────────────────────────╯
 [git_status]
-style = "bg:#1c1c1c fg:#fabd2f bold"
-format = '([$all_status$ahead_behind ]($style))'
-conflicted = "⚠"
-ahead = "⇡${count}"
-behind = "⇣${count}"
-untracked = "▪"
-modified = "●"
-staged = "✓"
-deleted = "✘"
-renamed = "»"
-diverged = "⇕"
-stashed = "$"
+# style = "bg:#1c1c1c fg:#fabd2f bold"
+# format = '([$all_status$ahead_behind ]($style))'
+# conflicted = "⚠"
+# ahead = "⇡${count}"
+# behind = "⇣${count}"
+# untracked = "▪"
+# modified = "●"
+# staged = "✓"
+# deleted = "✘"
+# renamed = "»"
+# diverged = "⇕"
+# stashed = "$"
+untracked = "[ •](fg:yellow bg:#1c1c1c)"
+modified = "[ •](fg:cyan bg:#1c1c1c)"
+staged = "[ •](fg:green bg:#1c1c1c)"
+deleted = "[ •](fg:red bg:#1c1c1c)"
+ahead = "[ ↑](fg:yellow bg:#1c1c1c)"
+behind = "[ ↓](fg:yellow bg:#1c1c1c)"
+diverged = "[ 󰦻](fg:cyan bg:#1c1c1c)"
+conflicted = "[ ⊘](fg:red bg:#1c1c1c)"
+stashed = ""
+typechanged = ""
+renamed = ""
+up_to_date = ""
+format = '$all_status$ahead_behind[](fg:#1c1c1c)'
 
 # ╭─────────────────────────────────────────────────────────────╮
 # │ Docker Context - Soft blue                                  │
