@@ -76,9 +76,21 @@ _check_registered() {
     esac
 
     local response http_code
+    local -a auth_headers
+    if [[ "$service" == "github" ]]; then
+        auth_headers=(
+            -H @<(printf 'Authorization: Bearer %s' "$token")
+            -H "Accept: application/vnd.github+json"
+            -H "X-GitHub-Api-Version: 2022-11-28"
+        )
+    else
+        auth_headers=(
+            -H @<(printf 'Authorization: token %s' "$token")
+            -H "Accept: application/json"
+        )
+    fi
     http_code=$(curl -s -o "$_TMPDIR/api_resp" -w "%{http_code}" \
-        -H @<(printf 'Authorization: token %s' "$token") \
-        -H "Accept: application/json" \
+        "${auth_headers[@]}" \
         "$url" 2>/dev/null) || return 1
 
     if [[ "$http_code" != "200" ]]; then
@@ -123,9 +135,19 @@ _revoke_from_service() {
     esac
 
     local http_code
+    local -a del_headers
+    if [[ "$service" == "github" ]]; then
+        del_headers=(
+            -H @<(printf 'Authorization: Bearer %s' "$token")
+            -H "Accept: application/vnd.github+json"
+            -H "X-GitHub-Api-Version: 2022-11-28"
+        )
+    else
+        del_headers=(-H @<(printf 'Authorization: token %s' "$token"))
+    fi
     http_code=$(curl -s -o /dev/null -w "%{http_code}" \
         -X DELETE \
-        -H @<(printf 'Authorization: token %s' "$token") \
+        "${del_headers[@]}" \
         "$del_url" 2>/dev/null) || http_code="000"
 
     if [[ "$http_code" == "204" ]]; then
@@ -481,11 +503,24 @@ print(json.dumps({'title': os.environ['KEY_NAME'], 'key': os.environ['PUB_KEY']}
 ")
 
             local http_code
+            local -a post_headers
+            if [[ "$service" == "github" ]]; then
+                post_headers=(
+                    -H @<(printf 'Authorization: Bearer %s' "$use_token")
+                    -H "Accept: application/vnd.github+json"
+                    -H "X-GitHub-Api-Version: 2022-11-28"
+                    -H "Content-Type: application/json"
+                )
+            else
+                post_headers=(
+                    -H @<(printf 'Authorization: token %s' "$use_token")
+                    -H "Accept: application/json"
+                    -H "Content-Type: application/json"
+                )
+            fi
             http_code=$(curl -s -o "$_TMPDIR/reg_resp" -w "%{http_code}" \
                 -X POST \
-                -H @<(printf 'Authorization: token %s' "$use_token") \
-                -H "Content-Type: application/json" \
-                -H "Accept: application/json" \
+                "${post_headers[@]}" \
                 -d "$body" \
                 "$api_url" 2>/dev/null) || http_code="000"
 
