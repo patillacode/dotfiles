@@ -1,3 +1,11 @@
+#!/bin/bash
+# Bootstrap ~/.claude/settings.json on first chezmoi apply.
+# After this runs, chezmoi no longer manages the file — Claude Code owns it.
+
+SETTINGS="$HOME/.claude/settings.json"
+mkdir -p "$HOME/.claude"
+
+cat > "$SETTINGS" <<'EOF'
 {
 {{- if eq .claude.variant "work" }}
   "model": "sonnet",
@@ -22,12 +30,10 @@
     "frontend-design@claude-plugins-official": true,
     "frontend-design@claude-code-plugins": true,
     "pyright-lsp@claude-plugins-official": true,
-    "figma@claude-plugins-official": true
-{{- if eq .claude.variant "work" }},
+    "figma@claude-plugins-official": true{{ if eq .claude.variant "work" }},
     "coderabbit@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
-    "Notion@claude-plugins-official": true
-{{- end }}
+    "Notion@claude-plugins-official": true{{ end }}
   },
   "voiceEnabled": true,
   "hooks": {
@@ -48,3 +54,6 @@
     ]
   }
 }
+EOF
+
+echo "claude: settings.json bootstrapped"
