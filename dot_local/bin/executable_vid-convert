@@ -2,7 +2,7 @@
 # vid-convert — convert video between formats (e.g. mkv to mp4)
 
 # shellcheck source=/dev/null
-source "${HOME}/.local/lib/tui.sh"
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
 
 usage() {
     echo "Usage: vid-convert <input> <output>"
