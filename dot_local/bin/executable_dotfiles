@@ -7,26 +7,13 @@ set -e
 CHEZMOI="${CHEZMOI:-chezmoi}"
 SOURCE_DIR="$($CHEZMOI source-path 2>/dev/null || echo "$HOME/dotfiles")"
 
-# ─── Colors ─────────────────────────────────────────────────
-BOLD="\033[1m"
-DIM="\033[2m"
-CYAN="\033[0;36m"
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-RED="\033[0;31m"
-NC="\033[0m"
-
-_header()  { echo -e "${BOLD}${CYAN}$1${NC}"; }
-_section() { echo -e "\n${BOLD}$1${NC}"; }
-_ok()      { echo -e "  ${GREEN}✓${NC} $1"; }
-_warn()    { echo -e "  ${YELLOW}⚠${NC} $1"; }
-_fail()    { echo -e "  ${RED}✗${NC} $1"; }
-_item()    { printf "  ${CYAN}%-20s${NC} %s\n" "$1" "$2"; }
-_dim()     { echo -e "  ${DIM}$1${NC}"; }
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
+# Local override: _section uses bold (not dim) for sub-headers
+_section() { printf "\n${BOLD}%s${RESET}\n" "$1"; }
 
 usage() {
     _header "dotfiles — manage your chezmoi dotfiles"
-    echo -e "  ${DIM}Aliases: dt, dots${NC}"
+    echo -e "  ${DIM}Aliases: dt, dots${RESET}"
 
     _section "SYNC & DEPLOY"
     _item "sync" "Pull latest changes from git and apply"
@@ -36,7 +23,7 @@ usage() {
     _item "edit <file>" "Edit a managed file in \$EDITOR"
 
     _section "CUSTOMIZATION"
-    _item "theme" "Interactive Starship theme selector (fzf)"
+    _item "theme" "Interactive Starship theme selector (gum)"
     _item "secrets" "Inject secrets from KeePassXC into ~/.env"
 
     _section "INFO"
@@ -47,17 +34,17 @@ usage() {
     _item "doctor" "Run chezmoi diagnostics"
 
     _section "RECOVERY"
-    _item "rollback" "Restore a previous snapshot (fzf)"
+    _item "rollback" "Restore a previous snapshot (gum)"
     echo ""
 }
 
 cmd_sync() {
     _header "Syncing dotfiles..."
     echo ""
-    echo "Pulling latest changes..."
+    _dim "Pulling latest changes..."
     git -C "$SOURCE_DIR" pull --rebase
     echo ""
-    echo "Applying..."
+    _dim "Applying..."
     $CHEZMOI apply
     echo ""
     _ok "Done."
@@ -67,6 +54,9 @@ cmd_push() {
     local msg="${1:-update dotfiles}"
     git -C "$SOURCE_DIR" add -A
     git -C "$SOURCE_DIR" commit -m "$msg" || true
+    if command -v gum &>/dev/null; then
+        _confirm "Push to remote?" || { _dim "Aborted."; exit 0; }
+    fi
     git -C "$SOURCE_DIR" push
     _ok "Pushed."
 }
@@ -85,31 +75,23 @@ cmd_diff() {
 
 cmd_edit() {
     if [[ -z "$1" ]]; then
-        echo -e "${RED}Usage:${NC} dotfiles edit <file>" >&2
+        _fail "Usage: dotfiles edit <file>"
         exit 1
     fi
     $CHEZMOI edit "$1"
 }
 
 cmd_theme() {
-    if ! command -v fzf &>/dev/null; then
-        _fail "fzf is required for interactive theme selection"
-        exit 1
-    fi
+    _require_gum
 
     local theme_dir
     theme_dir="$($CHEZMOI source-path)"/dot_config/starship
 
+    local themes
+    themes=$(find "$theme_dir" -name "*.toml" -not -name "*.tmpl" | xargs -I{} basename {} .toml | sort)
+
     local selected
-    selected=$(
-        find "$theme_dir" -name "*.toml" -not -name "*.tmpl" \
-            | xargs -I{} basename {} .toml \
-            | sort \
-            | fzf \
-                --prompt="Starship theme > " \
-                --preview="bat --color=always --style=plain '$theme_dir/{}.toml' 2>/dev/null || cat '$theme_dir/{}.toml'" \
-                --preview-window="right:60%"
-    ) || exit 0
+    selected=$(echo "$themes" | gum filter --placeholder="Filter themes...") || exit 0
 
     echo "Switching to theme: $selected"
 
@@ -126,12 +108,12 @@ cmd_theme() {
 cmd_status() {
     _header "dotfiles status"
     echo ""
-    echo -e "  Source:    ${CYAN}$SOURCE_DIR${NC}"
-    echo -e "  Machine:   $($CHEZMOI data | command grep -o '"machine_name":"[^"]*"' | cut -d'"' -f4 2>/dev/null || hostname)"
-    echo -e "  OS:        $(uname -s)"
-    echo -e "  Traits:    $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")"
-    echo -e "  Theme:     $($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")"
-    echo -e "  Managed:   $($CHEZMOI managed | wc -l | tr -d ' ') files"
+    _item "source"  "$SOURCE_DIR"
+    _item "machine" "$($CHEZMOI data | command grep -o '"machine_name":"[^"]*"' | cut -d'"' -f4 2>/dev/null || hostname)"
+    _item "os"      "$(uname -s)"
+    _item "traits"  "$($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(", ".join(d.get("profiles",[])))' 2>/dev/null || echo "unknown")"
+    _item "theme"   "$($CHEZMOI data | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("starship",{}).get("theme","unknown"))' 2>/dev/null || echo "unknown")"
+    _item "managed" "$($CHEZMOI managed | wc -l | tr -d ' ') files"
 
     _section "Recent commits"
     git -C "$SOURCE_DIR" log --oneline -3 2>/dev/null | sed 's/^/  /'
@@ -157,7 +139,7 @@ cmd_info() {
 
     _header "dotfiles info"
     echo ""
-    echo -e "  Machine:   ${CYAN}$machine${NC}"
+    echo -e "  Machine:   ${CYAN}$machine${RESET}"
     echo -e "  Traits:    $traits"
     echo -e "  Shell:     $shell_name"
     echo -e "  Theme:     $theme"
@@ -251,16 +233,18 @@ cmd_rollback() {
         fi
     done
 
-    if ! command -v fzf &>/dev/null; then
+    if ! command -v gum &>/dev/null; then
         _header "Available snapshots"
         echo ""
         echo "$entries" | while IFS= read -r line; do
             [[ -n "$line" ]] && echo "  $line"
         done
         echo ""
-        _warn "fzf is required for interactive rollback"
+        _fail "gum is required. Install: brew install gum"
         exit 1
     fi
+
+    _require_gum
 
     _header "Select a snapshot to restore"
     echo ""
@@ -268,21 +252,7 @@ cmd_rollback() {
     local selected
     selected=$(
         echo "$entries" | sed '/^$/d' \
-            | fzf \
-                --prompt="Restore > " \
-                --preview="
-                    snap=\$(echo {} | awk '{print \$1}')
-                    meta=\"$snapshot_dir/\$snap/.metadata\"
-                    if [ -f \"\$meta\" ]; then
-                        echo '── Metadata ──'
-                        cat \"\$meta\"
-                        echo ''
-                    fi
-                    echo '── Files ──'
-                    find \"$snapshot_dir/\$snap\" -type f -not -name '.metadata' -not -name '.chezmoi.toml' \
-                        | sed \"s|$snapshot_dir/\$snap/||\" | sort | head -40
-                " \
-                --preview-window="right:50%"
+            | gum filter --placeholder="Filter snapshots..."
     ) || exit 0
 
     local snap_name
@@ -298,13 +268,12 @@ cmd_rollback() {
     _section "Files to restore"
     find "$snapshot_path" -type f -not -name '.metadata' -not -name '.chezmoi.toml' \
         | sed "s|$snapshot_path/||" | sort | while read -r f; do
-            echo -e "  ${DIM}$f${NC}"
+            echo -e "  ${DIM}$f${RESET}"
         done
     echo ""
 
-    read -r -p "Restore this snapshot? [y/N] " confirm
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-        echo "Aborted."
+    if ! _confirm "Restore this snapshot?"; then
+        _dim "Aborted."
         exit 0
     fi
 
@@ -560,7 +529,7 @@ for a in aliases:
             if [[ ${#aval} -gt 50 ]]; then
                 aval="${aval:0:47}..."
             fi
-            printf "  ${CYAN}%-22s${NC} ${DIM}%s${NC}\n" "$aname" "$aval"
+            printf "  ${CYAN}%-22s${RESET} ${DIM}%s${RESET}\n" "$aname" "$aval"
         done
 
         # Extract functions: "name() {" or "function name()" lines
@@ -570,7 +539,7 @@ for a in aliases:
             # Try to get the comment on the line before or the inline comment
             local fdesc
             fdesc=$(grep -B1 "^${fname}()\|^function ${fname}" "$src_file" 2>/dev/null | grep '^#' | sed 's/^# *//' | head -1)
-            printf "  ${CYAN}%-22s${NC} ${DIM}%s${NC}\n" "$fname()" "${fdesc:-(function)}"
+            printf "  ${CYAN}%-22s${RESET} ${DIM}%s${RESET}\n" "$fname()" "${fdesc:-(function)}"
         done
 
     done <<< "$active_aliases"
@@ -582,7 +551,7 @@ cmd_doctor() {
 }
 
 # ─── dispatch ────────────────────────────────────────────────
-case "${1:-help}" in
+case "${1:-}" in
     sync)    cmd_sync ;;
     push)    shift; cmd_push "$@" ;;
     apply)   shift; cmd_apply "$@" ;;
@@ -596,9 +565,33 @@ case "${1:-help}" in
     aliases)  cmd_aliases ;;
     utils)    cmd_utils ;;
     doctor)   cmd_doctor ;;
-    help|-h|--help) usage ;;
+    help|-h|--help) usage; exit 0 ;;
+    "")
+        if [ -t 0 ] && command -v gum &>/dev/null; then
+            _header "dotfiles"
+            cmd=$(gum choose \
+                "sync     — pull + apply" \
+                "push     — commit + push" \
+                "apply    — apply configs" \
+                "diff     — show pending changes" \
+                "theme    — switch starship theme" \
+                "secrets  — inject secrets" \
+                "status   — machine info" \
+                "info     — active aliases and tools" \
+                "utils    — list utility scripts" \
+                "rollback — restore a snapshot" \
+                "doctor   — chezmoi diagnostics" \
+                --header="Select a command" \
+            ) || exit 0
+            # Extract command word before " — "
+            cmd=$(echo "$cmd" | awk '{print $1}')
+            exec "$0" "$cmd"
+        else
+            usage
+        fi
+        ;;
     *)
-        echo -e "${RED}Unknown command:${NC} $1" >&2
+        _fail "Unknown command: $1"
         echo ""
         usage
         exit 1
