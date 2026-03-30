@@ -20,6 +20,8 @@
 #   - For macOS: screencapture
 ################################################################################
 
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
+
 # Function to display script version
 show_version() {
   echo "screen-cap - capture your screen - 0.0.1"
@@ -38,7 +40,7 @@ show_usage() {
 check_command() {
   if ! command -v $1 &> /dev/null
   then
-    echo "$1 command not found. Please install $1."
+    _fail "$1 not found — please install $1"
     exit 1
   fi
 }
@@ -57,16 +59,16 @@ run_checks() {
     check_filename "$1"
     filename="$1"
     system="linux"
-    echo "Identified a Linux system... using 'slop' and 'ffmpeg'"
+    _item "system" "linux (slop + ffmpeg)"
     check_command "ffmpeg"
     check_command "slop"
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     system="macos"
     commandtool="screencapture"
-    echo "Identified a macOS system... using 'screencapture'"
+    _item "system" "macOS (screencapture)"
     check_command "screencapture"
   else
-    echo "Unsupported operating system."
+    _fail "Unsupported operating system"
     exit 1
   fi
   handle_options "$@"
@@ -75,7 +77,7 @@ run_checks() {
 # Function to start the recording
 start_recording() {
   if [[ $system == "linux" ]]; then
-    echo "Recording started. Press 'q' to stop recording."
+    _ok "Recording started — press q to stop"
     ffmpeg -loglevel quiet \
     -f x11grab \
     -s ${width}x${height} \
@@ -89,7 +91,7 @@ start_recording() {
     -f mp4 \
     $filename
   else
-    screencapture -vksU -
+    screencapture -vks -t "$macos_format" "$macos_output"
   fi
 }
 
@@ -108,7 +110,7 @@ handle_options() {
       -q|--quality)
         shift
         quality="$1"
-        echo "Quality set to $quality"
+        _item "quality" "$quality"
         ;;
       *)
         break
@@ -132,8 +134,30 @@ if [[ "$system" == "linux" ]]; then
   width=$((width / 2 * 2))
   height=$((height / 2 * 2))
   start_recording
-  echo "Recording stopped."
+  _ok "Recording stopped"
 elif [[ "$system" == "macos" ]]; then
+  # Determine output file: use provided arg or prompt interactively
+  # Find the non-option argument (output filename) from original args
+  macos_output=""
+  for arg in "$@"; do
+    case "$arg" in
+      -v|--version|-h|--help|-q|--quality) ;;
+      *) macos_output="$arg"; break ;;
+    esac
+  done
+
+  if [[ -z "$macos_output" ]]; then
+    _require_gum
+    format=$(_menu "Select output format" "MOV" "MP4")
+    macos_format="${format,,}"
+    macos_output=$(_input "Output filename" "recording.${macos_format}")
+  else
+    # Infer format from provided filename extension
+    ext="${macos_output##*.}"
+    macos_format="${ext,,}"
+    [[ "$macos_format" != "mov" && "$macos_format" != "mp4" ]] && macos_format="mov"
+  fi
+
   start_recording
-  echo "Recording can be found in your desktop."
+  _ok "Recording saved to desktop"
 fi
