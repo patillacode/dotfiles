@@ -433,6 +433,14 @@ cmd_register() {
         return
     fi
 
+    # Key title on the service (defaults to filename)
+    local key_title
+    key_title=$(gum input \
+        --value "$key_name" \
+        --placeholder "e.g. MacBook Pro, bars personal" \
+        --header "Title for this key on the service(s):") || { echo "Aborted."; return; }
+    [[ -z "$key_title" ]] && key_title="$key_name"
+
     echo ""
 
     while IFS= read -r service_label; do
@@ -493,9 +501,9 @@ cmd_register() {
 
             # POST to register
             local body
-            body=$(KEY_NAME="$key_name" PUB_KEY="$pubkey_content" python3 -c "
+            body=$(KEY_TITLE="$key_title" PUB_KEY="$pubkey_content" python3 -c "
 import json, os
-print(json.dumps({'title': os.environ['KEY_NAME'], 'key': os.environ['PUB_KEY']}))
+print(json.dumps({'title': os.environ['KEY_TITLE'], 'key': os.environ['PUB_KEY']}))
 ")
 
             local http_code
