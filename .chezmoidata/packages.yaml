@@ -37,6 +37,7 @@ trait_packages:
   developer:
     - gcc
     - glow
+    - gum
     - n
     - neovim
     - prek

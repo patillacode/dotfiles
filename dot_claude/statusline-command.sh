@@ -1,5 +1,11 @@
 #!/bin/bash
 # Claude Code — Tokyo Night no-bg 3-line status line v6
+# Re-exec with bash 4+ if running under bash 3.2 (macOS system bash lacks \uXXXX support)
+if [[ "${BASH_VERSINFO[0]:-0}" -lt 4 ]]; then
+  for _b in "$(command -v bash 2>/dev/null)" /opt/homebrew/bin/bash /usr/local/bin/bash; do
+    [[ -x "$_b" && "$_b" != /bin/bash ]] && exec "$_b" "$0" "$@"
+  done
+fi
 
 input=$(cat)
 
