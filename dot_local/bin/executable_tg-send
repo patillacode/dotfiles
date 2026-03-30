@@ -3,34 +3,27 @@
 
 # Load secrets
 [[ -f "$HOME/.env" ]] && source "$HOME/.env"
-
-# ─── Colors ─────────────────────────────────────────────────
-BOLD="\033[1m"
-DIM="\033[2m"
-CYAN="\033[0;36m"
-GREEN="\033[0;32m"
-RED="\033[0;31m"
-NC="\033[0m"
+source "${HOME}/.local/lib/tui.sh" 2>/dev/null || { echo "tui.sh not found — run: chezmoi apply" >&2; exit 1; }
 
 usage() {
-    echo -e "${BOLD}${CYAN}tg-send — send a Telegram message via bot API${NC}"
+    _header "tg-send — send a Telegram message via bot API"
     echo ""
-    echo -e "${BOLD}USAGE${NC}"
-    printf "  ${CYAN}%-38s${NC} %s\n" "tg-send <bot> <chat> <message>" "Send using named bot and chat"
-    printf "  ${CYAN}%-38s${NC} %s\n" "tg-send --discover <bot>" "Show recent chats the bot can see"
-    printf "  ${CYAN}%-38s${NC} %s\n" "tg-send --raw <token> <id> <msg>" "Send using raw token and chat id"
+    _section "USAGE"
+    _item "tg-send <bot> <chat> <message>" "Send using named bot and chat"
+    _item "tg-send --discover <bot>" "Show recent chats the bot can see"
+    _item "tg-send --raw <token> <id> <msg>" "Send using raw token and chat id"
     echo ""
-    echo -e "${BOLD}EXAMPLES${NC}"
-    echo -e "  ${DIM}tg-send dorito family 'Hello!'${NC}"
-    echo -e "  ${DIM}tg-send dorito alerts 'Server is down'${NC}"
-    echo -e "  ${DIM}tg-send --discover dorito${NC}"
+    _section "EXAMPLES"
+    _dim "tg-send dorito family 'Hello!'"
+    _dim "tg-send dorito alerts 'Server is down'"
+    _dim "tg-send --discover dorito"
     echo ""
-    echo -e "${BOLD}SETUP${NC}"
+    _section "SETUP"
     echo "  1. Create KeePassXC entry: Code/dotfiles/tg-<bot>"
     echo "     Password = bot token"
     echo "  2. In Notes, add chats (one per line):"
-    echo -e "     ${DIM}chat-family: -123456${NC}"
-    echo -e "     ${DIM}chat-personal: 789012${NC}"
+    _dim "     chat-family: -123456"
+    _dim "     chat-personal: 789012"
     echo "  3. Run 'dotfiles secrets' to inject into ~/.env"
     echo "  4. Use 'tg-send --discover <bot>' to find chat IDs"
 
@@ -42,19 +35,19 @@ usage() {
         bot_lower=$(echo "$bot" | tr '[:upper:]' '[:lower:]')
         if ! $has_bots; then
             echo ""
-            echo -e "${BOLD}AVAILABLE BOTS${NC}"
+            _section "AVAILABLE BOTS"
             has_bots=true
         fi
-        echo -e "  ${CYAN}$bot_lower${NC}"
+        _item "$bot_lower" ""
         env | grep "^TG_CHAT_${bot}_" | while IFS='=' read -r cvar _; do
             local chat="${cvar#TG_CHAT_${bot}_}"
-            echo -e "    ${DIM}-${NC} $(echo "$chat" | tr '[:upper:]' '[:lower:]')"
+            _dim "  - $(echo "$chat" | tr '[:upper:]' '[:lower:]')"
         done
     done < <(env | grep '^TG_BOT_' | sort)
 
     if ! $has_bots; then
         echo ""
-        echo -e "  ${DIM}No bots configured. Run 'dotfiles secrets' first.${NC}"
+        _dim "No bots configured. Run 'dotfiles secrets' first."
     fi
     echo ""
 }
@@ -71,10 +64,10 @@ tg_send_msg() {
     http_code=$(echo "$response" | tail -1)
 
     if [[ "$http_code" == "200" ]]; then
-        echo -e "${GREEN}✓${NC} Message sent."
+        _ok "Message sent"
     else
-        echo -e "${RED}✗${NC} Error (HTTP $http_code):" >&2
-        echo "$response" | sed '$d' >&2
+        _fail "Error (HTTP $http_code)"
+        echo "$response" | sed '$d'
         return 1
     fi
 }
@@ -86,12 +79,12 @@ cmd_discover() {
     local bot_token="${!bot_var}"
 
     if [[ -z "$bot_token" ]]; then
-        echo -e "${RED}✗${NC} Bot '$1' not found. Run 'dotfiles secrets' first." >&2
+        _fail "Bot '$1' not found — run 'dotfiles secrets' first"
         exit 1
     fi
 
-    echo -e "${BOLD}${CYAN}Discovering chats for bot '$1'...${NC}"
-    echo -e "${DIM}  Tip: send a message to the bot or add it to a group first.${NC}"
+    _header "Discovering chats for '$1'"
+    _dim "Tip: send a message to the bot or add it to a group first"
     echo ""
 
     local response
@@ -123,22 +116,81 @@ print("  " + "-" * 45)
 for cid, (name, ctype) in sorted(seen.items(), key=lambda x: x[1][0]):
     print(f"  {cid:>15}  {ctype:<12} {name}")
 ' 2>&1; then
-        echo -e "${RED}✗${NC} Failed to parse response." >&2
+        _fail "Failed to parse response"
         exit 1
     fi
 
     echo ""
-    echo "Add the chat ID to the KeePassXC entry Notes as:"
-    echo -e "  ${DIM}chat-<name>: <chat_id>${NC}"
-    echo "Then run 'dotfiles secrets' to inject."
+    _section "Next steps"
+    _dim "  Add the chat ID to the KeePassXC entry Notes as:"
+    _dim "    chat-<name>: <chat_id>"
+    _dim "  Then run 'dotfiles secrets' to inject."
+}
+
+_interactive_mode() {
+    _require_gum
+    _header "tg-send"
+    local mode
+    mode=$(_menu "Mode" "Named (bot + chat + message)" "Discover (show recent chats)" "Raw (token + chat_id + message)")
+
+    case "$mode" in
+        "Named (bot + chat + message)")
+            local bot chat message
+            bot=$(_input "Bot name")
+            chat=$(_input "Chat name")
+            message=$(_input "Message")
+            local bot_upper chat_upper
+            bot_upper=$(echo "$bot" | tr '[:lower:]' '[:upper:]')
+            chat_upper=$(echo "$chat" | tr '[:lower:]' '[:upper:]')
+            local bot_var="TG_BOT_${bot_upper}"
+            local chat_var="TG_CHAT_${bot_upper}_${chat_upper}"
+            local bot_token="${!bot_var}"
+            local chat_id="${!chat_var}"
+            if [[ -z "$bot_token" ]]; then
+                _fail "Bot '$bot' not found"
+                _dim "Run 'dotfiles secrets' or 'tg-send -h' to see available bots"
+                exit 1
+            fi
+            if [[ -z "$chat_id" ]]; then
+                _fail "Chat '$chat' not found for bot '$bot'"
+                exit 1
+            fi
+            tg_send_msg "$bot_token" "$chat_id" "$message"
+            ;;
+        "Discover (show recent chats)")
+            local bot
+            bot=$(_input "Bot name")
+            cmd_discover "$bot"
+            ;;
+        "Raw (token + chat_id + message)")
+            local token chat_id message
+            token=$(_input "Bot token")
+            chat_id=$(_input "Chat ID")
+            message=$(_input "Message")
+            tg_send_msg "$token" "$chat_id" "$message"
+            ;;
+    esac
 }
 
 main() {
-    [[ "$1" == "-h" || "$1" == "--help" || $# -eq 0 ]] && { usage; exit 0; }
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        usage
+        exit 0
+    fi
+
+    if [[ $# -eq 0 ]]; then
+        if [ -t 0 ]; then
+            _interactive_mode
+            exit 0
+        else
+            usage
+            exit 0
+        fi
+    fi
 
     # Discover mode
     if [[ "$1" == "--discover" ]]; then
-        [[ -z "$2" ]] && { echo -e "${RED}Usage:${NC} tg-send --discover <bot>" >&2; exit 1; }
+        [[ -z "$2" ]] && { _fail "Usage: tg-send --discover <bot>"; exit 1; }
         cmd_discover "$2"
         exit 0
     fi
@@ -146,7 +198,7 @@ main() {
     # Raw mode
     if [[ "$1" == "--raw" ]]; then
         shift
-        [[ $# -ne 3 ]] && { echo -e "${RED}Usage:${NC} tg-send --raw <token> <chat_id> <message>" >&2; exit 1; }
+        [[ $# -ne 3 ]] && { _fail "Usage: tg-send --raw <token> <chat_id> <message>"; exit 1; }
         tg_send_msg "$1" "$2" "$3"
         exit 0
     fi
@@ -163,20 +215,20 @@ main() {
         local chat_id="${!chat_var}"
 
         if [[ -z "$bot_token" ]]; then
-            echo -e "${RED}✗${NC} Bot '$1' not found." >&2
-            echo -e "  ${DIM}Run 'dotfiles secrets' or 'tg-send -h' to see available bots.${NC}" >&2
+            _fail "Bot '$1' not found"
+            _dim "Run 'dotfiles secrets' or 'tg-send -h' to see available bots"
             exit 1
         fi
         if [[ -z "$chat_id" ]]; then
-            echo -e "${RED}✗${NC} Chat '$2' not found for bot '$1'." >&2
+            _fail "Chat '$2' not found for bot '$1'"
             echo ""
-            echo "Available chats for $1:"
+            _section "Available chats for $1"
             env | grep "^TG_CHAT_${bot_upper}_" | while IFS='=' read -r cvar _; do
                 local chat="${cvar#TG_CHAT_${bot_upper}_}"
-                echo -e "  ${CYAN}-${NC} $(echo "$chat" | tr '[:upper:]' '[:lower:]')"
+                _item "-" "$(echo "$chat" | tr '[:upper:]' '[:lower:]')"
             done
             echo ""
-            echo -e "${DIM}To discover new chats: tg-send --discover $1${NC}" >&2
+            _dim "To discover new chats: tg-send --discover $1"
             exit 1
         fi
 
@@ -184,8 +236,8 @@ main() {
         exit 0
     fi
 
-    echo -e "${RED}✗${NC} Expected 3 arguments: <bot> <chat> <message>" >&2
-    echo -e "  ${DIM}Run 'tg-send -h' for help.${NC}" >&2
+    _fail "Expected 3 arguments: <bot> <chat> <message>"
+    _dim "Run 'tg-send -h' for help"
     exit 1
 }
 
