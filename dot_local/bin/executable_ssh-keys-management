@@ -62,6 +62,14 @@ _load_tokens() {
 _github_token()  { _load_tokens | grep '^GITHUB_TOKEN='  | cut -d= -f2-; }
 _forgejo_token() { _load_tokens | grep '^FORGEJO_TOKEN=' | cut -d= -f2-; }
 
+# Write an Authorization header to a temp file and echo the path.
+# Usage: -H @"$(_auth_header Bearer "$token")"
+_auth_header() {
+    local scheme="$1" token="$2"
+    printf 'Authorization: %s %s\n' "$scheme" "$token" > "$_TMPDIR/auth_header"
+    echo "$_TMPDIR/auth_header"
+}
+
 # Check if a public key is registered on a service.
 # Returns the key ID if found, empty string if not.
 _check_registered() {
@@ -79,13 +87,13 @@ _check_registered() {
     local -a auth_headers
     if [[ "$service" == "github" ]]; then
         auth_headers=(
-            -H @<(printf 'Authorization: Bearer %s' "$token")
+            -H @"$(_auth_header Bearer "$token")"
             -H "Accept: application/vnd.github+json"
             -H "X-GitHub-Api-Version: 2022-11-28"
         )
     else
         auth_headers=(
-            -H @<(printf 'Authorization: token %s' "$token")
+            -H @"$(_auth_header token "$token")"
             -H "Accept: application/json"
         )
     fi
@@ -138,12 +146,12 @@ _revoke_from_service() {
     local -a del_headers
     if [[ "$service" == "github" ]]; then
         del_headers=(
-            -H @<(printf 'Authorization: Bearer %s' "$token")
+            -H @"$(_auth_header Bearer "$token")"
             -H "Accept: application/vnd.github+json"
             -H "X-GitHub-Api-Version: 2022-11-28"
         )
     else
-        del_headers=(-H @<(printf 'Authorization: token %s' "$token"))
+        del_headers=(-H @"$(_auth_header token "$token")")
     fi
     http_code=$(curl -s -o /dev/null -w "%{http_code}" \
         -X DELETE \
@@ -513,7 +521,7 @@ print(json.dumps({'title': os.environ['KEY_NAME'], 'key': os.environ['PUB_KEY']}
                 )
             else
                 post_headers=(
-                    -H @<(printf 'Authorization: token %s' "$use_token")
+                    -H @"$(_auth_header token "$use_token")"
                     -H "Accept: application/json"
                     -H "Content-Type: application/json"
                 )
