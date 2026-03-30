@@ -15,3 +15,5 @@ btop.log
 .claude/settings.local.json
 
 dot_config/yt-dlp/cookies/
+
+.worktrees/
