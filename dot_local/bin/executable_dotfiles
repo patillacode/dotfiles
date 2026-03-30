@@ -453,7 +453,10 @@ cmd_secrets() {
 # Do not edit manually; re-run 'dotfiles secrets' to refresh.
 EOF
 
+    # GITHUB_TOKEN: standard name used by gh CLI and most tooling
+    # GITHUB_PERSONAL_ACCESS_TOKEN: required by the Claude Code GitHub MCP plugin
     [[ -n "$github_token" ]] && echo "export GITHUB_TOKEN=\"$github_token\"" >> "$HOME/.env"
+    [[ -n "$github_token" ]] && echo "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$github_token\"" >> "$HOME/.env"
     [[ -n "$forgejo_token" ]] && echo "export FORGEJO_TOKEN=\"$forgejo_token\"" >> "$HOME/.env"
 
     if [[ -n "$tg_env" ]]; then
