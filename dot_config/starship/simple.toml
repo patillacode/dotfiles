@@ -39,7 +39,7 @@ error_symbol = "[➜](bold red)"
 format = "[$path](bold cyan)"
 truncation_length = 1
 truncation_symbol = ""
-home_symbol = " "
+home_symbol = "~"
 # read_only = " "
 
 [git_branch]
@@ -72,7 +72,7 @@ format = '[](fg:black)[$time]($style)[](fg:black)'
 description = "Machine label from STARSHIP_MACHINE_LABEL env var"
 command = 'echo "${STARSHIP_MACHINE_LABEL:-$(hostname -s)}"'
 when = "true"
-format = "[](fg:black)[ 󰒋 $output](fg:yellow bg:black)[](fg:black) "
+format = "[](fg:black)[$output](fg:yellow bg:black)[](fg:black) "
 
 [custom.python_version]
 description = "putting the python verion in the prompt"
