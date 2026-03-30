@@ -13,6 +13,7 @@ trait_packages:
     - atuin
     - bat
     - btop
+    - chezmoi
     - duf
     - eza
     - fastfetch
@@ -38,7 +39,9 @@ trait_packages:
     - glow
     - n
     - neovim
+    - prek
     - rtk
+    - ruff
     - uv
   personal:
     - cmatrix
@@ -50,9 +53,10 @@ trait_packages:
     - ollama
     - poppler
     - streamlink
+    - yt-dlp
     - { name: firefox, type: cask }
     - { name: jordanbaird-ice, type: cask }
-    - { name: owncloud, type: cask }
+    - { name: nextcloud, type: cask }
     - { name: telegram, type: cask }
     - { name: transmission, type: cask }
     - { name: vlc, type: cask }
@@ -62,8 +66,8 @@ trait_packages:
 
 # Python tools per trait (installed via uv)
 trait_python_tools:
-  developer: [ ruff, prek ]
-  personal: [ yt-dlp ]
+  developer: []
+  personal: []
 
 # Nerd fonts (brew casks, macOS only)
 nerd_fonts:
