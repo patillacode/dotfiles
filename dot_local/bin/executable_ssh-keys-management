@@ -1,0 +1,856 @@
+#!/usr/bin/env bash
+# ssh-keys-management — SSH key lifecycle manager (generate, register, distribute, rotate)
+# Usage: ssh-keys-management [status|generate|register|distribute|rotate|agent]
+
+set -euo pipefail
+
+# ─── Colors ─────────────────────────────────────────────────
+BOLD=$'\e[1m'
+DIM=$'\e[2m'
+CYAN=$'\e[0;36m'
+GREEN=$'\e[0;32m'
+YELLOW=$'\e[0;33m'
+RED=$'\e[0;31m'
+NC=$'\e[0m'
+
+_header()  { echo -e "${BOLD}${CYAN}$1${NC}"; }
+_section() { echo -e "\n${BOLD}$1${NC}"; }
+_ok()      { echo -e "  ${GREEN}✓${NC} $1"; }
+_warn()    { echo -e "  ${YELLOW}⚠${NC} $1"; }
+_fail()    { echo -e "  ${RED}✗${NC} $1"; }
+_item()    { printf "  ${CYAN}%-20s${NC} %s\n" "$1" "$2"; }
+_dim()     { echo -e "  ${DIM}$1${NC}"; }
+
+# ─── Temp files ──────────────────────────────────────────────
+_TMPDIR=$(mktemp -d)
+trap 'rm -rf "$_TMPDIR"' EXIT
+
+# ─── Gum guard ───────────────────────────────────────────────
+_require_gum() {
+    if ! command -v gum &>/dev/null; then
+        _fail "gum is required but not installed."
+        _dim  "Install it with: brew install gum"
+        exit 1
+    fi
+}
+
+# ─── Helpers ─────────────────────────────────────────────────
+
+# List key names (basename without extension) that have both key + .pub
+_list_keys() {
+    local keys=()
+    for pub in "$HOME/.ssh/"*.pub; do
+        [[ -f "$pub" ]] || continue
+        local base
+        base=$(basename "$pub" .pub)
+        [[ -f "$HOME/.ssh/$base" ]] && keys+=("$base")
+    done
+    printf '%s\n' "${keys[@]+"${keys[@]}"}"
+}
+
+# Load tokens from ~/.env in a subshell; echo "GITHUB_TOKEN=<val>" etc
+_load_tokens() {
+    (
+        set +euo pipefail 2>/dev/null || true
+        # shellcheck disable=SC1090
+        source "$HOME/.env" 2>/dev/null || true
+        [[ -n "${GITHUB_TOKEN:-}" ]]  && echo "GITHUB_TOKEN=$GITHUB_TOKEN"
+        [[ -n "${FORGEJO_TOKEN:-}" ]] && echo "FORGEJO_TOKEN=$FORGEJO_TOKEN"
+    )
+}
+
+_github_token()  { _load_tokens | grep '^GITHUB_TOKEN='  | cut -d= -f2-; }
+_forgejo_token() { _load_tokens | grep '^FORGEJO_TOKEN=' | cut -d= -f2-; }
+
+# Check if a public key is registered on a service.
+# Returns the key ID if found, empty string if not.
+_check_registered() {
+    local service="$1"   # github | forgejo
+    local token="$2"
+    local pubkey_content="$3"
+
+    local url
+    case "$service" in
+        github)  url="https://api.github.com/user/keys" ;;
+        forgejo) url="https://forgejo.patilla.es/api/v1/user/keys" ;;
+    esac
+
+    local response http_code
+    http_code=$(curl -s -o "$_TMPDIR/api_resp" -w "%{http_code}" \
+        -H @<(printf 'Authorization: token %s' "$token") \
+        -H "Accept: application/json" \
+        "$url" 2>/dev/null) || return 1
+
+    if [[ "$http_code" != "200" ]]; then
+        return 1
+    fi
+    response=$(cat "$_TMPDIR/api_resp")
+
+    # Extract key field from JSON array, compare content
+    # pubkey_content is "ssh-ed25519 AAAA... comment" — match on the key material only
+    local key_material
+    key_material=$(echo "$pubkey_content" | awk '{print $2}')
+
+    echo "$response" | KEY_MATERIAL="$key_material" python3 -c "
+import sys, json, os
+data = json.load(sys.stdin)
+target = os.environ['KEY_MATERIAL']
+for entry in data:
+    k = entry.get('key', '')
+    parts = k.split()
+    if len(parts) >= 2 and parts[1] == target:
+        print(entry['id'])
+        sys.exit(0)
+" 2>/dev/null || true
+}
+
+_revoke_from_service() {
+    local service="$1" token="$2" service_label="$3" pubkey_content="$4"
+    [[ -z "$token" ]] && { _dim "No token for $service_label — skipping."; return; }
+
+    local key_id
+    key_id=$(_check_registered "$service" "$token" "$pubkey_content") || key_id=""
+
+    if [[ -z "$key_id" ]]; then
+        _warn "Not found on $service_label"
+        return
+    fi
+
+    local del_url
+    case "$service" in
+        github)  del_url="https://api.github.com/user/keys/$key_id" ;;
+        forgejo) del_url="https://forgejo.patilla.es/api/v1/user/keys/$key_id" ;;
+    esac
+
+    local http_code
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+        -X DELETE \
+        -H @<(printf 'Authorization: token %s' "$token") \
+        "$del_url" 2>/dev/null) || http_code="000"
+
+    if [[ "$http_code" == "204" ]]; then
+        _ok "Revoked from $service_label"
+    else
+        _fail "Failed to revoke from $service_label (HTTP $http_code)"
+    fi
+}
+
+# Parse Host entries from ~/.ssh/config (exclude wildcards)
+_list_ssh_hosts() {
+    [[ -f "$HOME/.ssh/config" ]] || return 0
+    grep -E '^Host ' "$HOME/.ssh/config" | awk '{print $2}' | grep -v '\*' || true
+}
+
+# ─── cmd_status ──────────────────────────────────────────────
+cmd_status() {
+    _require_gum
+    _header "SSH Key Status"
+
+    local keys=()
+    while IFS= read -r k; do [[ -n "$k" ]] && keys+=("$k"); done < <(_list_keys)
+
+    if [[ ${#keys[@]} -eq 0 ]]; then
+        echo ""
+        _warn "No SSH key pairs found in ~/.ssh/"
+        _dim  "Run 'ssh-keys-management generate' to create one."
+        echo ""
+        return
+    fi
+
+    # Load tokens once
+    local github_token forgejo_token
+    github_token=$(_github_token)
+    forgejo_token=$(_forgejo_token)
+
+    for key in "${keys[@]}"; do
+        _section "$key"
+
+        local pub="$HOME/.ssh/${key}.pub"
+        local pubkey_content
+        pubkey_content=$(cat "$pub")
+
+        # Algorithm + bits
+        local keyinfo
+        keyinfo=$(ssh-keygen -l -f "$pub" 2>/dev/null || echo "(unknown)")
+        _item "Algorithm" "$keyinfo"
+
+        # Creation date
+        local created
+        created=$(stat -f "%SB" "$pub" 2>/dev/null \
+            || stat --format="%w" "$pub" 2>/dev/null \
+            || stat --format="%y" "$pub" 2>/dev/null \
+            || echo "unknown")
+        _item "Created" "$created"
+
+        # GitHub registration
+        if [[ -n "$github_token" ]]; then
+            local gh_id
+            gh_id=$(_check_registered "github" "$github_token" "$pubkey_content") || gh_id=""
+            if [[ -n "$gh_id" ]]; then
+                _item "GitHub" "${GREEN}registered${NC} (id: $gh_id)"
+            else
+                _item "GitHub" "${DIM}not registered${NC}"
+            fi
+        else
+            _item "GitHub" "${DIM}no token in ~/.env${NC}"
+        fi
+
+        # Forgejo registration
+        if [[ -n "$forgejo_token" ]]; then
+            local fj_id
+            fj_id=$(_check_registered "forgejo" "$forgejo_token" "$pubkey_content") || fj_id=""
+            if [[ -n "$fj_id" ]]; then
+                _item "Forgejo" "${GREEN}registered${NC} (id: $fj_id)"
+            else
+                _item "Forgejo" "${DIM}not registered${NC}"
+            fi
+        else
+            _item "Forgejo" "${DIM}no token in ~/.env${NC}"
+        fi
+
+        # Agent status
+        local fingerprint
+        fingerprint=$(ssh-keygen -l -f "$pub" 2>/dev/null | awk '{print $2}')
+        if ssh-add -l 2>/dev/null | grep -qF "$fingerprint"; then
+            _item "Agent" "${GREEN}loaded${NC}"
+        else
+            _item "Agent" "${DIM}not loaded${NC}"
+        fi
+    done
+
+    # Configured SSH hosts
+    local hosts=()
+    while IFS= read -r h; do [[ -n "$h" ]] && hosts+=("$h"); done < <(_list_ssh_hosts)
+
+    if [[ ${#hosts[@]} -gt 0 ]]; then
+        _section "Configured hosts (from ~/.ssh/config)"
+        for h in "${hosts[@]}"; do
+            _dim "$h"
+        done
+    fi
+
+    echo ""
+}
+
+# ─── cmd_generate ────────────────────────────────────────────
+cmd_generate() {
+    _require_gum
+    _header "Generate SSH Key"
+    echo ""
+
+    # Key type
+    local key_type
+    key_type=$(gum choose \
+        --header "Key type:" \
+        "ed25519  Modern, fast, recommended for all new keys" \
+        "rsa4096  Legacy compatibility only; use ed25519 unless a system requires RSA") || { echo "Aborted."; return; }
+
+    # Key name
+    local key_name
+    key_name=$(gum input \
+        --placeholder "e.g. nordhealth, personal-bars" \
+        --header "Key name:") || { echo "Aborted."; return; }
+
+    if [[ -z "$key_name" ]]; then
+        _fail "Key name cannot be empty."
+        return 1
+    fi
+
+    if [[ -f "$HOME/.ssh/$key_name" ]]; then
+        _warn "Key ~/.ssh/$key_name already exists."
+        gum confirm "Overwrite it?" || { echo "Aborted."; return; }
+    fi
+
+    # Passphrase (with confirm loop)
+    local passphrase passphrase_confirm
+    while true; do
+        passphrase=$(gum input \
+            --password \
+            --placeholder "Passphrase (leave empty for none)" \
+            --header "Passphrase:") || { echo "Aborted."; return; }
+        passphrase_confirm=$(gum input \
+            --password \
+            --placeholder "Confirm passphrase" \
+            --header "Confirm passphrase:") || { echo "Aborted."; return; }
+        if [[ "$passphrase" == "$passphrase_confirm" ]]; then
+            break
+        fi
+        _fail "Passphrases do not match. Try again."
+        echo ""
+    done
+
+    echo ""
+    echo "Generating key..."
+
+    local key_path="$HOME/.ssh/$key_name"
+    local comment="${key_name}@$(hostname)"
+
+    if [[ "${key_type%% *}" == "rsa4096" ]]; then
+        ssh-keygen -t rsa -b 4096 -f "$key_path" -C "$comment" -N "$passphrase" -q
+    else
+        ssh-keygen -t ed25519 -f "$key_path" -C "$comment" -N "$passphrase" -q
+    fi
+
+    _ok "Key pair created: $key_path"
+    echo ""
+    _section "Public key"
+    echo ""
+    echo "  $(cat "${key_path}.pub")"
+    echo ""
+
+    # Offer to register
+    if gum confirm "Register this key with a service now?"; then
+        cmd_register "$key_name"
+    fi
+
+    # Offer to add SSH config entry
+    if gum confirm "Add a Host entry to your SSH config?"; then
+        local host_alias host_name ssh_user id_file
+
+        host_alias=$(gum input --placeholder "Host alias (e.g. myserver)" --header "Host alias:") || true
+        host_name=$(gum input  --placeholder "Hostname or IP (e.g. myserver.example.com)" --header "HostName:") || true
+        ssh_user=$(gum input   --placeholder "Remote user (e.g. git, deploy)" --header "User:") || true
+        id_file=$(gum input    --placeholder "~/.ssh/$key_name" --header "IdentityFile:") || true
+        [[ -z "$id_file" ]] && id_file="~/.ssh/$key_name"
+
+        if [[ -n "$host_alias" && -n "$host_name" ]]; then
+            local config_block
+            config_block=$(cat <<EOF
+
+Host $host_alias
+    HostName $host_name
+    User ${ssh_user:-$(whoami)}
+    IdentityFile $id_file
+EOF
+)
+            # Append to chezmoi source config template
+            local chezmoi_source
+            chezmoi_source=$(chezmoi source-path 2>/dev/null) || chezmoi_source=""
+
+            if [[ -z "$chezmoi_source" ]]; then
+                _warn "Could not determine chezmoi source path."
+                _dim  "Add this block manually to your SSH config template:"
+                echo ""
+                echo "$config_block"
+                echo ""
+            elif [[ ! -f "$chezmoi_source/private_dot_ssh/private_config.tmpl" ]]; then
+                _warn "SSH config template not found at $chezmoi_source/private_dot_ssh/private_config.tmpl"
+                _dim  "Add this block manually to your SSH config template:"
+                echo ""
+                echo "$config_block"
+                echo ""
+            else
+                echo "$config_block" >> "$chezmoi_source/private_dot_ssh/private_config.tmpl"
+                if chezmoi apply 2>"$_TMPDIR/chezmoi_err"; then
+                    _ok "Host entry added and applied."
+                else
+                    _fail "chezmoi apply failed. Your config template was updated but not deployed."
+                    _dim  "Run 'chezmoi apply' manually to deploy."
+                    cat "$_TMPDIR/chezmoi_err" >&2 2>/dev/null || true
+                fi
+            fi
+        else
+            _warn "Skipping SSH config entry (missing alias or hostname)."
+        fi
+    fi
+
+    # Offer to add to agent
+    if gum confirm "Add this key to the SSH agent now?"; then
+        if ssh-add "$key_path" 2>/dev/null; then
+            _ok "Key added to agent."
+        else
+            _fail "Failed to add key to agent."
+        fi
+    fi
+}
+
+# ─── cmd_register ────────────────────────────────────────────
+cmd_register() {
+    _require_gum
+
+    local preselected_key="${1:-}"
+
+    _header "Register SSH Key"
+    echo ""
+
+    # Pick key
+    local key_name
+    if [[ -n "$preselected_key" ]]; then
+        key_name="$preselected_key"
+    else
+        local key_list=()
+        while IFS= read -r k; do [[ -n "$k" ]] && key_list+=("$k"); done < <(_list_keys)
+
+        if [[ ${#key_list[@]} -eq 0 ]]; then
+            _warn "No SSH key pairs found in ~/.ssh/"
+            _dim  "Run 'ssh-keys-management generate' to create one."
+            return
+        fi
+
+        key_name=$(gum choose \
+            --header "Select key to register:" \
+            "${key_list[@]}") || { echo "Aborted."; return; }
+    fi
+
+    local pub="$HOME/.ssh/${key_name}.pub"
+    if [[ ! -f "$pub" ]]; then
+        _fail "Public key not found: $pub"
+        return 1
+    fi
+
+    local pubkey_content
+    pubkey_content=$(cat "$pub")
+    local registration_failed=0
+
+    # Pick services
+    local selected_services
+    selected_services=$(gum choose \
+        --no-limit \
+        --header "Select services to register with:" \
+        "GitHub   Register at github.com (uses GITHUB_TOKEN)" \
+        "Forgejo  Register at forgejo.patilla.es (uses FORGEJO_TOKEN)") || { echo "Aborted."; return; }
+
+    if [[ -z "$selected_services" ]]; then
+        _warn "No services selected."
+        return
+    fi
+
+    echo ""
+
+    while IFS= read -r service_label; do
+        [[ -z "$service_label" ]] && continue
+        local service_key="${service_label%% *}"
+
+        local service token api_url web_url
+        case "$service_key" in
+            GitHub)
+                service="github"
+                api_url="https://api.github.com/user/keys"
+                web_url="https://github.com/settings/ssh/new"
+                token=$(_github_token)
+                ;;
+            Forgejo)
+                service="forgejo"
+                api_url="https://forgejo.patilla.es/api/v1/user/keys"
+                web_url="https://forgejo.patilla.es/user/settings/keys"
+                token=$(_forgejo_token)
+                ;;
+        esac
+
+        _section "$service_key"
+
+        # Build auth method choices
+        local auth_choices=()
+        [[ -n "$token" ]] && auth_choices+=("Use token from ~/.env    Upload automatically using your stored token")
+        auth_choices+=("Enter token manually     Paste a token now to upload automatically")
+        auth_choices+=("Show me the public key   Copy and paste it yourself in the web UI")
+
+        local auth_choice
+        auth_choice=$(gum choose \
+            --header "How do you want to register?" \
+            "${auth_choices[@]}") || { echo "Aborted."; continue; }
+
+        # Determine the actual token to use
+        local use_token=""
+        if [[ "$auth_choice" == Use\ token* ]]; then
+            use_token="$token"
+        elif [[ "$auth_choice" == Enter\ token* ]]; then
+            use_token=$(gum input --password --placeholder "Paste your API token" --header "API token:") || true
+        fi
+
+        if [[ "$auth_choice" == Show\ me* ]]; then
+            echo ""
+            _dim "Paste this public key at: $web_url"
+            echo ""
+            echo "$pubkey_content" | gum pager
+        elif [[ -n "$use_token" ]]; then
+            # Check for duplicate
+            local existing_id
+            existing_id=$(_check_registered "$service" "$use_token" "$pubkey_content") || existing_id=""
+
+            if [[ -n "$existing_id" ]]; then
+                _warn "Key already registered on $service_key (id: $existing_id) — skipping."
+                continue
+            fi
+
+            # POST to register
+            local body
+            body=$(KEY_NAME="$key_name" PUB_KEY="$pubkey_content" python3 -c "
+import json, os
+print(json.dumps({'title': os.environ['KEY_NAME'], 'key': os.environ['PUB_KEY']}))
+")
+
+            local http_code
+            http_code=$(curl -s -o "$_TMPDIR/reg_resp" -w "%{http_code}" \
+                -X POST \
+                -H @<(printf 'Authorization: token %s' "$use_token") \
+                -H "Content-Type: application/json" \
+                -H "Accept: application/json" \
+                -d "$body" \
+                "$api_url" 2>/dev/null) || http_code="000"
+
+            if [[ "$http_code" == "201" ]]; then
+                _ok "Registered on $service_key"
+            else
+                _fail "Failed to register on $service_key (HTTP $http_code)"
+                registration_failed=1
+                local resp_body
+                resp_body=$(cat "$_TMPDIR/reg_resp" 2>/dev/null || echo "")
+                [[ -n "$resp_body" ]] && _dim "$resp_body"
+
+                if gum confirm "Retry with manual web UI instead?"; then
+                    _dim "Paste this public key at: $web_url"
+                    echo ""
+                    echo "$pubkey_content" | gum pager
+                fi
+            fi
+        else
+            _warn "No token provided — skipping $service_key."
+        fi
+
+    done <<< "$selected_services"
+    return $registration_failed
+}
+
+# ─── cmd_distribute ──────────────────────────────────────────
+cmd_distribute() {
+    _require_gum
+    _header "Distribute SSH Key"
+    echo ""
+
+    # Pick key
+    local key_list=()
+    while IFS= read -r k; do [[ -n "$k" ]] && key_list+=("$k"); done < <(_list_keys)
+
+    if [[ ${#key_list[@]} -eq 0 ]]; then
+        _warn "No SSH key pairs found in ~/.ssh/"
+        _dim  "Run 'ssh-keys-management generate' to create one."
+        return
+    fi
+
+    local key_name
+    key_name=$(gum choose \
+        --header "Select key to distribute:" \
+        "${key_list[@]}") || { echo "Aborted."; return; }
+
+    local pub="$HOME/.ssh/${key_name}.pub"
+
+    # Pick hosts
+    local host_list=()
+    while IFS= read -r h; do [[ -n "$h" ]] && host_list+=("$h"); done < <(_list_ssh_hosts)
+
+    if [[ ${#host_list[@]} -eq 0 ]]; then
+        _warn "No hosts found in ~/.ssh/config (excluding wildcards)."
+        _dim  "Add Host entries to ~/.ssh/config first."
+        return
+    fi
+
+    local selected_hosts
+    selected_hosts=$(gum choose \
+        --no-limit \
+        --header "Select hosts to copy key to:" \
+        "${host_list[@]}") || { echo "Aborted."; return; }
+
+    if [[ -z "$selected_hosts" ]]; then
+        _warn "No hosts selected."
+        return
+    fi
+
+    echo ""
+
+    while IFS= read -r host; do
+        [[ -z "$host" ]] && continue
+        _section "$host"
+        if ssh-copy-id -i "$pub" "$host" 2>"$_TMPDIR/copy_err"; then
+            _ok "$host"
+        else
+            local err
+            err=$(head -3 "$_TMPDIR/copy_err" 2>/dev/null)
+            _fail "$host — ${err:-unknown error}"
+        fi
+    done <<< "$selected_hosts"
+    echo ""
+}
+
+# ─── cmd_rotate ──────────────────────────────────────────────
+cmd_rotate() {
+    _require_gum
+    _header "Rotate SSH Key"
+    echo ""
+
+    # Pick key to rotate
+    local key_list=()
+    while IFS= read -r k; do [[ -n "$k" ]] && key_list+=("$k"); done < <(_list_keys)
+
+    if [[ ${#key_list[@]} -eq 0 ]]; then
+        _warn "No SSH key pairs found in ~/.ssh/"
+        return
+    fi
+
+    local old_key
+    old_key=$(gum choose \
+        --header "Select key to rotate (will be revoked and replaced):" \
+        "${key_list[@]}") || { echo "Aborted."; return; }
+
+    echo ""
+    _warn "This will revoke $old_key from all services and generate a replacement."
+
+    gum confirm "Revoke this key from all services and replace it? This cannot be undone." \
+        || { echo "Aborted."; return; }
+
+    local old_pub="$HOME/.ssh/${old_key}.pub"
+    local old_pubkey_content
+    old_pubkey_content=$(cat "$old_pub")
+
+    # Revoke from services
+    _section "Revoking from services"
+
+    local github_token forgejo_token
+    github_token=$(_github_token)
+    forgejo_token=$(_forgejo_token)
+
+    _revoke_from_service "github"  "$github_token"  "GitHub"  "$old_pubkey_content"
+    _revoke_from_service "forgejo" "$forgejo_token" "Forgejo" "$old_pubkey_content"
+
+    # New key name
+    _section "New key"
+    local new_key
+    new_key=$(gum input \
+        --value "$old_key" \
+        --header "New key name (pre-filled with current name):") || { echo "Aborted."; return; }
+    [[ -z "$new_key" ]] && new_key="$old_key"
+
+    # Generate new key inline (passphrase prompts, ssh-keygen)
+    local passphrase passphrase_confirm
+    while true; do
+        passphrase=$(gum input \
+            --password \
+            --placeholder "Passphrase (leave empty for none)" \
+            --header "Passphrase:") || { echo "Aborted."; return; }
+        passphrase_confirm=$(gum input \
+            --password \
+            --placeholder "Confirm passphrase" \
+            --header "Confirm passphrase:") || { echo "Aborted."; return; }
+        if [[ "$passphrase" == "$passphrase_confirm" ]]; then
+            break
+        fi
+        _fail "Passphrases do not match. Try again."
+        echo ""
+    done
+
+    local key_type
+    key_type=$(gum choose \
+        --header "Key type for new key:" \
+        "ed25519  Modern, fast, recommended for all new keys" \
+        "rsa4096  Legacy compatibility only; use ed25519 unless a system requires RSA") || { echo "Aborted."; return; }
+
+    local key_path="$HOME/.ssh/$new_key"
+    local comment="${new_key}@$(hostname)"
+
+    echo ""
+    echo "Generating new key..."
+    if [[ "${key_type%% *}" == "rsa4096" ]]; then
+        ssh-keygen -t rsa -b 4096 -f "$key_path" -C "$comment" -N "$passphrase" -q
+    else
+        ssh-keygen -t ed25519 -f "$key_path" -C "$comment" -N "$passphrase" -q
+    fi
+    _ok "New key created: $key_path"
+
+    # Register new key
+    local reg_ok=0
+    cmd_register "$new_key" || reg_ok=1
+
+    # Offer to re-distribute
+    if gum confirm "Re-distribute the new key to your machines?"; then
+        cmd_distribute
+    fi
+
+    # Offer to delete old key files
+    if [[ "$reg_ok" -ne 0 ]]; then
+        echo ""
+        _warn "Registration had failures. The old key has already been revoked from services."
+        _dim  "Verify your new key is working before deleting the old key files."
+        echo ""
+    fi
+    if gum confirm "Delete old key files (~/.ssh/$old_key and ~/.ssh/${old_key}.pub)?"; then
+        rm -f "$HOME/.ssh/$old_key" "$HOME/.ssh/${old_key}.pub"
+        _ok "Old key files deleted."
+    fi
+
+    echo ""
+}
+
+# ─── cmd_agent ───────────────────────────────────────────────
+cmd_agent() {
+    _require_gum
+    _header "SSH Agent"
+    echo ""
+
+    # Check agent and loaded keys
+    local agent_exit=0
+    local agent_output=""
+    local loaded_keys=""
+    agent_output=$(ssh-add -l 2>&1) || agent_exit=$?
+
+    if [[ "$agent_exit" -eq 2 ]]; then
+        _fail "SSH agent is not running."
+        _dim  "Start it with: eval \"\$(ssh-agent -s)\""
+        return
+    fi
+
+    if [[ "$agent_exit" -ne 0 ]] || echo "$agent_output" | grep -q "no identities\|The agent has no"; then
+        _warn "No keys loaded in agent."
+        loaded_keys=""
+        agent_output=""
+    else
+        _section "Keys loaded in agent"
+        while IFS= read -r line; do
+            [[ -n "$line" ]] && _dim "$line"
+        done <<< "$agent_output"
+        loaded_keys="$agent_output"
+    fi
+
+    echo ""
+
+    local action
+    action=$(gum choose \
+        --header "Agent action:" \
+        "Add     Load a key into the agent so you don't re-enter your passphrase each time" \
+        "Remove  Unload a specific key from the agent" \
+        "Clear   Remove all keys from the agent (ssh-add -D)" \
+        "Back    Return to main menu") || { echo "Aborted."; return; }
+
+    case "${action%% *}" in
+        Add)
+            # Keys not currently in agent
+            local all_keys=()
+            while IFS= read -r k; do [[ -n "$k" ]] && all_keys+=("$k"); done < <(_list_keys)
+
+            local available=()
+            for k in "${all_keys[@]}"; do
+                local fp
+                fp=$(ssh-keygen -l -f "$HOME/.ssh/${k}.pub" 2>/dev/null | awk '{print $2}')
+                if ! echo "$loaded_keys" | grep -qF "$fp"; then
+                    available+=("$k")
+                fi
+            done
+
+            if [[ ${#available[@]} -eq 0 ]]; then
+                _warn "All keys are already loaded in the agent."
+                return
+            fi
+
+            local pick
+            pick=$(gum choose \
+                --header "Select key to add to agent:" \
+                "${available[@]}") || { echo "Aborted."; return; }
+
+            if ssh-add "$HOME/.ssh/$pick" 2>/dev/null; then
+                _ok "Added $pick to agent."
+            else
+                _fail "Failed to add $pick to agent."
+            fi
+            ;;
+
+        Remove)
+            if [[ -z "$loaded_keys" ]]; then
+                _warn "No keys loaded in agent."
+                return
+            fi
+
+            # Build choices from loaded keys (show fingerprint + comment)
+            local loaded_list=()
+            while IFS= read -r line; do
+                [[ -n "$line" ]] && loaded_list+=("$line")
+            done <<< "$loaded_keys"
+
+            local pick_line
+            pick_line=$(gum choose \
+                --header "Select key to remove from agent:" \
+                "${loaded_list[@]}") || { echo "Aborted."; return; }
+
+            # Extract the file path from agent output (last field)
+            local key_file
+            key_file=$(echo "$pick_line" | awk '{print $NF}')
+
+            if ssh-add -d "$key_file" 2>/dev/null; then
+                _ok "Removed $key_file from agent."
+            else
+                # Try removing all keys with that fingerprint
+                local fp
+                fp=$(echo "$pick_line" | awk '{print $2}')
+                _fail "Could not remove by path. Fingerprint: $fp"
+            fi
+            ;;
+
+        Clear)
+            gum confirm "Remove all keys from the SSH agent?" || { echo "Aborted."; return; }
+            if ssh-add -D 2>/dev/null; then
+                _ok "All keys removed from agent."
+            else
+                _fail "Failed to clear agent keys."
+            fi
+            ;;
+
+        Back)
+            return
+            ;;
+    esac
+    echo ""
+}
+
+# ─── main ────────────────────────────────────────────────────
+main() {
+    _require_gum
+    _header "SSH Key Manager"
+    echo ""
+
+    local choice
+    choice=$(gum choose \
+        --header "What would you like to do?" \
+        "Status      Show all your SSH keys and where they are registered" \
+        "Generate    Create a new SSH key pair (ed25519 recommended, RSA for legacy)" \
+        "Register    Upload a public key to GitHub or Forgejo" \
+        "Distribute  Copy a public key to your machines via ssh-copy-id" \
+        "Rotate      Replace an existing key: revoke, regenerate, re-register" \
+        "Agent       Manage keys loaded in your SSH agent (ssh-add)" \
+        "Quit") || { echo "Aborted."; exit 0; }
+
+    case "${choice%% *}" in
+        Status)     cmd_status ;;
+        Generate)   cmd_generate ;;
+        Register)   cmd_register ;;
+        Distribute) cmd_distribute ;;
+        Rotate)     cmd_rotate ;;
+        Agent)      cmd_agent ;;
+        Quit)       exit 0 ;;
+    esac
+}
+
+# ─── dispatch ────────────────────────────────────────────────
+case "${1:-}" in
+    status)     cmd_status ;;
+    generate)   cmd_generate ;;
+    register)   shift; cmd_register "${1:-}" ;;
+    distribute) cmd_distribute ;;
+    rotate)     cmd_rotate ;;
+    agent)      cmd_agent ;;
+    "")         main ;;
+    -h|--help)
+        _header "ssh-keys-management — SSH key lifecycle manager"
+        echo ""
+        _item "status"     "Show all keys and registration state"
+        _item "generate"   "Create a new SSH key pair"
+        _item "register"   "Upload a public key to GitHub or Forgejo"
+        _item "distribute" "Copy a public key to hosts via ssh-copy-id"
+        _item "rotate"     "Revoke, regenerate, re-register a key"
+        _item "agent"      "Manage SSH agent key loading"
+        echo ""
+        ;;
+    *)
+        _fail "Unknown command: $1"
+        echo ""
+        exec "$0" --help
+        exit 1
+        ;;
+esac
