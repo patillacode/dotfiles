@@ -32,18 +32,18 @@ show_always = true
 disabled = true
 
 [character]
-success_symbol = "[➜](bold cyan)"
-error_symbol = "[➜](bold red)"
+success_symbol = "[](bold cyan)"
+error_symbol = "[](bold red)"
 
 [directory]
 format = "[$path](bold cyan)"
-truncation_length = 1
+truncation_length = 0
 truncation_symbol = ""
-home_symbol = " "
-# read_only = " "
+truncate_to_repo = false
+home_symbol = "~"
 
 [git_branch]
-symbol = "[](fg:black)[](fg:red bg:black)"
+symbol = "[](fg:black)[](fg:red bg:black)"
 style = "fg:red bg:black"
 format = '[$symbol $branch]($style)'
 
@@ -72,17 +72,17 @@ format = '[](fg:black)[$time]($style)[](fg:black)'
 description = "Machine label from STARSHIP_MACHINE_LABEL env var"
 command = 'echo "${STARSHIP_MACHINE_LABEL:-$(hostname -s)}"'
 when = "true"
-format = "[](fg:black)[ 󰒋 $output](fg:yellow bg:black)[](fg:black) "
+format = "[](fg:black)[$output](fg:red bg:black)[](fg:black) "
 
 [custom.python_version]
-description = "putting the python verion in the prompt"
+description = "Active Python version when in a venv"
 command = "echo \"$(python --version | awk '{split($2, a, \".\"); print a[1] \".\" a[2]}')\""
 when = '[[ -n "$VIRTUAL_ENV" ]]'
-format = "[](fg:black)[ ](fg:yellow bg:black)[$output](fg:green bg:black)[](fg:black)"
+format = "[](fg:black)[󰌠 ](fg:yellow bg:black)[$output](fg:green bg:black)[](fg:black)"
 
 [custom.venv]
-description = "putting the python venv symbol in the prompt if there is a venv active"
-command = 'echo ""'
+description = "Python venv indicator"
+command = 'echo ""'
 when = '[[ -n "$VIRTUAL_ENV" ]]'
 style = "fg:yellow"
 format = " [$output]($style)"
@@ -92,11 +92,11 @@ format = "[\\($version\\)](fg:#ff6900)"
 disabled = true
 
 [docker_context]
-symbol = " "
+symbol = " "
 format = "[$symbol](cyan)"
 
 [nodejs]
-symbol = " "
+symbol = " "
 format = "[$symbol $version]"
 
 [os]
@@ -105,13 +105,12 @@ style = "bold yellow dimmed"
 disabled = false
 
 [os.symbols]
-Macos = " "
-Linux = " "
-Windows = " "
-
+Macos = " "
+Linux = " "
+Windows = " "
 
 [sudo]
 style = 'bold yellow'
-symbol = ''
+symbol = ''
 format = "[$symbol]($style)"
 disabled = true

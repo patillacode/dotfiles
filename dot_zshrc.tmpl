@@ -6,12 +6,12 @@
 #############
 
 export ZSH="$HOME/.oh-my-zsh"
-ZSH_THEME="bars"
+#ZSH_THEME="bars"
 
 SHARE_HISTORY="false"
 setopt no_share_history
 
-# Disable default virtualenv prompt (customized in bars.zsh-theme)
+# Disable default virtualenv prompt (customized via Starship)
 VIRTUAL_ENV_DISABLE_PROMPT="true"
 
 plugins=(zsh-syntax-highlighting)
@@ -81,6 +81,7 @@ export PATH="$PATH:$HOME/.local/bin"
 ##########
 
 # Starship — theme selectable via chezmoi data
+export STARSHIP_MACHINE_LABEL="{{ .machine_name }}"
 export STARSHIP_CONFIG="$HOME/.config/starship/{{ .starship.theme }}.toml"
 eval "$(starship init {{ .shell }})"
 

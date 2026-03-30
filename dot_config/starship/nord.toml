@@ -13,6 +13,7 @@ $character\
 
 right_format = """
 $docker_context\
+${custom.machine}\
 $time\
 """
 
@@ -75,6 +76,16 @@ command     = "echo \"$(python --version | awk '{split($2, a, \".\"); print a[1]
 when        = '[[ -n "$VIRTUAL_ENV" ]]'
 style       = "fg:nord13"
 format      = "[ $output]($style) "
+
+[hostname]
+disabled = true
+
+[custom.machine]
+description = "Machine label from STARSHIP_MACHINE_LABEL env var"
+command = 'echo "${STARSHIP_MACHINE_LABEL:-$(hostname -s)}"'
+when = "true"
+style = "fg:nord15"
+format = "[ 󰒋 $output]($style) "
 
 [docker_context]
 symbol = " "

@@ -13,6 +13,11 @@ $line_break\
 $character\
 """
 
+right_format = """
+${custom.machine}\
+$time\
+"""
+
 ###########################################
 
 [palettes.default]
@@ -52,3 +57,13 @@ min_time = 1000
 [time]
 format = "[](fg:duration)[󰥔](fg:icon bg:duration)[](fg:duration bg:background)[ $time](bg:background)[](fg:background)"
 disabled = false
+
+[hostname]
+disabled = true
+
+[custom.machine]
+description = "Machine label from STARSHIP_MACHINE_LABEL env var"
+command = 'echo "${STARSHIP_MACHINE_LABEL:-$(hostname -s)}"'
+when = "true"
+style = "fg:directory"
+format = "[ 󰒋 $output]($style) "
