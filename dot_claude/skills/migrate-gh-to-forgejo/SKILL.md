@@ -14,7 +14,7 @@ These rules are absolute — no exceptions:
 - Forgejo SSH URL format: `ssh://git@forgejo.patilla.es:2223/patillacode/<repo>.git`
 - Forgejo HTTPS API base: `https://forgejo.patilla.es/api/v1`
 - Forgejo organization: `patillacode`
-- Push mirror interval: `8h0m0s` with `sync_on_commit: true`
+- Push mirror interval: `0` with `sync_on_commit: true`
 - Use full SSH URLs for git remotes (not `fg:` shortcut) — explicit in `git remote -v`
 - Push mirror authenticates to GitHub via HTTPS using `GITHUB_TOKEN`
 
@@ -80,9 +80,9 @@ Single round via `AskUserQuestion`. Present the migration summary:
 - **Description:** from GitHub
 - **Branches:** N branches
 - **Tags:** N tags
-- **Push mirror:** GitHub ← Forgejo (every 8h + on commit)
+- **Push mirror:** GitHub ← Forgejo (on commit)
 
-Ask: "Proceed with migration?" with options:
+Ask: "Proceed with migration?" with multi select options:
 1. **Yes, proceed as shown** (recommended)
 2. **Change visibility** — flip public/private
 3. **Change repo name on Forgejo** — use a different name
