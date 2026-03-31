@@ -31,7 +31,7 @@ This file applies to all Claude Code sessions on this machine ({{ .machine_name 
 ## Rules
 
 See `~/.claude/rules/` for additional context-specific instructions.
-{{ if eq .claude.variant "work" }}
+{{ if has "work" .profiles }}
 ---
 
 ## Daily Driver
