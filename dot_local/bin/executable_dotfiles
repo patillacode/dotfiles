@@ -102,12 +102,13 @@ cmd_theme() {
 
     local selected
     selected=$(
-        find "$theme_dir" -name "*.toml" -not -name "*.tmpl" \
-            | xargs -I{} basename {} .toml \
-            | sort \
+        find "$theme_dir" -name "*.toml" -o -name "*.toml.tmpl" \
+            | xargs -I{} basename {} \
+            | sed 's/\.toml\.tmpl$//; s/\.toml$//' \
+            | sort -u \
             | fzf \
                 --prompt="Starship theme > " \
-                --preview="bat --color=always --style=plain '$theme_dir/{}.toml' 2>/dev/null || cat '$theme_dir/{}.toml'" \
+                --preview="bat --color=always --style=plain '$theme_dir/{}.toml' '$theme_dir/{}.toml.tmpl' 2>/dev/null || cat '$theme_dir/{}.toml' '$theme_dir/{}.toml.tmpl' 2>/dev/null" \
                 --preview-window="right:60%"
     ) || exit 0
 
