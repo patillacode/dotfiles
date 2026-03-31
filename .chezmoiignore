@@ -25,14 +25,14 @@ docs/
 .bashrc
 {{ end -}}
 
-# ─── desktop-only (no GUI apps on headless machines) ─────────
-{{ if not (has "desktop" .profiles) -}}
+# ─── gui-only (no GUI apps on headless machines) ─────────────
+{{ if not (has "gui" .profiles) -}}
 dot_config/ghostty/
 dot_alias/ghostty.sh
 {{ end -}}
 
-# ─── personal-only ────────────────────────────────────────────
-{{ if not (has "personal" .profiles) -}}
+# ─── entertainment (personal + gui only) ─────────────────────
+{{ if not (and (has "personal" .profiles) (has "gui" .profiles)) -}}
 dot_alias/music.sh
 dot_alias/tv.sh
 dot_alias/twitch.sh
@@ -49,11 +49,9 @@ dot_config/git/nordhealth
 dot_oh-my-zsh/custom/themes/nordhealth.zsh-theme
 {{ end -}}
 
-# ─── developer-only ───────────────────────────────────────────
-{{ if not (has "developer" .profiles) -}}
+# ─── gui-only dev tools ───────────────────────────────────────
+{{ if not (has "gui" .profiles) -}}
 dot_config/zed/
-dot_config/nvim/
-dot_claude/
 {{ end -}}
 
 # ─── Claude Code: never deploy runtime/machine-local files ────

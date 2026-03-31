@@ -39,7 +39,7 @@ source $ZSH/oh-my-zsh.sh
 {{- $aliases = $aliases | uniq }}
 {{ range $aliases -}}
 {{ if not (has . $excluded) -}}
-source "$HOME/.alias/{{ . }}.sh"
+[[ -f "$HOME/.alias/{{ . }}.sh" ]] && source "$HOME/.alias/{{ . }}.sh"
 {{ end -}}
 {{- end }}
 
