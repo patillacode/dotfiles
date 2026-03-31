@@ -3,6 +3,6 @@
 # The full list is resolved at template time by iterating active traits.
 trait_aliases:
   base:     [ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils]
-  gui:      [ghostty]
-  personal: [music, tv, twitch]
+  gui:      []
+  personal: []
   work:     []

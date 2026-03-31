@@ -28,14 +28,10 @@ docs/
 # ─── gui-only (no GUI apps on headless machines) ─────────────
 {{ if not (has "gui" .profiles) -}}
 dot_config/ghostty/
-dot_alias/ghostty.sh
 {{ end -}}
 
-# ─── entertainment (personal + gui only) ─────────────────────
+# ─── entertainment configs (personal + gui only) ──────────────
 {{ if not (and (has "personal" .profiles) (has "gui" .profiles)) -}}
-dot_alias/music.sh
-dot_alias/tv.sh
-dot_alias/twitch.sh
 dot_config/mpv/
 dot_config/yt-dlp/
 {{ end -}}
