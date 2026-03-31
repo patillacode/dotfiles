@@ -7,30 +7,24 @@ set -e
 {{- /* ─── Resolve all packages from active traits ────────── */}}
 {{- $formulae := list }}
 {{- $casks := list }}
-{{- $aptPkgs := list }}
 {{- range .profiles }}
 {{-   $pkgs := index $.trait_packages . | default list }}
 {{-   range $pkgs }}
 {{-     if kindIs "string" . }}
 {{-       $formulae = append $formulae . }}
-{{-       $aptPkgs = append $aptPkgs . }}
 {{-     else }}
 {{-       $name := index . "name" }}
 {{-       $type := index . "type" | default "formula" }}
-{{-       $aptName := index . "apt" | default $name }}
 {{-       if eq $type "cask" }}
 {{-         $casks = append $casks $name }}
-{{-         if index . "apt" }}{{ $aptPkgs = append $aptPkgs $aptName }}{{ end }}
 {{-       else }}
 {{-         $formulae = append $formulae $name }}
-{{-         $aptPkgs = append $aptPkgs $aptName }}
 {{-       end }}
 {{-     end }}
 {{-   end }}
 {{- end }}
 {{- $formulae = $formulae | uniq }}
 {{- $casks = $casks | uniq }}
-{{- $aptPkgs = $aptPkgs | uniq }}
 
 {{ if eq .chezmoi.os "darwin" -}}
 # ─── macOS: Homebrew formulae ────────────────────────────────
@@ -70,31 +64,7 @@ for font in {{ range .nerd_fonts }}"{{ . }}" {{ end }}; do
 done
 
 {{ else if eq .chezmoi.os "linux" -}}
-# ─── Linux: apt packages ─────────────────────────────────────
-
-{{- if not .use_homebrew }}
-# Base packages — skipped when Homebrew is active (brew provides these instead)
-APT_PKGS=(
-{{- range $aptPkgs }}
-    "{{ . }}"
-{{- end }}
-{{- range .profiles }}
-{{-   $extras := index $.apt_extras . | default list }}
-{{-   range $extras }}
-    "{{ . }}"
-{{-   end }}
-{{- end }}
-)
-echo "Installing apt packages..."
-sudo apt-get update -qq
-sudo apt-get install -y "${APT_PKGS[@]}"
-{{- else }}
-echo "Homebrew is active — skipping apt base packages (brew provides these)."
-sudo apt-get update -qq
-{{- end }}
-
-{{- if .use_homebrew }}
-# ─── Linux: Homebrew (optional) ──────────────────────────────
+# ─── Linux: Homebrew ─────────────────────────────────────────
 if ! command -v brew &>/dev/null; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -115,7 +85,6 @@ for pkg in "${BREW_PKGS[@]}"; do
         brew install "$pkg"
     fi
 done
-{{- end }}
 
 {{ end -}}
 

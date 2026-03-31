@@ -74,7 +74,3 @@ nerd_fonts:
   - font-fira-code-nerd-font
   - font-jetbrains-mono-nerd-font
 
-# apt-specific extras — packages that only exist on apt, not brew.
-# Installed on Linux when Homebrew is NOT active.
-apt_extras:
-  base: [ build-essential, curl, git ]
