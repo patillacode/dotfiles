@@ -2,8 +2,7 @@
 # Each trait lists ONLY what it adds. No duplication.
 # The full list is resolved at template time by iterating active traits.
 trait_aliases:
-  base: [atuin, docker, fzf, git, misc, system, tmux, utils]
-  desktop: [ghostty]
-  developer: [ai]
-  personal: [music, ssh, tv, twitch]
-  work: [ssh]
+  base:     [ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils]
+  gui:      [ghostty]
+  personal: [music, tv, twitch]
+  work:     []

@@ -19,31 +19,30 @@ trait_packages:
     - fastfetch
     - { name: fd, apt: fd-find }
     - fzf
+    - gcc
     - gh
     - git-delta
     - git-lfs
+    - glow
+    - gum
     - jq
+    - n
+    - neovim
+    - prek
     - ripgrep
+    - rtk
+    - ruff
     - starship
     - tmux
+    - uv
     - wget
-  desktop:
+  gui:
     - { name: ghostty, type: cask }
     - { name: keepassxc, type: cask, apt: keepassxc }
     - { name: raycast, type: cask }
     - { name: rectangle, type: cask }
     - { name: sf-symbols, type: cask }
     - { name: stats, type: cask }
-  developer:
-    - gcc
-    - glow
-    - gum
-    - n
-    - neovim
-    - prek
-    - rtk
-    - ruff
-    - uv
   personal:
     - cmatrix
     - ffmpeg
@@ -67,7 +66,6 @@ trait_packages:
 
 # Python tools per trait (installed via uv)
 trait_python_tools:
-  developer: []
   personal: []
 
 # Nerd fonts (brew casks, macOS only)
