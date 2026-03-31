@@ -208,6 +208,14 @@ Run the one-liner from Fresh Install. The wizard asks the right questions and ha
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles https://forgejo.patilla.es/patillacode/dotfiles.git
 ```
 
+Once packages are installed, run the interactive configuration wizard for a polished setup experience:
+
+```bash
+dotfiles setup
+```
+
+This reads all current values as defaults (safe to re-run at any time to reconfigure).
+
 ### Update an existing machine after a repo change
 
 Pull and re-apply — chezmoi diffs against deployed state and only touches what changed.

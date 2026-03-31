@@ -28,6 +28,9 @@ usage() {
     _header "dotfiles — manage your chezmoi dotfiles"
     echo -e "  ${DIM}Aliases: dt, dots${NC}"
 
+    _section "SETUP"
+    _item "setup" "Interactive configuration wizard (gum)"
+
     _section "SYNC & DEPLOY"
     _item "sync" "Pull latest changes from git and apply"
     _item "push [msg]" "Commit source changes and push to remote"
@@ -581,12 +584,187 @@ for a in aliases:
     echo ""
 }
 
+cmd_setup() {
+    # ── Header ────────────────────────────────────────────────
+    gum style \
+        --foreground 6 --border-foreground 6 \
+        --border double --align center \
+        --width 52 --margin "1 2" --padding "1 4" \
+        "dotfiles setup" "" "Configure your environment"
+
+    # Print a confirmed answer line (history trail)
+    _ans() { printf "  ${DIM}%-12s${NC}  ${CYAN}%s${NC}\n" "$1" "$2"; }
+
+    # ── Read current values ────────────────────────────────────
+    local data; data=$($CHEZMOI data 2>/dev/null)
+    local machine_name purpose gui theme git_name git_email keepassxc_db
+    local shell_val font_family font_size profiles_json
+
+    machine_name=$(echo "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('machine_name',''))" 2>/dev/null)
+    git_name=$(echo     "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['git']['name'])" 2>/dev/null)
+    git_email=$(echo    "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['git']['email'])" 2>/dev/null)
+    theme=$(echo        "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['starship']['theme'])" 2>/dev/null)
+    keepassxc_db=$(echo "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('keepassxc',{}).get('database',''))" 2>/dev/null)
+    shell_val=$(echo    "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('shell','bash'))" 2>/dev/null)
+    font_family=$(echo  "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['font']['family'])" 2>/dev/null)
+    font_size=$(echo    "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['font']['size'])" 2>/dev/null)
+    profiles_json=$(echo "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get('profiles',[])))" 2>/dev/null)
+
+    purpose=$(echo "$profiles_json" | python3 -c "import sys,json; p=json.load(sys.stdin); print('work' if 'work' in p else 'personal')" 2>/dev/null)
+    gui=$(echo     "$profiles_json" | python3 -c "import sys,json; p=json.load(sys.stdin); print('y' if 'gui' in p else 'n')" 2>/dev/null)
+
+    # ── Machine ───────────────────────────────────────────────
+    gum style --foreground 6 --bold --margin "1 0 0 2" "MACHINE"
+    machine_name=$(gum input \
+        --placeholder "machine name" --value "$machine_name" \
+        --prompt "  name  › " --prompt.foreground "6" \
+        --cursor.foreground "13")
+    _ans "name" "$machine_name"
+
+    if [[ "$(uname)" == "Linux" ]]; then
+        shell_val=$(gum choose --selected "$shell_val" \
+            --header "  shell" --header.foreground "240" \
+            --cursor.foreground "13" \
+            "bash" "zsh")
+        _ans "shell" "$shell_val"
+    fi
+
+    # ── Purpose ───────────────────────────────────────────────
+    gum style --foreground 6 --bold --margin "1 0 0 2" "PURPOSE"
+    purpose=$(gum choose --selected "$purpose" \
+        --header "  personal or work?" --header.foreground "240" \
+        --cursor.foreground "13" \
+        "personal" "work")
+    _ans "purpose" "$purpose"
+    gui=$(gum choose --selected "$gui" \
+        --header "  has a screen / GUI?" --header.foreground "240" \
+        --cursor.foreground "13" \
+        "y" "n")
+    _ans "gui" "$([[ "$gui" == "y" ]] && echo "yes" || echo "no")"
+
+    # ── Appearance ────────────────────────────────────────────
+    gum style --foreground 6 --bold --margin "1 0 0 2" "APPEARANCE"
+    local themes_dir="$SOURCE_DIR/dot_config/starship"
+    local theme_options
+    theme_options=$(ls "$themes_dir"/*.toml* 2>/dev/null | xargs -n1 basename | sed 's/\.toml.*//' | sort -u)
+    theme=$(echo "$theme_options" | gum choose --selected "$theme" \
+        --header "  starship theme" --header.foreground "240" \
+        --cursor.foreground "13")
+    _ans "theme" "$theme"
+
+    if [[ "$gui" == "y" ]]; then
+        font_family=$(gum input \
+            --placeholder "font family" --value "$font_family" \
+            --prompt "  font  › " --prompt.foreground "6" \
+            --cursor.foreground "13")
+        _ans "font" "$font_family"
+        font_size=$(gum input \
+            --placeholder "font size" --value "$font_size" \
+            --prompt "  size  › " --prompt.foreground "6" \
+            --cursor.foreground "13")
+        _ans "size" "$font_size"
+    fi
+
+    # ── Identity ──────────────────────────────────────────────
+    gum style --foreground 6 --bold --margin "1 0 0 2" "IDENTITY"
+    git_name=$(gum input \
+        --placeholder "git name" --value "$git_name" \
+        --prompt "  name  › " --prompt.foreground "6" \
+        --cursor.foreground "13")
+    _ans "git name" "$git_name"
+    git_email=$(gum input \
+        --placeholder "git email" --value "$git_email" \
+        --prompt "  email › " --prompt.foreground "6" \
+        --cursor.foreground "13")
+    _ans "git email" "$git_email"
+
+    # ── Secrets ───────────────────────────────────────────────
+    gum style --foreground 6 --bold --margin "1 0 0 2" "SECRETS"
+    keepassxc_db=$(gum input \
+        --placeholder "path to .kdbx (leave empty to skip)" \
+        --value "$keepassxc_db" \
+        --prompt "  db    › " --prompt.foreground "6" \
+        --cursor.foreground "13")
+    _ans "keepassxc" "${keepassxc_db:-(none)}"
+
+    # ── Summary ───────────────────────────────────────────────
+    echo ""
+    gum style --foreground 6 --bold --margin "0 0 0 2" "SUMMARY"
+    local summary
+    summary=$(printf "  %-12s %s\n" \
+        "machine"   "$machine_name" \
+        "shell"     "$shell_val" \
+        "purpose"   "$purpose" \
+        "gui"       "$([[ "$gui" == "y" ]] && echo "yes" || echo "no")" \
+        "theme"     "$theme" \
+        "font"      "$([[ "$gui" == "y" ]] && echo "$font_family $font_size" || echo "(headless)")" \
+        "git name"  "$git_name" \
+        "git email" "$git_email" \
+        "keepassxc" "${keepassxc_db:-(none)}")
+    gum style \
+        --border rounded --border-foreground 6 \
+        --margin "0 2" --padding "1 2" \
+        "$summary"
+
+    echo ""
+    gum confirm "Apply these settings?" || exit 0
+
+    # ── Write chezmoi config directly ─────────────────────────
+    echo ""
+
+    local config_file="$HOME/.config/chezmoi/chezmoi.toml"
+    local os_name; os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+    local profiles='["base"'
+    [[ "$gui" == "y" ]] && profiles+=',"gui"'
+    [[ "$purpose" == "work" ]] && profiles+=',"work"' || profiles+=',"personal"'
+    profiles+=']'
+
+    # Preserve existing per-machine include/exclude overrides
+    local inc_aliases exc_aliases inc_configs exc_configs
+    inc_aliases=$(echo "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get('include_aliases',[])))" 2>/dev/null || echo '[]')
+    exc_aliases=$(echo "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get('exclude_aliases',[])))" 2>/dev/null || echo '[]')
+    inc_configs=$(echo "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get('include_configs',[])))" 2>/dev/null || echo '[]')
+    exc_configs=$(echo "$data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps(d.get('exclude_configs',[])))" 2>/dev/null || echo '[]')
+
+    {
+        printf 'sourceDir = "%s/dotfiles"\n\n' "$HOME"
+        [[ -n "$keepassxc_db" ]] && printf '[keepassxc]\n    database = "%s"\n\n' "$keepassxc_db"
+        printf '[data]\n'
+        printf '    machine_name = "%s"\n' "$machine_name"
+        printf '    os = "%s"\n'           "$os_name"
+        printf '    shell = "%s"\n'        "$shell_val"
+        printf '    use_homebrew = true\n'
+        printf '    profiles = %s\n'       "$profiles"
+        printf '    exclude_aliases = %s\n' "$exc_aliases"
+        printf '    exclude_configs = %s\n' "$exc_configs"
+        printf '    include_aliases = %s\n' "$inc_aliases"
+        printf '    include_configs = %s\n' "$inc_configs"
+        printf '\n    [data.font]\n'
+        printf '        family = "%s"\n'   "$font_family"
+        printf '        size = %s\n'       "$font_size"
+        printf '\n    [data.starship]\n'
+        printf '        theme = "%s"\n'    "$theme"
+        printf '\n    [data.git]\n'
+        printf '        name = "%s"\n'     "$git_name"
+        printf '        email = "%s"\n'    "$git_email"
+        printf '\n    [data.keepassxc]\n'
+        printf '        database = "%s"\n' "$keepassxc_db"
+    } > "$config_file"
+
+    # ── Apply ─────────────────────────────────────────────────
+    gum spin --spinner dot --title " Applying configuration…" -- $CHEZMOI apply
+    echo ""
+    gum style --foreground 6 --bold --margin "0 2" "✓ Done!  Run 'dotfiles status' to verify."
+    echo ""
+}
+
 cmd_doctor() {
     $CHEZMOI doctor
 }
 
 # ─── dispatch ────────────────────────────────────────────────
 case "${1:-help}" in
+    setup)   cmd_setup ;;
     sync)    cmd_sync ;;
     push)    shift; cmd_push "$@" ;;
     apply)   shift; cmd_apply "$@" ;;
