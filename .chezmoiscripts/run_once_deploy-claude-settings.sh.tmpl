@@ -7,7 +7,7 @@ mkdir -p "$HOME/.claude"
 
 cat > "$SETTINGS" <<'EOF'
 {
-{{- if eq .claude.variant "work" }}
+{{- if has "work" .profiles }}
   "model": "sonnet",
   "alwaysThinkingEnabled": true,
 {{- end }}
@@ -30,7 +30,7 @@ cat > "$SETTINGS" <<'EOF'
     "frontend-design@claude-plugins-official": true,
     "frontend-design@claude-code-plugins": true,
     "pyright-lsp@claude-plugins-official": true,
-    "figma@claude-plugins-official": true{{ if eq .claude.variant "work" }},
+    "figma@claude-plugins-official": true{{ if has "work" .profiles }},
     "coderabbit@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
     "Notion@claude-plugins-official": true{{ end }}
