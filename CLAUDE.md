@@ -47,7 +47,7 @@ dotfiles doctor        # run chezmoi diagnostics
 dotfiles/
 ├── .chezmoi.toml.tmpl          # Interactive init prompts (machine, traits, font…)
 ├── .chezmoidata/               # Split data files:
-│   ├── profiles.yaml           #   trait definitions + presets
+│   ├── profiles.yaml           #   trait definitions
 │   ├── aliases.yaml            #   trait_aliases (delta per trait)
 │   ├── configs.yaml            #   trait_configs (delta per trait)
 │   └── packages.yaml           #   unified cross-platform packages
@@ -68,13 +68,12 @@ dotfiles/
 
 Each machine selects a set of independent traits. Each trait answers one question:
 
-| Trait       | Question                    | Machines            |
-|-------------|-----------------------------|---------------------|
-| `base`      | Does this machine exist?    | all                 |
-| `desktop`   | Does it have a screen?      | bars, nordhealth    |
-| `developer` | Do I code on it?            | bars, nordhealth    |
-| `personal`  | Is it mine for fun?         | bars                |
-| `work`      | Is it for work?             | nordhealth          |
+| Trait      | Question                  | Machines                     |
+|------------|---------------------------|------------------------------|
+| `base`     | Does this machine exist?  | all                          |
+| `gui`      | Does it have a screen?    | bars, nordhealth, archbook   |
+| `personal` | Is it mine for fun?       | bars, archbook, totoro       |
+| `work`     | Is it for work?           | nordhealth                   |
 
 Traits are defined in `.chezmoidata/profiles.yaml`. Each trait's aliases, configs,
 and packages are delta-only (list ONLY what the trait adds). The full set is resolved
@@ -87,15 +86,14 @@ Per-machine overrides: `include_aliases`, `exclude_aliases`, `include_configs`,
 ## Adding Packages or Aliases
 
 **"Where do I put this?"** — pick the trait that matches:
-- Dev tool → `developer` in `.chezmoidata/packages.yaml`
-- GUI app → `desktop` in `.chezmoidata/packages.yaml`
+- GUI app → `gui` in `.chezmoidata/packages.yaml`
 - All machines → `base` in `.chezmoidata/packages.yaml`
 - New alias file → create in `dot_alias/`, add to the right trait in `.chezmoidata/aliases.yaml`
 
 Package YAML format (supports cross-platform name differences and casks):
 ```yaml
 trait_packages:
-  developer:
+  base:
     - new-tool                            # same name on brew & apt
     - { name: x, apt: x-dev }            # different apt name
     - { name: y, type: cask }            # brew cask (macOS only)
@@ -134,10 +132,3 @@ Then run `chezmoi apply`.
 - **Zed**: `dot_config/zed/settings.json.tmpl` — font from chezmoi vars
 - **Claude Code**: `dot_claude/` — settings.json, CLAUDE.md, rules/
 
-## Machines
-
-| Name        | OS     | Shell | Traits                                |
-|-------------|--------|-------|---------------------------------------|
-| bars        | macOS  | zsh   | base, desktop, developer, personal    |
-| nordhealth  | macOS  | zsh   | base, desktop, developer, work        |
-| totoro      | Debian | bash  | base, developer                       |

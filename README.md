@@ -1,8 +1,6 @@
-# PatillaCode Dotfiles
+# dotfiles
 
-Personal dotfiles managed with [chezmoi](https://chezmoi.io).
-
-Supports macOS (zsh) and Debian/Ubuntu Linux with a trait-based system — one repo, multiple machines.
+Personal dotfiles managed with [chezmoi](https://chezmoi.io) — one repo, macOS and Debian Linux, multiple machines.
 
 **Primary remote:** `https://forgejo.patilla.es/patillacode/dotfiles.git`
 
@@ -20,24 +18,22 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles https:/
 
 This installs chezmoi, clones the repo, runs the interactive setup, and applies everything.
 
-### Manual
+### What the setup wizard asks
 
-Install chezmoi
+When running `chezmoi init` for the first time you'll be prompted for:
 
-```bash
-sh -c "$(curl -fsLS get.chezmoi.io)"
-# or
-brew install chezmoi
-````
+1. **Machine name** — used throughout configs and prompts
+2. **Shell** — `zsh` or `bash` (Linux only; macOS always uses zsh)
+3. **Personal or work machine?** — sets `personal` or `work` trait
+4. **Does it have a GUI / screen?** — sets `gui` trait; skips desktop-only packages on headless machines
+5. **Starship theme** — choose from 13+ themes (default: `simple`)
+6. **Git name & email** — used in `~/.config/git/config`
+7. **KeePassXC database path** — full path to your `.kdbx` file
+8. **Font family & size** — used in Ghostty and Zed (GUI machines only)
 
-Then initialize the repo and run the setup wizard:
+Answers are saved in `~/.config/chezmoi/chezmoi.toml` and reused on subsequent runs.
 
-```bash
-chezmoi init --source ~/dotfiles https://forgejo.patilla.es/patillacode/dotfiles.git
-chezmoi apply
-```
-
-### Migrating from the old Stow setup
+### Migrating from old setups
 
 If the machine currently has the old GNU Stow dotfiles, remove the symlinks first:
 
@@ -63,32 +59,52 @@ Then proceed with the fresh install one-liner.
 
 ---
 
-### Prerequisites
+## How It Works
 
-- **Secrets:** A [KeePassXC](https://keepassxc.org) database with a `dotfiles/github-pat` entry (Password field = your GitHub PAT). The `keepassxc-cli` binary must be on your PATH — it ships with KeePassXC on macOS, and is installed automatically via packages on Linux developer profiles.
-- **SSH key:** Your SSH key registered with the Forgejo instance to clone via SSH.
+### The trait system
 
-### What the setup wizard asks
+Each machine selects a set of independent traits. Traits compose — a machine just has whichever apply.
 
-When running `chezmoi init` for the first time you'll be prompted for:
+| Trait | Question | Gets |
+|-------|----------|------|
+| `base` | Does this machine exist? | All CLI tools, dev tools, git, SSH, nvim, claude |
+| `gui` | Does it have a screen? | Ghostty, Zed, GUI-only apps |
+| `personal` | Is it mine for fun? | Personal identity, SSH keys, entertainment tools |
+| `work` | Is it for work? | Work git identity, work rules |
 
-1. **Machine name** — `bars`, `nordhealth`, `totoro`, or custom
-2. **Profile preset** — `1` personal · `2` work · `3` server · `4` custom (pick individual traits)
-3. **Shell** — `zsh` or `bash` (Linux only, auto-detected on macOS)
-4. **Homebrew on Linux** — whether to install Homebrew alongside apt
-5. **Starship theme** — choose from 13+ themes (default: `simple`)
-6. **Git name & email** — used in `~/.config/git/config`
-7. **KeePassXC database path** — full path to your `.kdbx` file
-8. **Claude Code variant** — `personal`, `work`, or `none`
-9. **Font family & size** — used in Ghostty and Zed
+`personal + gui` together also add entertainment: music/tv/twitch aliases, mpv, yt-dlp.
 
-Answers are saved in `~/.config/chezmoi/chezmoi.toml` and reused on subsequent runs.
+Each trait only lists what it adds — no duplication. The full set is resolved at template time by iterating all active traits.
+
+Files are gated in `.chezmoiignore` — wrong-trait files are never deployed to disk.
+
+### OS differences
+
+chezmoi handles macOS/Linux automatically:
+
+- **Packages:** brew (+ casks on macOS) vs apt
+- **Shell:** zsh on macOS; bash or zsh on Linux (your choice at init)
+- **GUI-only packages** (casks) are skipped on Linux machines without the `gui` trait
+
+### Per-machine overrides
+
+To include an alias or config outside your traits without changing trait membership, edit `~/.config/chezmoi/chezmoi.toml`:
+
+```toml
+[data]
+    include_aliases = ["music"]   # pull in music.sh even on a work machine
+    exclude_aliases = ["tv"]      # skip tv.sh
+    include_configs = ["mpv"]     # deploy mpv config on a non-personal machine
+    exclude_configs = ["zed"]     # skip zed config
+```
+
+Then `chezmoi apply`.
 
 ---
 
-## Daily Usage
+## Quick Reference
 
-Aliases: `dt` and `dots` are shorthand for `dotfiles`.
+### dotfiles CLI (`dt` / `dots`)
 
 ```bash
 # Sync & deploy
@@ -112,122 +128,146 @@ dotfiles doctor            # run chezmoi diagnostics
 dotfiles rollback          # restore a previous snapshot (fzf)
 ```
 
-Or use chezmoi directly: `chezmoi apply`, `chezmoi diff`, `chezmoi edit ~/.zshrc`.
+`chezmoi apply`, `chezmoi diff`, and `chezmoi edit ~/.zshrc` all work directly too.
 
 ---
 
-## Traits
+## How To
 
-Traits are defined in `.chezmoidata/profiles.yaml`. Each trait is independent and answers one question:
+### Add a new managed file
 
-| Trait       | Question                    | Machines            |
-|-------------|-----------------------------|---------------------|
-| `base`      | Does this machine exist?    | all                 |
-| `desktop`   | Does it have a screen?      | bars, nordhealth    |
-| `developer` | Do I code on it?            | bars, nordhealth    |
-| `personal`  | Is it mine for fun?         | bars                |
-| `work`      | Is it for work?             | nordhealth          |
+chezmoi tracks source files, not symlinks — add a file to the source directory and it deploys on `apply`.
 
-Each trait only lists what it **adds** — no duplication. The full set is resolved at
-template time by iterating all active traits.
-
-Files are gated in `.chezmoiignore` — wrong-trait files are never deployed.
-
----
-
-## Common Tasks
-
-### Change your Starship theme
-
-**Interactive** (recommended):
 ```bash
-dotfiles theme
+# Copy an existing file into the source dir
+chezmoi add ~/.config/tool/config
+
+# Or create it manually in the source dir
+# dot_config/tool/config → ~/.config/tool/config
+chezmoi apply
 ```
 
-**Manual** — edit `~/.config/chezmoi/chezmoi.toml`:
-```toml
-[data.starship]
-    theme = "catppuccin"
+### Modify an existing managed file
+
+Edits go to the source directory; `apply` deploys them.
+
+```bash
+chezmoi edit ~/.zshrc   # opens source file in $EDITOR
+chezmoi apply
 ```
-Then `chezmoi apply`.
 
-Available themes: `simple` · `minimal` · `zenful` · `nerd-font-symbols` · `gruvbox` · `catppuccin` · `dracula` · `nord` · `tokyo-night` · `pastel` · `tops` · `totoro` · `ushuaia`
+Or edit the source file directly in `~/dotfiles/` and run `chezmoi apply`.
 
----
+### Add a package
 
-### Add a new alias
-
-1. Create `dot_alias/<name>.sh` in the repo
-2. Add it to the right trait in `.chezmoidata/aliases.yaml` under `trait_aliases`
-3. Run `chezmoi apply` or `dotfiles push "add <name> alias"`
-
----
-
-### Add a new package to auto-install
+Packages are auto-installed when the list hash changes on `chezmoi apply`.
 
 Edit `.chezmoidata/packages.yaml` — add to the right trait:
 
 ```yaml
 trait_packages:
-  developer:         # or base / desktop / personal / work
-    - new-tool                             # formula, same name on brew & apt
+  base:           # or gui / personal / work
+    - new-tool
     - { name: x, apt: x-dev }             # different name on apt
     - { name: y, type: cask }             # brew cask (macOS only)
     - { name: z, type: cask, apt: z-app } # cask on macOS, apt name on Linux
 ```
 
-The package will be installed automatically next time `chezmoi apply` runs (the script reruns when the package list hash changes).
+Then `chezmoi apply`.
 
----
+### Remove a package
 
-### Add a new tool config
+The install script only adds — it doesn't uninstall. Remove the line from `.chezmoidata/packages.yaml`, then uninstall manually with `brew remove` or `apt remove`.
 
-1. Create `dot_config/<tool>/` in the repo
-2. If it should only appear on certain profiles, gate it in `.chezmoiignore`:
-   ```
-   {{ if not (has "personal" .profiles) -}}
-   dot_config/<tool>/
-   {{ end -}}
-   ```
-3. Run `chezmoi apply`
+### Add a new alias file
 
----
+Alias files live in `dot_alias/` and are sourced based on active traits.
+
+1. Create `dot_alias/<name>.sh` in the repo
+2. Add `<name>` to the right trait in `.chezmoidata/aliases.yaml` under `trait_aliases`
+3. `chezmoi apply`
+
+### Add an alias to an existing file
+
+The alias files are plain shell files — just edit them.
+
+```bash
+chezmoi edit ~/.alias/git.sh
+chezmoi apply
+```
+
+### Remove an alias
+
+Delete or comment out the line from the relevant file in `dot_alias/`, then `chezmoi apply`. The shell will stop sourcing it on the next session.
+
+### Set up a new machine
+
+Run the one-liner from Fresh Install. The wizard asks the right questions and handles everything else.
+
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles https://forgejo.patilla.es/patillacode/dotfiles.git
+```
+
+### Update an existing machine after a repo change
+
+Pull and re-apply — chezmoi diffs against deployed state and only touches what changed.
+
+```bash
+dotfiles sync
+# or
+git -C ~/dotfiles pull && chezmoi apply
+```
+
+### Switch Starship theme
+
+The prompt theme is set in `chezmoi.toml` and re-applied by chezmoi.
+
+```bash
+dotfiles theme   # interactive fzf picker
+```
+
+Or manually edit `~/.config/chezmoi/chezmoi.toml`:
+
+```toml
+[data.starship]
+    theme = "catppuccin"
+```
+
+Then `chezmoi apply`.
+
+Available themes: `simple` · `minimal` · `zenful` · `nerd-font-symbols` · `gruvbox` · `catppuccin` · `dracula` · `nord` · `tokyo-night` · `pastel` · `tops` · `totoro` · `ushuaia`
+
+### Inject secrets from KeePassXC
+
+Secrets are pulled on demand into `~/.env` — they're never part of normal apply.
+
+```bash
+dotfiles secrets   # prompts for master password once, writes ~/.env
+```
 
 ### Change font (Ghostty + Zed)
 
+Both apps read font settings from `chezmoi.toml` via templates — one change updates both.
+
 Edit `~/.config/chezmoi/chezmoi.toml`:
+
 ```toml
 [data.font]
     family = "JetBrainsMono Nerd Font Propo"
     size = 16
-```
-Then `chezmoi apply` — both Ghostty and Zed pick up the change.
-
----
-
-### Use a per-machine override
-
-To include an alias or config outside your traits, edit `~/.config/chezmoi/chezmoi.toml`:
-
-```toml
-[data]
-    include_aliases = ["music"]   # pull in music.sh even on a work machine
-    exclude_aliases = ["tv"]      # skip tv.sh on a personal machine
-    include_configs = ["mpv"]     # deploy mpv config on a non-personal machine
-    exclude_configs = ["zed"]     # skip zed config on a developer machine
 ```
 
 Then `chezmoi apply`.
 
 ---
 
-## Repository Layout
+## Repository Structure
 
 ```
 dotfiles/
 ├── .chezmoi.toml.tmpl           # init wizard (prompts)
 ├── .chezmoidata/                # split data files:
-│   ├── profiles.yaml            #   trait definitions + presets
+│   ├── profiles.yaml            #   trait definitions
 │   ├── aliases.yaml             #   trait_aliases (delta per trait)
 │   ├── configs.yaml             #   trait_configs (delta per trait)
 │   └── packages.yaml            #   unified cross-platform packages
@@ -238,7 +278,6 @@ dotfiles/
 │   ├── run_onchange_install-uv.sh.tmpl         # uv on Linux
 │   ├── run_onchange_install-oh-my-zsh.sh.tmpl
 │   ├── run_onchange_install-python-tools.sh.tmpl
-│   ├── run_onchange_update-hosts.sh.tmpl       # /etc/hosts entries
 │   └── run_after_apply-snapshot.sh.tmpl
 │
 ├── dot_alias/                   # → ~/.alias/
@@ -274,19 +313,15 @@ dotfiles/
 
 ---
 
-## Included Tools
+## Trait Reference
 
-**Shell:** zsh + oh-my-zsh (`bars` theme) + Starship prompt
+What each trait deploys:
 
-**Editor:** Zed (primary) · Neovim/LazyVim · Vim
-
-**Terminal:** Ghostty
-
-**Git:** delta pager with custom `patilla` theme · git-lfs
-
-**CLI:** atuin · bat · btop · duf · eza · fastfetch · fd · fzf · gh · ripgrep · tmux · uv
-
-**Personal:** mpv · yt-dlp · ollama · streamlink · ffmpeg
+| | `base` | `gui` | `personal` | `work` |
+|-|--------|-------|------------|--------|
+| **aliases** | ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils | ghostty | music, tv, twitch (`personal+gui` only) | — |
+| **configs** | atuin, btop, claude, gh, git, nvim, starship, tmux | ghostty, zed | mpv, yt-dlp (`personal+gui` only) | — |
+| **packages** | atuin, bat, btop, chezmoi, duf, eza, fastfetch, fd, fzf, gcc, gh, git-delta, git-lfs, glow, gum, jq, n, neovim, prek, ripgrep, rtk, ruff, starship, tmux, uv, wget | ghostty, keepassxc, raycast, rectangle, sf-symbols, stats | cmatrix, ffmpeg, ffmpegthumbnailer, figlet, imagemagick, mpv, ollama, poppler, streamlink, yt-dlp, firefox, jordanbaird-ice, nextcloud, telegram, transmission, vlc, zen | zen |
 
 ---
 
