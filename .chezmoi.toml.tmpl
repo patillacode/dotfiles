@@ -9,7 +9,8 @@
 
 {{- /* ─── Purpose and GUI ──────────────────────────────── */ -}}
 {{- $purpose := promptStringOnce . "purpose" "Personal or work machine? (personal/work)" "personal" -}}
-{{- $hasGui := promptBoolOnce . "has_gui" "Does this machine have a GUI / screen" true -}}
+{{- $guiInput := promptStringOnce . "gui" "Does this machine have a GUI / screen? (y/n)" "y" -}}
+{{- $hasGui := eq $guiInput "y" -}}
 
 {{- /* ─── Profile assembly ─────────────────────────────── */ -}}
 {{- $profiles := list "base" -}}
