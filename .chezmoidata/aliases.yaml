@@ -5,4 +5,4 @@ trait_aliases:
   base:     [ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils]
   gui:      []
   personal: []
-  work:     []
+  work:     [nordhealth]
