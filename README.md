@@ -147,6 +147,15 @@ chezmoi add ~/.config/tool/config
 chezmoi apply
 ```
 
+### Check if a file is tracked
+
+```bash
+chezmoi status ~/.config/tool/config   # shows status code if tracked, nothing if not
+chezmoi managed | grep <filename>      # search across all tracked files
+```
+
+Status codes: `A` added · `M` modified · `D` deleted · `R` re-added.
+
 ### Modify an existing managed file
 
 Edits go to the source directory; `apply` deploys them.
