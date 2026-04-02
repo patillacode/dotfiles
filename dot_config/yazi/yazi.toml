@@ -12,7 +12,7 @@ play_audio = [
   { run = 'mpv "$@"',      orphan = true,  desc = "mpv" },
 ]
 view_pdf = [
-  { run = 'zathura "$@"',  orphan = true,  desc = "zathura" },
+  { run = 'bookokrat "$@"',  orphan = true,  desc = "bookokrat" },
 ]
 browse_csv = [
   { run = 'csvlens "$@"',  block = true,   desc = "csvlens" },

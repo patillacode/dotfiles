@@ -46,7 +46,7 @@ trait_packages:
     - { name: rectangle, type: cask }
     - { name: sf-symbols, type: cask }
     - { name: stats, type: cask }
-    - { name: zathura, type: cask, apt: zathura }
+    - { name: bookokrat, type: cask, apt: bookokrat }
   personal:
     - cmatrix
     - ffmpeg
