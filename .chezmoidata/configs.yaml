@@ -2,7 +2,7 @@
 # Each trait lists ONLY what it adds. No duplication.
 # The full list is resolved at template time by iterating active traits.
 trait_configs:
-  base:     [atuin, btop, claude, gh, git, nvim, starship, tmux]
+  base:     [atuin, btop, claude, gh, git, nvim, starship, tmux, yazi]
   gui:      [ghostty, zed]
   personal: [mpv, yt-dlp]
   work:     []

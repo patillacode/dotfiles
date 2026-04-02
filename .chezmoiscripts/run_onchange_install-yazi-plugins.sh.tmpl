@@ -1,0 +1,30 @@
+#!/bin/bash
+# run_onchange_install-yazi-plugins.sh — reruns when this file changes
+
+set -e
+
+if ! command -v ya &>/dev/null; then
+    echo "ya not found — skipping yazi plugin installation (install yazi first)"
+    exit 0
+fi
+
+PLUGINS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/yazi/plugins"
+
+# Remove any pre-existing plugin dirs so ya pkg add doesn't refuse to overwrite
+for plugin in git.yazi chmod.yazi smart-enter.yazi diff.yazi bookmarks.yazi compress.yazi; do
+    rm -rf "${PLUGINS_DIR:?}/$plugin"
+done
+
+echo "Installing yazi plugins..."
+
+# Official plugins (yazi-rs/plugins monorepo)
+ya pkg add yazi-rs/plugins:git
+ya pkg add yazi-rs/plugins:chmod
+ya pkg add yazi-rs/plugins:smart-enter
+ya pkg add yazi-rs/plugins:diff
+
+# Community plugins
+ya pkg add dedukun/bookmarks   # bookmark directories
+ya pkg add KKV9/compress       # create archives from selected files
+
+echo "Done."

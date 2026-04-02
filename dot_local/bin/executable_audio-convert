@@ -1,0 +1,44 @@
+#!/bin/bash
+# audio-convert — convert audio between formats
+
+usage() {
+    echo "Usage: audio-convert <input> [format]"
+    echo ""
+    echo "Convert audio to another format. Default output format: flac"
+    echo "Supported formats: flac, mp3, aac, ogg, wav, opus, m4a"
+    echo ""
+    echo "Example: audio-convert song.wav"
+    echo "         → song.flac"
+    echo "         audio-convert song.wav mp3"
+    echo "         → song.mp3"
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && { usage; exit 0; }
+
+if [ $# -lt 1 ]; then
+    usage
+    exit 1
+fi
+
+if ! command -v ffmpeg &>/dev/null; then
+    echo "Error: ffmpeg is not installed." >&2
+    exit 1
+fi
+
+input="$1"
+format="${2:-flac}"
+base="${input%.*}"
+output="${base}.${format}"
+
+if [ ! -f "$input" ]; then
+    echo "Not found: $input" >&2
+    exit 1
+fi
+
+if [ -f "$output" ]; then
+    echo "Already exists: $output" >&2
+    exit 1
+fi
+
+ffmpeg -i "$input" "$output"
+echo "Saved to: $output"

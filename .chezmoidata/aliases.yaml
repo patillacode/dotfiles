@@ -2,7 +2,7 @@
 # Each trait lists ONLY what it adds. No duplication.
 # The full list is resolved at template time by iterating active traits.
 trait_aliases:
-  base:     [ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils]
+  base:     [ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils, yazi]
   gui:      []
   personal: []
   work:     [nordhealth]

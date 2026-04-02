@@ -1,0 +1,34 @@
+[mgr]
+prepend_keymap = [
+  # Permanent delete (override default trash)
+  { on = "d", run = "remove --permanently", desc = "Delete permanently" },
+
+  # Smart enter — dirs enter, files open
+  { on = "l",       run = "plugin smart-enter", desc = "Enter dir or open file" },
+  { on = "<Enter>", run = "plugin smart-enter", desc = "Enter dir or open file" },
+
+  # Single-key shortcuts (fast, once memorised)
+  { on = "b", run = "shell 'bak \"$@\"' --block --confirm",        desc = "Backup" },
+  { on = "x", run = "shell 'extract \"$@\"' --block --confirm",    desc = "Extract archive" },
+  { on = "C", run = "shell 'vid-compress \"$1\"' --confirm",       desc = "Compress video" },
+  { on = "G", run = "shell 'vid2gif \"$1\"' --confirm",            desc = "Video to GIF" },
+  { on = "W", run = "shell 'audio-convert \"$1\" flac' --confirm", desc = "Audio to FLAC" },
+  { on = "e", run = "shell 'vim \"$1\"' --block",                  desc = "Edit in vim" },
+
+  # R prefix — press R to see this discovery menu
+  { on = ["R", "b"], run = "shell 'bak \"$@\"' --block --confirm",        desc = "Backup" },
+  { on = ["R", "x"], run = "shell 'extract \"$@\"' --block --confirm",    desc = "Extract archive" },
+  { on = ["R", "C"], run = "shell 'vid-compress \"$1\"' --confirm",       desc = "Compress video" },
+  { on = ["R", "G"], run = "shell 'vid2gif \"$1\"' --confirm",            desc = "Video to GIF" },
+  { on = ["R", "W"], run = "shell 'audio-convert \"$1\" flac' --confirm", desc = "Audio to FLAC" },
+  { on = ["R", "e"], run = "shell 'vim \"$1\"' --block",                  desc = "Edit in vim" },
+  { on = ["R", "c"], run = "plugin chmod",                                desc = "Chmod" },
+  { on = ["R", "d"], run = "plugin diff",                                 desc = "Diff files" },
+  { on = ["R", "z"], run = "plugin compress",                             desc = "Create archive" },
+  { on = ["R", "m"], run = "plugin bookmarks --args=save",                desc = "Bookmark here" },
+  { on = ["R", "j"], run = "plugin bookmarks --args=jump",                desc = "Jump to bookmark" },
+
+  # Git — extends the existing g* chord namespace
+  { on = ["g", "P"], run = "shell 'git pull' --interactive --confirm", desc = "Git pull" },
+  { on = ["g", "S"], run = "shell 'git status' --interactive",         desc = "Git status" },
+]

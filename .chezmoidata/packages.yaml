@@ -35,7 +35,10 @@ trait_packages:
     - starship
     - tmux
     - uv
+    - csvlens
+    - hexyl
     - wget
+    - yazi
   gui:
     - { name: ghostty, type: cask }
     - { name: keepassxc, type: cask, apt: keepassxc }
@@ -43,6 +46,7 @@ trait_packages:
     - { name: rectangle, type: cask }
     - { name: sf-symbols, type: cask }
     - { name: stats, type: cask }
+    - { name: zathura, type: cask, apt: zathura }
   personal:
     - cmatrix
     - ffmpeg
