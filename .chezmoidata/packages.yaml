@@ -12,6 +12,7 @@ trait_packages:
   base:
     - atuin
     - bat
+    - bookokrat
     - btop
     - chezmoi
     - duf
@@ -46,7 +47,6 @@ trait_packages:
     - { name: rectangle, type: cask }
     - { name: sf-symbols, type: cask }
     - { name: stats, type: cask }
-    - { name: bookokrat, type: cask, apt: bookokrat }
   personal:
     - cmatrix
     - ffmpeg
