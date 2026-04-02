@@ -235,6 +235,20 @@ dotfiles sync
 git -C ~/dotfiles pull && chezmoi apply
 ```
 
+### Switch yazi theme
+
+Yazi uses catppuccin themes. Two scripts live in `~/.config/yazi/themes/`:
+
+```bash
+# Download all catppuccin theme variants
+~/.config/yazi/themes/download-themes.sh
+
+# Switch to a specific theme (interactive or by name)
+~/.config/yazi/themes/switch-theme.sh
+```
+
+These scripts are yazi-specific and not part of the `dotfiles` CLI.
+
 ### Switch Starship theme
 
 The prompt theme is set in `chezmoi.toml` and re-applied by chezmoi.
@@ -304,6 +318,8 @@ dotfiles/
 │   ├── ghostty/                 # config.tmpl
 │   ├── starship/                # 13 .toml themes
 │   ├── zed/                     # settings.json.tmpl
+│   ├── yazi/
+│   │   └── themes/              # catppuccin theme files + executable_download-themes.sh / executable_switch-theme.sh
 │   └── atuin/ btop/ gh/ mpv/ nvim/ tmux/ yt-dlp/
 ├── dot_local/bin/               # → ~/.local/bin/ (all executable)
 │   ├── executable_dotfiles      # CLI wrapper for chezmoi
