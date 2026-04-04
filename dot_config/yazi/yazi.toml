@@ -1,25 +1,41 @@
 [opener]
+# Single-entry openers — used by direct keybindings (no picker shown)
+edit_terminal = [
+  { run = 'nvim "$@"', block = true, desc = "nvim" },
+]
+edit_gui = [
+  { run = 'zed "$@"', desc = "Zed" },
+]
+# Multi-entry opener — used by open rules so Enter/o shows a picker
 edit = [
-  { run = 'vim "$@"',      block = true,   desc = "vim" },
-  { run = 'nvim "$@"',     block = true,   desc = "nvim" },
-  { run = 'zed "$@"',                      desc = "Zed" },
+  { run = 'nvim "$@"', block = true, desc = "nvim" },
+  { run = 'zed "$@"',              desc = "Zed" },
 ]
 play = [
-  { run = 'mpv "$@"',      orphan = true,  desc = "mpv" },
-  { run = 'vlc "$@"',      orphan = true,  desc = "VLC" },
+  { run = 'mpv-yazi "$@"',      orphan = true, desc = "mpv (toggle)" },
+  { run = 'vlc "$@"',           orphan = true, desc = "VLC" },
 ]
 play_audio = [
-  { run = 'mpv "$@"',      orphan = true,  desc = "mpv" },
+  { run = 'mpv-yazi "$@"',      orphan = true, desc = "mpv (toggle)" },
 ]
 view_pdf = [
-  { run = 'bookokrat "$@"',  orphan = true,  desc = "bookokrat" },
+  { run = 'bookokrat "$@"',     orphan = true, desc = "bookokrat" },
 ]
 browse_csv = [
-  { run = 'csvlens "$@"',  block = true,   desc = "csvlens" },
-  { run = 'vim "$@"',      block = true,   desc = "vim" },
+  { run = 'csvlens "$@"', block = true, desc = "csvlens" },
+  { run = 'nvim "$@"',    block = true, desc = "nvim" },
 ]
 extract_arc = [
-  { run = 'extract "$@"',  block = true,   desc = "extract" },
+  { run = 'extract "$@"',       block = true,  desc = "extract" },
+]
+compress_video = [
+  { run = 'vid-compress "$@"',  block = true,  desc = "Compress video" },
+]
+to_gif = [
+  { run = 'vid2gif-auto "$@"',  block = true,  desc = "Video → GIF" },
+]
+to_flac = [
+  { run = 'audio-convert "$@"', block = true,  desc = "Audio → FLAC" },
 ]
 
 [open]
@@ -28,8 +44,8 @@ rules = [
   { mime = "text/*",                        use = "edit" },
   { mime = "application/json",              use = "edit" },
   { mime = "application/xml",               use = "edit" },
-  { mime = "video/*",                       use = "play" },
-  { mime = "audio/*",                       use = "play_audio" },
+  { mime = "video/*",                       use = ["play", "compress_video", "to_gif"] },
+  { mime = "audio/*",                       use = ["play_audio", "to_flac"] },
   { mime = "application/pdf",               use = "view_pdf" },
   { mime = "application/zip",               use = "extract_arc" },
   { mime = "application/x-tar",             use = "extract_arc" },

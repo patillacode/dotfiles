@@ -235,6 +235,32 @@ dotfiles sync
 git -C ~/dotfiles pull && chezmoi apply
 ```
 
+### Yazi keybindings
+
+Press `<Space>` inside yazi to open a filterable keybinding overlay.
+
+Key highlights:
+
+| Key | Action |
+|-----|--------|
+| `<Space>` | Show all keybindings |
+| `e` / `E` | Edit in `$EDITOR` / Zed |
+| `d` / `D` | Trash / permanent delete |
+| `v` / `V` | Toggle select / select all |
+| `gg` / `G` | Top / bottom of list |
+| `<C-u>` / `<C-d>` | Scroll half-page up/down |
+| `{` / `}` | History back/forward |
+| `g.` / `g/` | Go to home / root |
+| `gs` / `gp` | Git status / pull |
+| `<C-t>` / `q` | New tab / close tab |
+| `[` / `]` | Prev / next tab |
+| `R,G` / `R,W` | Video → GIF / Audio → FLAC |
+| `R,m` / `R,j` | Bookmark here / jump to bookmark |
+
+**Media toggle:** opening an audio or video file uses `mpv-yazi` — pressing the same file again stops playback; pressing a different file replaces it. Requires `socat` and `jq`.
+
+**Opener picker:** pressing `<Enter>` on a video shows a picker (play / compress / GIF); on audio (play / FLAC). Single-key shortcuts bypass the picker for speed.
+
 ### Switch yazi theme
 
 Yazi uses catppuccin themes. Two scripts live in `~/.config/yazi/themes/`:
@@ -309,6 +335,7 @@ dotfiles/
 │   ├── run_onchange_install-uv.sh.tmpl         # uv on Linux
 │   ├── run_onchange_install-oh-my-zsh.sh.tmpl
 │   ├── run_onchange_install-python-tools.sh.tmpl
+│   ├── run_onchange_install-yazi-plugins.sh.tmpl  # ya pkg add
 │   └── run_after_apply-snapshot.sh.tmpl
 │
 ├── dot_alias/                   # → ~/.alias/
@@ -328,9 +355,11 @@ dotfiles/
 │   ├── executable_json-fmt      # pretty-print JSON (jq wrapper)
 │   ├── executable_myip          # show public + local IP
 │   ├── executable_port-check    # check if host:port is open
+│   ├── executable_mpv-yazi      # toggle-play via mpv IPC (used by yazi)
 │   ├── executable_vid-compress  # shrink video file size
 │   ├── executable_vid-convert   # convert video formats
-│   ├── executable_vid2gif       # convert video to GIF
+│   ├── executable_vid2gif       # convert video to GIF (requires explicit output name)
+│   ├── executable_vid2gif-auto  # vid2gif wrapper with auto output name (used by yazi)
 │   ├── executable_ffmpeg-trim   # trim a video clip
 │   ├── executable_img-convert   # convert image formats
 │   ├── executable_screen-cap    # screen recording
@@ -354,7 +383,7 @@ What each trait deploys:
 |-|--------|-------|------------|--------|
 | **aliases** | ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils | ghostty | music, tv, twitch (`personal+gui` only) | — |
 | **configs** | atuin, btop, claude, gh, git, nvim, starship, tmux | ghostty, zed | mpv, yt-dlp (`personal+gui` only) | — |
-| **packages** | atuin, bat, btop, chezmoi, duf, eza, fastfetch, fd, fzf, gcc, gh, git-delta, git-lfs, glow, gum, jq, n, neovim, prek, ripgrep, rtk, ruff, starship, tmux, uv, wget | ghostty, keepassxc, raycast, rectangle, sf-symbols, stats | cmatrix, ffmpeg, ffmpegthumbnailer, figlet, imagemagick, mpv, ollama, poppler, streamlink, yt-dlp, firefox, jordanbaird-ice, nextcloud, telegram, transmission, vlc, zen | zen |
+| **packages** | atuin, bat, btop, chezmoi, duf, eza, fastfetch, fd, fzf, gcc, gh, git-delta, git-lfs, glow, gum, jq, n, neovim, prek, ripgrep, rtk, ruff, starship, tmux, uv, wget | ghostty, keepassxc, raycast, rectangle, sf-symbols, stats | cmatrix, ffmpeg, ffmpegthumbnailer, figlet, imagemagick, mpv, ollama, poppler, socat, streamlink, yt-dlp, firefox, jordanbaird-ice, nextcloud, telegram, transmission, vlc, zen | zen |
 
 ---
 
@@ -400,9 +429,11 @@ All scripts are in `~/.local/bin/` (on `$PATH`), available on every machine. Run
 
 | Command | Description |
 |---------|-------------|
+| `mpv-yazi <file>` | Toggle-play via mpv IPC — same file stops, new file replaces |
 | `vid-convert <in> <out>` | Convert video formats (tries stream copy first) |
 | `vid-compress <in> [out]` | Shrink video keeping reasonable quality |
-| `vid2gif [-s width] <in> <out>` | Convert video to GIF |
+| `vid2gif [-s width] <in> <out>` | Convert video to GIF (explicit output name required) |
+| `vid2gif-auto <in>` | Convert video to GIF (auto-names output as `<in>.gif`) |
 | `ffmpeg-trim <in> <start> <end>` | Trim a video clip |
 | `img-convert` | Convert image formats (macOS sips) |
 | `screen-cap` | Screen recording (macOS) |

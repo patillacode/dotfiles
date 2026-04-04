@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# mpv-yazi — toggle-play via mpv IPC socket
+#
+# Usage:
+#   mpv-yazi <file>   Play file (same file → stop; different file → replace)
+#   mpv-yazi          Stop current playback
+#
+# Dependencies: socat, jq
+
+SOCKET=/tmp/mpv-yazi.sock
+CURRENT_FILE=/tmp/mpv-yazi-current
+FILE="$1"
+
+stop_mpv() {
+  printf '{"command":["quit"]}\n' | socat - "$SOCKET" 2>/dev/null
+  rm -f "$CURRENT_FILE"
+}
+
+# No argument — stop only
+if [ -z "$FILE" ]; then
+  [ -S "$SOCKET" ] && stop_mpv
+  exit 0
+fi
+
+if [ -S "$SOCKET" ]; then
+  CURRENT=$(printf '{"command":["get_property","path"]}\n' \
+    | socat - "$SOCKET" 2>/dev/null \
+    | jq -r '.data // empty' 2>/dev/null)
+
+  if [ "$CURRENT" = "$FILE" ]; then
+    stop_mpv
+    exit 0
+  else
+    stop_mpv
+    sleep 0.15
+  fi
+fi
+
+printf '%s\n' "$(basename "$FILE")" > "$CURRENT_FILE"
+mpv --no-terminal --input-ipc-server="$SOCKET" "$FILE" &

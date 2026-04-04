@@ -1,34 +1,70 @@
 [mgr]
 prepend_keymap = [
-  # Permanent delete (override default trash)
-  { on = "d", run = "remove --permanently", desc = "Delete permanently" },
+  # ── Navigation ─────────────────────────────────────────────────────────────
+  { on = "G",            run = "arrow 99999",               desc = "Go to bottom" },
+  { on = "<C-d>",        run = "arrow 10",                   desc = "Scroll down half-page" },
+  { on = "<C-u>",        run = "arrow -10",                  desc = "Scroll up half-page" },
+  { on = "{",            run = "back",                       desc = "Go back in history" },
+  { on = "}",            run = "forward",                    desc = "Go forward in history" },
 
-  # Smart enter — dirs enter, files open
-  { on = "l",       run = "plugin smart-enter", desc = "Enter dir or open file" },
-  { on = "<Enter>", run = "plugin smart-enter", desc = "Enter dir or open file" },
+  # g prefix — navigation + git (which-key popup shows on g)
+  { on = ["g", "g"],     run = "arrow -99999",               desc = "Go to top" },
+  { on = ["g", "."],     run = "cd ~",                       desc = "Go to home" },
+  { on = ["g", "/"],     run = "cd /",                       desc = "Go to root" },
+  { on = ["g", "s"],     run = "shell 'git status' --interactive",         desc = "Git status" },
+  { on = ["g", "p"],     run = "shell 'git pull' --interactive --confirm", desc = "Git pull" },
 
-  # Single-key shortcuts (fast, once memorised)
-  { on = "b", run = "shell 'bak \"$@\"' --block --confirm",        desc = "Backup" },
-  { on = "x", run = "shell 'extract \"$@\"' --block --confirm",    desc = "Extract archive" },
-  { on = "C", run = "shell 'vid-compress \"$1\"' --confirm",       desc = "Compress video" },
-  { on = "G", run = "shell 'vid2gif \"$1\"' --confirm",            desc = "Video to GIF" },
-  { on = "W", run = "shell 'audio-convert \"$1\" flac' --confirm", desc = "Audio to FLAC" },
-  { on = "e", run = "shell 'vim \"$1\"' --block",                  desc = "Edit in vim" },
+  # ── Open / Edit ────────────────────────────────────────────────────────────
+  { on = "l",            run = "plugin smart-enter",         desc = "Enter dir / open file" },
+  { on = "<Enter>",      run = "plugin smart-enter",         desc = "Enter dir / open file" },
+  { on = "o",            run = "open --interactive",         desc = "Open with... (picker)" },
+  { on = "e",            run = "open --with edit_terminal",  desc = "Edit in nvim" },
+  { on = "E",            run = "open --with edit_gui",       desc = "Open in Zed" },
+  { on = "i",            run = "spot",                       desc = "File info" },
+  { on = "<C-k>",        run = "shell 'mpv-yazi'",           desc = "Stop mpv" },
 
-  # R prefix — press R to see this discovery menu
-  { on = ["R", "b"], run = "shell 'bak \"$@\"' --block --confirm",        desc = "Backup" },
-  { on = ["R", "x"], run = "shell 'extract \"$@\"' --block --confirm",    desc = "Extract archive" },
-  { on = ["R", "C"], run = "shell 'vid-compress \"$1\"' --confirm",       desc = "Compress video" },
-  { on = ["R", "G"], run = "shell 'vid2gif \"$1\"' --confirm",            desc = "Video to GIF" },
-  { on = ["R", "W"], run = "shell 'audio-convert \"$1\" flac' --confirm", desc = "Audio to FLAC" },
-  { on = ["R", "e"], run = "shell 'vim \"$1\"' --block",                  desc = "Edit in vim" },
-  { on = ["R", "c"], run = "plugin chmod",                                desc = "Chmod" },
-  { on = ["R", "d"], run = "plugin diff",                                 desc = "Diff files" },
-  { on = ["R", "z"], run = "plugin compress",                             desc = "Create archive" },
-  { on = ["R", "m"], run = "plugin bookmarks --args=save",                desc = "Bookmark here" },
-  { on = ["R", "j"], run = "plugin bookmarks --args=jump",                desc = "Jump to bookmark" },
+  # ── File ops ───────────────────────────────────────────────────────────────
+  { on = "b",            run = "shell 'bak \"$@\"' --block --confirm",            desc = "Backup" },
+  { on = "x",            run = "shell 'extract \"$@\"' --block --confirm",        desc = "Extract archive" },
+  { on = "C",            run = "shell 'vid-compress \"$1\"' --confirm",           desc = "Compress video" },
 
-  # Git — extends the existing g* chord namespace
-  { on = ["g", "P"], run = "shell 'git pull' --interactive --confirm", desc = "Git pull" },
-  { on = ["g", "S"], run = "shell 'git status' --interactive",         desc = "Git status" },
+  # ── Selection ──────────────────────────────────────────────────────────────
+  # { on = "<Space>",      run = "toggle",                     desc = "Toggle select" },
+  { on = "A",            run = "toggle_all",                 desc = "Select all" },
+
+  # ── Tabs ───────────────────────────────────────────────────────────────────
+  { on = "<C-t>",        run = "tab_create",                 desc = "New tab" },
+  { on = "<C-w>",        run = "tab_close",                  desc = "Close tab" },
+  { on = "q",            run = "quit",                       desc = "Quit yazi" },
+  { on = "[",            run = "tab_switch -1 --relative",   desc = "Prev tab" },
+  { on = "]",            run = "tab_switch 1 --relative",    desc = "Next tab" },
+
+  # ── Tab prefix — custom cheatsheet (which-key popup shows on Tab) ──────────
+  # Press Tab to see this menu. Single-key shortcuts above still work.
+  { on = ["<Tab>", "e"], run = "open --with edit_terminal",                          desc = "Edit (nvim)" },
+  { on = ["<Tab>", "E"], run = "open --with edit_gui",                               desc = "Open in Zed" },
+  { on = ["<Tab>", "o"], run = "open --interactive",                                 desc = "Open with..." },
+  { on = ["<Tab>", "k"], run = "shell 'mpv-yazi'",                                   desc = "Stop mpv" },
+  { on = ["<Tab>", "d"], run = "trash",                                              desc = "Trash" },
+  { on = ["<Tab>", "D"], run = "remove",                                             desc = "Delete permanently" },
+  { on = ["<Tab>", "b"], run = "shell 'bak \"$@\"' --block --confirm",              desc = "Backup" },
+  { on = ["<Tab>", "x"], run = "shell 'extract \"$@\"' --block --confirm",          desc = "Extract archive" },
+  { on = ["<Tab>", "C"], run = "shell 'vid-compress \"$1\"' --confirm",             desc = "Compress video" },
+  { on = ["<Tab>", "G"], run = "shell 'vid2gif-auto \"$1\"' --confirm",             desc = "Video → GIF" },
+  { on = ["<Tab>", "W"], run = "shell 'audio-convert \"$1\"' --block --confirm",    desc = "Audio → FLAC" },
+  { on = ["<Tab>", "s"], run = "shell 'git status' --interactive",                  desc = "Git status" },
+  { on = ["<Tab>", "p"], run = "shell 'git pull' --interactive --confirm",          desc = "Git pull" },
+  { on = ["<Tab>", "c"], run = "plugin chmod",                                       desc = "Chmod" },
+  { on = ["<Tab>", "z"], run = "plugin compress",                                    desc = "Create archive" },
+  { on = ["<Tab>", "m"], run = "plugin bookmarks --args=save",                       desc = "Bookmark here" },
+  { on = ["<Tab>", "j"], run = "plugin bookmarks --args=jump",                       desc = "Jump to bookmark" },
+
+  # ── R prefix — secondary / file-type ops (which-key popup shows on R) ──────
+  { on = ["R", "c"],     run = "plugin chmod",                                            desc = "Chmod" },
+  { on = ["R", "d"],     run = "plugin diff",                                             desc = "Diff files" },
+  { on = ["R", "z"],     run = "plugin compress",                                         desc = "Create archive" },
+  { on = ["R", "m"],     run = "plugin bookmarks --args=save",                           desc = "Bookmark here" },
+  { on = ["R", "j"],     run = "plugin bookmarks --args=jump",                           desc = "Jump to bookmark" },
+  { on = ["R", "G"],     run = "shell 'vid2gif-auto \"$1\"' --confirm",                  desc = "Video → GIF" },
+  { on = ["R", "W"],     run = "shell 'audio-convert \"$1\"' --block --confirm",         desc = "Audio → FLAC" },
 ]

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# vid2gif-auto — convert video to GIF with auto-generated output name
+# Wraps vid2gif, deriving output path from input filename.
+# Usage: vid2gif-auto <input> [-s <scale>]
+
+input="$1"
+shift
+
+if [ -z "$input" ]; then
+  echo "Usage: vid2gif-auto <input> [-s <scale>]" >&2
+  exit 1
+fi
+
+output="${input%.*}.gif"
+vid2gif "$@" "$input" "$output"
