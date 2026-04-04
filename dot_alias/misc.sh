@@ -13,3 +13,6 @@ alias ludo='slot-machine' # this is a custom command under ~/projects/slot-machi
 alias mm='cmatrix -b -C magenta -u 9'
 alias sudoku='sku'        # this is a go command under ~/go/bin
 alias wordle='clidle'     # this is a go command under ~/go/bin
+
+alias radio='mpv https://radio.patilla.es/stream'
+alias radio-totoro='mpv https://radio.patilla.es/stream'
