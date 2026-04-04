@@ -25,7 +25,7 @@ prepend_keymap = [
 
   # ── File ops ───────────────────────────────────────────────────────────────
   { on = "b",            run = "shell 'bak \"$@\"' --block --confirm",            desc = "Backup" },
-  { on = "x",            run = "shell 'extract \"$@\"' --block --confirm",        desc = "Extract archive" },
+  { on = "X",            run = "shell 'extract \"$@\"' --block --confirm",        desc = "Extract archive" },
   { on = "C",            run = "shell 'vid-compress \"$1\"' --confirm",           desc = "Compress video" },
 
   # ── Selection ──────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ prepend_keymap = [
   { on = ["<Tab>", "d"], run = "trash",                                              desc = "Trash" },
   { on = ["<Tab>", "D"], run = "remove",                                             desc = "Delete permanently" },
   { on = ["<Tab>", "b"], run = "shell 'bak \"$@\"' --block --confirm",              desc = "Backup" },
-  { on = ["<Tab>", "x"], run = "shell 'extract \"$@\"' --block --confirm",          desc = "Extract archive" },
+  { on = ["<Tab>", "X"], run = "shell 'extract \"$@\"' --block --confirm",          desc = "Extract archive" },
   { on = ["<Tab>", "C"], run = "shell 'vid-compress \"$1\"' --confirm",             desc = "Compress video" },
   { on = ["<Tab>", "G"], run = "shell 'vid2gif-auto \"$1\"' --confirm",             desc = "Video → GIF" },
   { on = ["<Tab>", "W"], run = "shell 'audio-convert \"$1\"' --block --confirm",    desc = "Audio → FLAC" },
