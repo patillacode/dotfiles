@@ -8,3 +8,4 @@ alias ttf="cd $HOME/projects/topstopstops-front"
 alias cup-check='cd $HOME/services/cup && just check && cd -'
 alias cup-notify='cd $HOME/services/cup && just notify'
 alias cup='cup-check'
+# cup-update: interactive TUI for selectively updating outdated images (see ~/.local/bin/cup-update)
