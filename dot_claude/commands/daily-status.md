@@ -1,7 +1,11 @@
 Generate my standup talking points for today's 2-minute live standup.
 
 Steps:
-1. Using glab CLI, run `glab mr list --reviewer=@me` from ~/projects/nordhealth/provetcloud to get MRs waiting for my review. If the command fails, skip this step silently.
+1. Using glab CLI from ~/projects/nordhealth/provetcloud, get MRs that actually need my review:
+   a. Run `glab mr list --reviewer=@me -F json` to get MR iids
+   b. For each MR, call `glab api "projects/:id/merge_requests/<iid>/reviewers"` and find the entry where `user.username == "gonz-nh"`
+   c. Only include MRs where my reviewer `state` is `"unreviewed"` — skip `"approved"` and `"requested_changes"` (those are waiting on the author, not me)
+   If any glab command fails, skip this step silently.
 2. Use the Linear MCP to query my assigned issues:
    - Issues with status "In Progress" or "In Review"
    - Issues with status "Done" or "Completed" that were updated in the last 2 days
