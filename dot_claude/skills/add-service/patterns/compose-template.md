@@ -32,6 +32,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "cup.notify=true"
+      - "kuma.<service>.http.name=<Service Name>"
+      - "kuma.<service>.http.url=http://192.168.1.2:<port>"
     logging:
       driver: "json-file"
       options:
@@ -103,6 +107,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "cup.notify=true"
+      - "kuma.<service>.http.name=<Service Name>"
+      - "kuma.<service>.http.url=http://192.168.1.2:<port>"
     logging:
       driver: "json-file"
       options:
@@ -131,8 +139,16 @@ services:
       - .env
     volumes:
       - /mnt/services/<service>/files:/path/in/container/files
-    # Healthcheck removed — minimal container has no curl/wget
-    # Service health can be monitored via Homepage dashboard
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost <port> || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      - "cup.notify=true"
+      - "kuma.<service>.http.name=<Service Name>"
+      - "kuma.<service>.http.url=http://192.168.1.2:<port>"
     logging:
       driver: "json-file"
       options:
@@ -180,6 +196,16 @@ services:
     volumes:
       - /home/dvitto/services/<service>/config:/config
       - /mnt/services/<service>/data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:<internal-port>/<health-path>"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "cup.notify=true"
+      - "kuma.<service>.http.name=<Service Name>"
+      - "kuma.<service>.http.url=http://192.168.1.2:<port>"
     networks:
       - default
       - arr-network
@@ -212,6 +238,16 @@ services:
     volumes:
       - /home/dvitto/services/<service>/config:/config
       - /mnt/services/<service>/data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:<internal-port>/<health-path>"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "cup.notify=true"
+      - "kuma.<service>.http.name=<Service Name>"
+      - "kuma.<service>.http.url=http://127.0.0.1:<port>"
     logging:
       driver: "json-file"
       options:
@@ -219,13 +255,16 @@ services:
         max-file: "3"
 ```
 
-Note: `ports:` is incompatible with `network_mode: host` — remove the `ports` section entirely.
+Note: `ports:` is incompatible with `network_mode: host`. Kuma URL uses `127.0.0.1` (not `192.168.1.2`) for host-network services. — remove the `ports` section entirely.
 
 ---
 
 ## Key Annotations
 
-- **`restart: unless-stopped`** — always this, never `always` or `on-failure`
+- **`restart: unless-stopped`** — always this, never `always` or `on-failure`. `restart: always` breaks Sablier.
+- **Healthcheck mandatory** — every app container must have one. Use TCP fallback (`nc -z localhost <port>`) when no HTTP endpoint is available.
+- **Labels block** — on app container only. Never on sidecars (db, redis, mariadb) or locally-built images.
+- **Kuma URL** — always `http://192.168.1.2:<port>`. Exception: `network_mode: host` → use `http://127.0.0.1:<port>`.
 - **Logging block** — every container, no exceptions (app + all sidecars)
 - **Bind mounts only** — no `volumes:` section at the top level with named volumes
 - **`env_file: - .env`** on the app container for secrets and config

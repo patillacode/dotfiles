@@ -48,10 +48,20 @@ default:
 up:
     docker compose up -d
 
-# Stop services
+# Stop services (removes containers)
 [group('service')]
 down:
     docker compose down
+
+# Stop containers without removing them (Sablier-compatible)
+[group('service')]
+stop:
+    docker compose stop
+
+# Start previously stopped containers
+[group('service')]
+start:
+    docker compose start
 
 # Restart services
 [group('service')]
@@ -69,7 +79,7 @@ logs *args:
     docker compose logs -f {{args}}
 ```
 
-All five recipes are always present. Do not add, remove, or rename them. Do not change the group names.
+All seven recipes are always present. Do not add, remove, or rename them. Do not change the group names.
 
 ---
 
@@ -110,5 +120,5 @@ run *args:
 
 The canonical implementation is at `/home/dvitto/services/vikunja/`:
 - `justfile` — root with both imports
-- `just/service.just` — exact 5-recipe baseline
+- `just/service.just` — exact 7-recipe baseline
 - `just/cli.just` — full CLI wrapper with multiple grouped recipes

@@ -12,7 +12,8 @@ You are helping the user add a new dockerized service to their home server. Foll
 
 These rules are absolute — no exceptions:
 
-- `restart: unless-stopped` — never `always`, never `on-failure`
+- `restart: unless-stopped` — never `always`, never `on-failure`. **`restart: always` is incompatible with Sablier** — it causes containers to restart themselves immediately after Sablier stops them, breaking on-demand wake-up.
+- **Every app container MUST have a healthcheck** — no exceptions. If the image has no HTTP endpoint or lacks curl/wget, use a TCP port fallback: `["CMD-SHELL", "nc -z localhost <port> || exit 1"]`. Sidecar images (postgres, redis, mariadb) already include standard healthchecks in their templates.
 - Every container gets the logging block:
   ```yaml
   logging:
@@ -78,11 +79,14 @@ Ask:
 ### Round 3 — Integration
 
 Ask:
-1. **Healthcheck** — propose the command from docs. If image has no curl/wget, propose commenting it out entirely (like vikunja pattern). Ask user to confirm.
+1. **Healthcheck** — propose the command from docs. If the image has no HTTP endpoint or lacks curl/wget, propose the TCP fallback: `["CMD-SHELL", "nc -z localhost <port> || exit 1"]`. A healthcheck is mandatory — never omit it.
 2. **Homepage** — which category? (Productivity / Infrastructure / Media Center / Media Management / Downloads / Production Sites / Personal Projects — or new category?) Does a Homepage widget exist? What icon? (`<service>.png` / `si-<service>.svg` / `mdi-...` / full URL)
 3. **Backup script needed?** — yes/no
 4. **Nginx subdomain?** — will it get a `<service>.patilla.es` domain via NPM? What's the subdomain?
-5. **Uptime Kuma monitor type** — AutoKuma labels will be added to compose.yml so the monitor is created automatically. Confirm type: `http` (default for web UIs) / `port` (TCP port check for non-HTTP or auth-gated services) / skip (for background workers with no port). Note: TCP type in labels is `port`, not `tcp`. For HTTP monitors, always use the public HTTPS subdomain URL (e.g. `https://<service>.patilla.es`), not the local IP:port.
+5. **Uptime Kuma monitor type** — AutoKuma labels will be added to compose.yml so the monitor is created automatically. Confirm type: `http` (default for web UIs) / `port` (TCP port check for non-HTTP or auth-gated services) / skip (for background workers with no port). Note: TCP type in labels is `port`, not `tcp`. Always use the internal IP URL: `http://192.168.1.2:<port>`. Exception: `network_mode: host` services may need `http://127.0.0.1:<port>`.
+6. **Sablier (on-demand wake-up)?** — Should this service be stopped when idle and woken on first request? If yes, see the Sablier automation steps in Phase 4.
+
+   **Never use Sablier for:** DNS (adguard), reverse proxy (nginx), monitoring (kuma, dozzle, beszel), VPN (wireguard), core infra (homepage, syncthing, atuin, cup).
 
 ---
 
@@ -118,19 +122,20 @@ See `patterns/homepage-categories.md` for category locations and YAML format.
 - Use `env_file: - .env` for app secrets/config. Use inline `environment:` for sidecar credentials referencing `.env` vars.
 - Sidecars named `<service>-db`, `<service>-redis`
 - App depends on sidecars with `condition: service_healthy` when sidecars have healthchecks
-- Healthcheck on app container if image has curl/wget; omit with comment if not
-- Add AutoKuma labels to the main app container (not sidecars) if a monitor is wanted:
-  ```yaml
-  labels:
-    - "kuma.<service-id>.http.name=Service Name"
-    - "kuma.<service-id>.http.url=https://<service>.patilla.es"
-  ```
-  **Important:** Always use the public HTTPS subdomain URL (e.g. `https://zipline.patilla.es`), NOT the local IP:port (e.g. `http://192.168.1.2:<port>`). All services have a public subdomain via NPM and the monitor should check the public URL.
-- Add cup label to the main app container (not sidecars, not locally-built images):
+- Healthcheck on every app container — mandatory. Use TCP fallback (`nc -z localhost <port>`) if no HTTP endpoint available.
+- Add labels to the main app container (not sidecars). Combine cup and kuma labels in one block:
   ```yaml
   labels:
     - "cup.notify=true"
+    - "kuma.<service>.http.name=<Service Name>"
+    - "kuma.<service>.http.url=http://192.168.1.2:<port>"
   ```
+  Always use the internal IP URL. Exception: `network_mode: host` services use `http://127.0.0.1:<port>`.
+
+  **Never add `cup.notify=true` to:**
+  - Sidecar containers (db, redis, mariadb) — not in a public registry
+  - Locally-built images (`build: .`) — cup can't check them
+  - Nextcloud AIO mastercontainer — manages its own updates
 - Compress flag is NOT needed in logging block — Docker daemon config handles it globally
 
 ### .env rules
@@ -177,3 +182,9 @@ After all files are written, output a clean checklist:
 Only include lines that are relevant to this specific service.
 
 **IMPORTANT — logrotate limitation:** Claude cannot edit `/etc/logrotate.d/backup-logs` directly (requires sudo). Always output the exact `sudo sed` command the user needs to run manually. Never attempt to write or edit that file.
+
+---
+
+## Sablier Automation (run only if user said yes in Round 3 Q6)
+
+After `docker compose up -d`, use the `/sablier add <service>` skill to handle the full Sablier integration — it covers NPM config, kuma label update, homepage icon check, container stop, and cleanup instructions.
