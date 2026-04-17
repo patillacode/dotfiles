@@ -83,7 +83,9 @@ Ask:
 2. **Homepage** — which category? (Productivity / Infrastructure / Media Center / Media Management / Downloads / Production Sites / Personal Projects — or new category?) Does a Homepage widget exist? What icon? (`<service>.png` / `si-<service>.svg` / `mdi-...` / full URL)
 3. **Backup script needed?** — yes/no
 4. **Nginx subdomain?** — will it get a `<service>.patilla.es` domain via NPM? What's the subdomain?
-5. **Uptime Kuma monitor type** — AutoKuma labels will be added to compose.yml so the monitor is created automatically. Confirm type: `http` (default for web UIs) / `port` (TCP port check for non-HTTP or auth-gated services) / skip (for background workers with no port). Note: TCP type in labels is `port`, not `tcp`. Always use the internal IP URL: `http://192.168.1.2:<port>`. Exception: `network_mode: host` services may need `http://127.0.0.1:<port>`.
+5. **Uptime Kuma monitor** — AutoKuma labels will be added to compose.yml so the monitor is created automatically. Confirm:
+   - **Type**: `http` (default for web UIs) / `port` (TCP port check for non-HTTP or auth-gated services) / skip (background workers with no port). Note: TCP type in labels is `port`, not `tcp`.
+   - **Category tag**: which of `infrastructure` / `monitoring` / `media` / `apps` / `dev` / `dashboards` / `misc` fits this service?
 6. **Sablier (on-demand wake-up)?** — Should this service be stopped when idle and woken on first request? If yes, see the Sablier automation steps in Phase 4.
 
    **Never use Sablier for:** DNS (adguard), reverse proxy (nginx), monitoring (kuma, dozzle, beszel), VPN (wireguard), core infra (homepage, syncthing, atuin, cup).
@@ -129,8 +131,16 @@ See `patterns/homepage-categories.md` for category locations and YAML format.
     - "cup.notify=true"
     - "kuma.<service>.http.name=<Service Name>"
     - "kuma.<service>.http.url=http://192.168.1.2:<port>"
+    - "kuma.<service>.http.tag_names=[{\"name\":\"<category>\"}]"
   ```
   Always use the internal IP URL. Exception: `network_mode: host` services use `http://127.0.0.1:<port>`.
+
+  **Tag categories** (pick one): `infrastructure` / `monitoring` / `media` / `apps` / `dev` / `dashboards` / `misc`
+
+  **Important autokuma label rules:**
+  - Use `tag_names` (not `tags`) — autokuma resolves this against its internally managed tag entities
+  - Monitor type in labels is `port` for TCP checks (never `tcp`)
+  - Tags are defined via labels on the autokuma container itself — no manual setup needed
 
   **Never add `cup.notify=true` to:**
   - Sidecar containers (db, redis, mariadb) — not in a public registry

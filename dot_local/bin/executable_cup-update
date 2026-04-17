@@ -9,14 +9,9 @@ BOLD=$'\e[1m'
 DIM=$'\e[2m'
 CYAN=$'\e[0;36m'
 BCYAN=$'\e[1;36m'
-GREEN=$'\e[0;32m'
 BGREEN=$'\e[1;32m'
-YELLOW=$'\e[0;33m'
 BYELLOW=$'\e[1;33m'
-RED=$'\e[0;31m'
 BRED=$'\e[1;31m'
-BLUE=$'\e[0;34m'
-MAGENTA=$'\e[0;35m'
 NC=$'\e[0m'
 
 _header()  { echo -e "${BOLD}${BCYAN}$1${NC}"; }
@@ -26,7 +21,6 @@ _warn()    { echo -e "  ${BYELLOW}⚠${NC}  $1"; }
 _fail()    { echo -e "  ${BRED}✗${NC} $1"; }
 _item()    { printf "  ${CYAN}%-24s${NC} %s\n" "$1" "$2"; }
 _dim()     { echo -e "  ${DIM}$1${NC}"; }
-_cmd()     { echo -e "      ${DIM}\$${NC} ${CYAN}$1${NC}"; }
 
 # ─── Temp dir ───────────────────────────────────────────────
 _TMPDIR=$(mktemp -d)
@@ -41,14 +35,13 @@ usage() {
     _section "USAGE"
     echo "  cup-update"
     echo ""
-    _section "ACTIONS"
-    _item "Pull only"       "docker pull <image>"
-    _item "Pull + Restart"  "docker pull + docker restart <container>"
-    _item "Pull + Recreate" "docker compose pull + up -d  (compose-managed only)"
+    _section "BEHAVIOUR"
+    _dim "Compose services: runs 'just update' (or docker compose pull+up) for the whole stack."
+    _dim "Multiple services from the same compose dir are updated in a single run."
+    _dim "Standalone containers: docker pull + docker restart."
     echo ""
     _section "NOTES"
     _dim "Requires the cup container to be running."
-    _dim "Standalone containers fall back to pull + restart when recreate is selected."
     _dim "Required tools: docker, gum, jq"
     echo ""
 }
@@ -109,7 +102,34 @@ enrich_image() {
     printf '%s\t%s\t%s\t%s' "$container_id" "$compose_dir" "$compose_service" "$compose_project"
 }
 
-# ─── Row formatting (plain — colors break byte-width alignment) ──
+# ─── Registry URL ────────────────────────────────────────────
+registry_url() {
+    local ref="$1"
+    local image="${ref%%:*}"
+    image="${image%%@*}"
+
+    local host="${image%%/*}"
+    if [[ "$host" == "$image" || ( "$host" != *.* && "$host" != *:* ) ]]; then
+        echo "https://hub.docker.com/_/${image}"
+        return
+    fi
+
+    local path="${image#*/}"
+    case "$host" in
+        docker.io)
+            if [[ "$path" == library/* ]]; then
+                echo "https://hub.docker.com/_/${path#library/}"
+            else
+                echo "https://hub.docker.com/r/${path}"
+            fi
+            ;;
+        *)
+            echo "https://${host}/${path}"
+            ;;
+    esac
+}
+
+# ─── Row formatting ──────────────────────────────────────────
 # printf '%-Ns' counts bytes, not display chars. _padr compensates by
 # inflating the width field by the extra bytes in multi-byte UTF-8 strings.
 _padr() {
@@ -122,8 +142,8 @@ _padr() {
 
 format_row() {
     local ref="$1" update_type="$2" version_bump="$3"
-    local current_ver="$4" new_ver="$5" in_use="$6"
-    local compose_service="$7" compose_project="$8"
+    local current_ver="$4" new_ver="$5"
+    local compose_service="$6" compose_project="$7"
 
     local version_col
     if [[ "$update_type" == "version" ]]; then
@@ -139,9 +159,6 @@ format_row() {
         version_col="digest update"
     fi
 
-    local use_col
-    [[ "$in_use" == "true" ]] && use_col="in use" || use_col="unused"
-
     local mgmt_col
     if [[ -n "$compose_service" ]]; then
         mgmt_col="[${compose_project}/${compose_service}]"
@@ -152,14 +169,13 @@ format_row() {
     [[ ${#ref}         -gt 42 ]] && ref="${ref:0:41}…"
     [[ ${#version_col} -gt 24 ]] && version_col="${version_col:0:23}…"
 
-    printf '%s │ %s │ %-6s │ %s' \
+    printf '%s │ %s │ %s' \
         "$(_padr "$ref" 42)" \
         "$(_padr "$version_col" 24)" \
-        "$use_col" \
         "$mgmt_col"
 }
 
-# ─── Colored version info (for confirmation dashboard) ──────
+# ─── Colored version info ────────────────────────────────────
 format_version_colored() {
     local update_type="$1" version_bump="$2" current_ver="$3" new_ver="$4"
 
@@ -182,40 +198,23 @@ format_version_colored() {
     fi
 }
 
-# ─── Command preview ────────────────────────────────────────
-get_commands() {
-    local action="$1" ref="$2" container_id="$3" compose_dir="$4" compose_svc="$5" in_use="$6"
-    case "$action" in
-        "Pull only")
-            echo "docker pull ${ref}"
-            ;;
-        "Pull + Restart")
-            echo "docker pull ${ref}"
-            [[ "$in_use" == "true" && -n "$container_id" ]] && \
-                echo "docker restart ${container_id}"
-            ;;
-        "Pull + Recreate")
-            if [[ -n "$compose_dir" && -n "$compose_svc" ]]; then
-                echo "docker compose --project-directory ${compose_dir} pull ${compose_svc}"
-                echo "docker compose --project-directory ${compose_dir} up -d ${compose_svc}"
-            else
-                echo "# no compose context — falling back to pull + restart"
-                echo "docker pull ${ref}"
-                [[ "$in_use" == "true" && -n "$container_id" ]] && \
-                    echo "docker restart ${container_id}"
-            fi
-            ;;
-    esac
-}
-
 # ─── Update actions ─────────────────────────────────────────
-do_pull_only() {
-    local ref="$1"
-    gum spin --title "Pulling ${ref}..." -- docker pull "$ref"
-    _ok "Pulled"
+do_update_compose() {
+    local compose_dir="$1"
+    local label="${compose_dir##*/}"
+    if [[ -f "${compose_dir}/justfile" ]]; then
+        gum spin --title "Updating ${label}..." -- \
+            bash -c "cd '${compose_dir}' && just update"
+    else
+        gum spin --title "Pulling ${label}..." -- \
+            docker compose --project-directory "${compose_dir}" pull
+        gum spin --title "Recreating ${label}..." -- \
+            docker compose --project-directory "${compose_dir}" up -d
+    fi
+    _ok "Updated ${label}"
 }
 
-do_pull_restart() {
+do_update_standalone() {
     local ref="$1" container_id="$2" in_use="$3"
     gum spin --title "Pulling ${ref}..." -- docker pull "$ref"
     if [[ "$in_use" == "true" && -n "$container_id" ]]; then
@@ -223,20 +222,6 @@ do_pull_restart() {
         _ok "Pulled and restarted"
     else
         _ok "Pulled  ${DIM}(container not running, restart skipped)${NC}"
-    fi
-}
-
-do_pull_recreate() {
-    local ref="$1" container_id="$2" compose_dir="$3" compose_svc="$4" in_use="$5"
-    if [[ -n "$compose_dir" && -n "$compose_svc" ]]; then
-        gum spin --title "Pulling via compose..." -- \
-            docker compose --project-directory "${compose_dir}" pull "${compose_svc}"
-        gum spin --title "Recreating ${compose_svc}..." -- \
-            docker compose --project-directory "${compose_dir}" up -d "${compose_svc}"
-        _ok "Recreated"
-    else
-        _warn "No compose context — falling back to pull + restart"
-        do_pull_restart "$ref" "$container_id" "$in_use"
     fi
 }
 
@@ -273,7 +258,6 @@ main() {
     local containers_json
     containers_json=$(get_containers)
 
-    # Build parallel arrays: rows (display) and metadata
     declare -a rows=()
     declare -a refs=()
     declare -a cont_ids=()
@@ -300,7 +284,7 @@ main() {
 
         local row
         row=$(format_row "$ref" "$update_type" "$version_bump" "$current_ver" "$new_ver" \
-            "$in_use" "$compose_svc" "$compose_proj")
+            "$compose_svc" "$compose_proj")
 
         rows+=("$row")
         refs+=("$ref")
@@ -333,22 +317,7 @@ main() {
 
     echo ""
 
-    # Step 2: choose action
-    local action=""
-    action=$(gum choose \
-        --header "Select action to apply to all selected images:" \
-        "Pull only" \
-        "Pull + Restart" \
-        "Pull + Recreate  (compose: full recreate; standalone: falls back to restart)") || true
-
-    if [[ -z "$action" ]]; then
-        _dim "No action selected. Exiting."
-        exit 0
-    fi
-
-    action="${action%%  *}"
-
-    # Step 3: resolve indices
+    # Step 2: resolve indices
     declare -a sel_idx=()
     while IFS= read -r row; do
         local idx=-1
@@ -358,40 +327,75 @@ main() {
         sel_idx+=("$idx")
     done <<< "$selected"
 
-    # Step 3b: confirmation dashboard
-    echo ""
-    echo -e "${BOLD}${CYAN}┌─ Review ─────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BOLD}${CYAN}│${NC}  Action: ${BOLD}${YELLOW}${action}${NC}"
-    echo -e "${BOLD}${CYAN}│${NC}"
+    # Step 3: group selected into compose stacks and standalones
+    declare -A seen_compose_dirs=()
+    declare -a compose_dir_list=()
+    declare -a standalone_idxs=()
 
     for idx in "${sel_idx[@]}"; do
         [[ $idx -eq -1 ]] && continue
+        if [[ -n "${comp_dirs[$idx]}" ]]; then
+            if [[ -z "${seen_compose_dirs[${comp_dirs[$idx]}]+x}" ]]; then
+                seen_compose_dirs["${comp_dirs[$idx]}"]=1
+                compose_dir_list+=("${comp_dirs[$idx]}")
+            fi
+        else
+            standalone_idxs+=("$idx")
+        fi
+    done
 
+    # Step 4: confirmation dashboard
+    echo ""
+    echo -e "${BOLD}${CYAN}┌─ Review ─────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${BOLD}${CYAN}│${NC}"
+
+    for dir in "${compose_dir_list[@]}"; do
+        local label="${dir##*/}"
+        local cmd_preview
+        if [[ -f "${dir}/justfile" ]]; then
+            cmd_preview="just update  (in ${dir})"
+        else
+            cmd_preview="docker compose pull && up -d  (in ${dir})"
+        fi
+
+        echo -e "${BOLD}${CYAN}│${NC}  ${BOLD}${BYELLOW}${label}${NC}  ${DIM}(compose stack)${NC}"
+        echo -e "${BOLD}${CYAN}│${NC}    ${DIM}\$${NC} ${CYAN}${cmd_preview}${NC}"
+
+        for idx in "${sel_idx[@]}"; do
+            [[ $idx -eq -1 ]] && continue
+            [[ "${comp_dirs[$idx]}" != "$dir" ]] && continue
+
+            local ref="${refs[$idx]}"
+            local ver_info
+            ver_info=$(format_version_colored \
+                "${update_types[$idx]}" "${version_bumps[$idx]}" \
+                "${current_vers[$idx]}" "${new_vers[$idx]}")
+            local url
+            url=$(registry_url "$ref")
+
+            echo -e "${BOLD}${CYAN}│${NC}      ${BCYAN}${comp_svcs[$idx]}${NC}  ${DIM}(${ref})${NC}"
+            echo -e "${BOLD}${CYAN}│${NC}        ${ver_info}"
+            echo -e "${BOLD}${CYAN}│${NC}        ${DIM}↗ ${url}${NC}"
+        done
+        echo -e "${BOLD}${CYAN}│${NC}"
+    done
+
+    for idx in "${standalone_idxs[@]}"; do
         local ref="${refs[$idx]}"
         local ver_info
         ver_info=$(format_version_colored \
             "${update_types[$idx]}" "${version_bumps[$idx]}" \
             "${current_vers[$idx]}" "${new_vers[$idx]}")
+        local url
+        url=$(registry_url "$ref")
 
-        local mgmt_label
-        if [[ -n "${comp_svcs[$idx]}" ]]; then
-            mgmt_label="${DIM}[${comp_dirs[$idx]##*/}/${comp_svcs[$idx]}]${NC}"
-        else
-            mgmt_label="${YELLOW}[standalone]${NC}"
+        echo -e "${BOLD}${CYAN}│${NC}  ${BOLD}${BYELLOW}${ref}${NC}  ${DIM}(standalone)${NC}"
+        echo -e "${BOLD}${CYAN}│${NC}    ${ver_info}"
+        echo -e "${BOLD}${CYAN}│${NC}    ${DIM}↗ ${url}${NC}"
+        echo -e "${BOLD}${CYAN}│${NC}    ${DIM}\$${NC} ${CYAN}docker pull ${ref}${NC}"
+        if [[ "${in_uses[$idx]}" == "true" && -n "${cont_ids[$idx]}" ]]; then
+            echo -e "${BOLD}${CYAN}│${NC}    ${DIM}\$${NC} ${CYAN}docker restart ${cont_ids[$idx]}${NC}"
         fi
-
-        echo -e "${BOLD}${CYAN}│${NC}  ${BCYAN}${ref}${NC}"
-        echo -e "${BOLD}${CYAN}│${NC}    ${ver_info}  ${mgmt_label}"
-
-        while IFS= read -r cmd; do
-            if [[ "$cmd" == \#* ]]; then
-                echo -e "${BOLD}${CYAN}│${NC}    ${BYELLOW}${cmd}${NC}"
-            else
-                echo -e "${BOLD}${CYAN}│${NC}    ${DIM}\$${NC} ${CYAN}${cmd}${NC}"
-            fi
-        done < <(get_commands "$action" "$ref" "${cont_ids[$idx]}" \
-            "${comp_dirs[$idx]}" "${comp_svcs[$idx]}" "${in_uses[$idx]}")
-
         echo -e "${BOLD}${CYAN}│${NC}"
     done
 
@@ -401,31 +405,20 @@ main() {
     gum confirm "Proceed?" || { echo ""; _dim "Aborted."; exit 0; }
     echo ""
 
-    # Step 4: execute
+    # Step 5: execute
     local errors=0
-    for idx in "${sel_idx[@]}"; do
-        if [[ $idx -eq -1 ]]; then
-            _warn "Could not resolve image for selected row, skipping."
-            continue
-        fi
 
-        echo -e "\n${BOLD}${CYAN}▶${NC} ${BCYAN}${refs[$idx]}${NC}"
+    for dir in "${compose_dir_list[@]}"; do
+        local label="${dir##*/}"
+        echo -e "\n${BOLD}${CYAN}▶${NC} ${BCYAN}${label}${NC}  ${DIM}(compose stack)${NC}"
+        do_update_compose "$dir" \
+            || { _fail "Failed: ${label}"; errors=$((errors + 1)); }
+    done
 
-        case "$action" in
-            "Pull only")
-                do_pull_only "${refs[$idx]}" \
-                    || { _fail "Failed: ${refs[$idx]}"; errors=$((errors + 1)); }
-                ;;
-            "Pull + Restart")
-                do_pull_restart "${refs[$idx]}" "${cont_ids[$idx]}" "${in_uses[$idx]}" \
-                    || { _fail "Failed: ${refs[$idx]}"; errors=$((errors + 1)); }
-                ;;
-            "Pull + Recreate")
-                do_pull_recreate "${refs[$idx]}" "${cont_ids[$idx]}" "${comp_dirs[$idx]}" \
-                    "${comp_svcs[$idx]}" "${in_uses[$idx]}" \
-                    || { _fail "Failed: ${refs[$idx]}"; errors=$((errors + 1)); }
-                ;;
-        esac
+    for idx in "${standalone_idxs[@]}"; do
+        echo -e "\n${BOLD}${CYAN}▶${NC} ${BCYAN}${refs[$idx]}${NC}  ${DIM}(standalone)${NC}"
+        do_update_standalone "${refs[$idx]}" "${cont_ids[$idx]}" "${in_uses[$idx]}" \
+            || { _fail "Failed: ${refs[$idx]}"; errors=$((errors + 1)); }
     done
 
     echo ""
