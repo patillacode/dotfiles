@@ -359,7 +359,7 @@ cmd_secrets() {
     kp_ls()   { echo "$kp_pass" | keepassxc-cli ls -q "$db" "$1" 2>/dev/null; }
 
     # ── GitHub token ────────────────────────────────────────────
-    _section "[1/3] GitHub token"
+    _section "[1/4] GitHub token"
     _dim "Entry: Code/dotfiles/github-pat"
     local github_token
     github_token=$(kp_show Password "Code/dotfiles/github-pat")
@@ -370,7 +370,7 @@ cmd_secrets() {
     fi
 
     # ── Forgejo token ──────────────────────────────────────────
-    _section "[2/3] Forgejo token"
+    _section "[2/4] Forgejo token"
     _dim "Entry: Code/dotfiles/forgejo-token"
     local forgejo_token
     forgejo_token=$(kp_show Password "Code/dotfiles/forgejo-token")
@@ -381,7 +381,7 @@ cmd_secrets() {
     fi
 
     # ── Telegram bots ──────────────────────────────────────────
-    _section "[3/3] Telegram bots"
+    _section "[3/4] Telegram bots"
     _dim "Scanning Code/dotfiles/tg-* entries..."
     echo ""
 
@@ -449,6 +449,18 @@ cmd_secrets() {
         done <<< "$entries"
     fi
 
+    # ── Navidrome ──────────────────────────────────────────────
+    _section "[4/4] Navidrome"
+    _dim "Entry: Code/dotfiles/navidrome"
+    local nav_user nav_pass
+    nav_user=$(kp_show UserName "Code/dotfiles/navidrome")
+    nav_pass=$(kp_show Password "Code/dotfiles/navidrome")
+    if [[ -n "$nav_user" && -n "$nav_pass" ]]; then
+        _ok "NAVIDROME_USER / NAVIDROME_PASS"
+    else
+        _fail "Not found — skipping"
+    fi
+
     # ── Write ~/.env ────────────────────────────────────────────
     _section "Writing ~/.env"
 
@@ -462,6 +474,8 @@ EOF
     [[ -n "$github_token" ]] && echo "export GITHUB_TOKEN=\"$github_token\"" >> "$HOME/.env"
     [[ -n "$github_token" ]] && echo "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$github_token\"" >> "$HOME/.env"
     [[ -n "$forgejo_token" ]] && echo "export FORGEJO_TOKEN=\"$forgejo_token\"" >> "$HOME/.env"
+    [[ -n "$nav_user" ]] && echo "export NAVIDROME_USER=\"$nav_user\"" >> "$HOME/.env"
+    [[ -n "$nav_pass" ]] && echo "export NAVIDROME_PASS=\"$nav_pass\"" >> "$HOME/.env"
 
     if [[ -n "$tg_env" ]]; then
         echo "" >> "$HOME/.env"
