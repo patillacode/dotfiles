@@ -12,6 +12,8 @@ _nav() {
 }
 
 _nav_play() {
+    local shuffle="--shuffle"
+    [[ "$1" == "--ordered" ]] && { shuffle=""; shift; }
     local tmp count=0
     tmp=$(mktemp /tmp/music-XXXXX.m3u)
     while IFS= read -r id; do
@@ -21,7 +23,7 @@ _nav_play() {
         (( count++ ))
     done
     echo "Playing $count songs"
-    mpv --no-video --shuffle "$tmp"
+    mpv --no-video ${shuffle:+--shuffle} "$tmp"
     rm -f "$tmp"
 }
 
@@ -115,16 +117,16 @@ for a in albums:
             album_name=$(printf '%s' "$album_selection" | cut -f1)
             echo "Loading album: $album_name"
             _nav getAlbum "id=$album_id" \
-                | python3 -c 'import sys,json; [print(s["id"]) for s in json.load(sys.stdin)["subsonic-response"]["album"].get("song",[])]' \
-                | _nav_play
+                | python3 -c 'import sys,json; [print(s["id"]) for s in sorted(json.load(sys.stdin)["subsonic-response"]["album"].get("song",[]), key=lambda s: (s.get("discNumber",1), s.get("track",0)))]' \
+                | _nav_play --ordered
             ;;
         album)
             local name
             name=$(printf '%s' "$selection" | cut -f1)
             echo "Loading album: $name"
             _nav getAlbum "id=$id" \
-                | python3 -c 'import sys,json; [print(s["id"]) for s in json.load(sys.stdin)["subsonic-response"]["album"].get("song",[])]' \
-                | _nav_play
+                | python3 -c 'import sys,json; [print(s["id"]) for s in sorted(json.load(sys.stdin)["subsonic-response"]["album"].get("song",[]), key=lambda s: (s.get("discNumber",1), s.get("track",0)))]' \
+                | _nav_play --ordered
             ;;
         song)
             printf '%s\n' "$id" | _nav_play
