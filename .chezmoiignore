@@ -43,6 +43,7 @@ dot_config/yt-dlp/
 {{ if not (has "work" .profiles) -}}
 dot_config/git/nordhealth
 dot_oh-my-zsh/custom/themes/nordhealth.zsh-theme
+dot_config/tmux/sessions/work.sh
 {{ end -}}
 
 # ─── gui-only dev tools ───────────────────────────────────────
