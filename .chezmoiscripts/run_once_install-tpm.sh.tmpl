@@ -1,0 +1,20 @@
+#!/bin/bash
+# run_once_install-tpm.sh — install tmux plugin manager (runs once per machine)
+
+set -e
+
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+
+if [[ -d "$TPM_DIR" ]]; then
+    echo "tpm already installed — skipping"
+    exit 0
+fi
+
+if ! command -v tmux &>/dev/null; then
+    echo "tmux not found — skipping tpm installation"
+    exit 0
+fi
+
+echo "Installing tpm..."
+git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+echo "Done. Open tmux and press Ctrl+Space I to install plugins."
