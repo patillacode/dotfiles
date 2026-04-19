@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+{{ if eq .chezmoi.hostname "totoro" -}}
+SESSION="totoro"
+
+tmux has-session -t "=$SESSION" 2>/dev/null && exec tmux attach-session -t "=$SESSION"
+
+# ── Window 1: music ────────────────────────────────────────────────
+tmux new-session -d -s "$SESSION" -n "music" -c "/mnt/services/music/slskd/downloads/complete"
+tmux send-keys -t "$SESSION:music" "yazi" Enter
+
+tmux split-window -h -t "$SESSION:music" -c "$HOME/services/music"
+tmux send-keys -t "$SESSION:music" "c" Enter
+
+tmux split-window -v -t "$SESSION:music" -c "$HOME/services/music"
+
+tmux select-pane -t "$SESSION:music.1"
+tmux split-window -v -t "$SESSION:music.1" -c "/mnt/media/music.bak/staged"
+tmux send-keys -t "$SESSION:music" "python3 -m http.server 55880" Enter
+
+tmux select-pane -t "$SESSION:music.1"
+
+# ── Window 2: dev ──────────────────────────────────────────────────
+tmux new-window -t "$SESSION" -n "dev" -c "$HOME/services"
+tmux send-keys -t "$SESSION:dev" "dtop" Enter
+
+tmux split-window -h -t "$SESSION:dev" -c "$HOME/services"
+tmux send-keys -t "$SESSION:dev" "c" Enter
+
+tmux split-window -v -t "$SESSION:dev" -c "$HOME/projects"
+
+tmux select-pane -t "$SESSION:dev.1"
+tmux split-window -v -t "$SESSION:dev.1" -c "$HOME/projects"
+
+tmux select-pane -t "$SESSION:dev.1"
+
+# ── Window 3: banana ───────────────────────────────────────────────
+tmux new-window -t "$SESSION" -n "banana" -c "$HOME"
+
+tmux split-window -h -t "$SESSION:banana" -c "$HOME"
+tmux send-keys -t "$SESSION:banana" "fastfetch" Enter
+
+tmux select-pane -t "$SESSION:banana.1"
+
+# ── Focus music on attach ──────────────────────────────────────────
+tmux select-window -t "$SESSION:music"
+tmux attach-session -t "$SESSION"
+{{ else -}}
+ssh totoro -t "bash \$HOME/.config/tmux/sessions/totoro.sh"
+{{ end -}}

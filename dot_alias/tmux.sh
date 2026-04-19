@@ -2,6 +2,7 @@
 
 alias t="tmux"
 alias tm="tmux_session_picker"
+alias tt="bash ~/.config/tmux/sessions/totoro.sh"
 alias ta="tmux attach -t"
 alias tl="tmux ls"
 alias tk="tmux kill-session -t"
@@ -16,6 +17,7 @@ tmux_cheatsheet() {
 ## Sessions
 | Command | Action |
 |---------|--------|
+| `tt` | connect to totoro session |
 | `tm` | fuzzy pick / launch session |
 | `tl` | list sessions |
 | `tn <name>` | new named session |
