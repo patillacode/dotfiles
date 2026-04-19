@@ -57,9 +57,29 @@ set -g @plugin 'tmux-plugins/tmux-resurrect'    # Persist tmux sessions after co
 set -g @plugin 'tmux-plugins/tmux-continuum'    # Automatically saves sessions every 15 minutes
 set -g @plugin 'hendrikmi/tmux-cpu-mem-monitor' # CPU and memory info
 
-# Load theme
-if-shell "[[ \"$TMUX_THEME\" == \"onedark\" ]]" 'source-file ~/.config/tmux/onedark-theme.conf' ""
-if-shell "[[ \"$TMUX_THEME\" == \"nord\" ]]" 'source-file ~/.config/tmux/nord-theme.conf' ""
+# ── Status bar — banana theme ──────────────────────────────────────
+set -g status-position bottom
+set -g status-style "bg=black,fg=white"
+set -g status-left-length 40
+set -g status-right-length 60
+
+# Left: session name pill (red, matches Starship machine label)
+set -g status-left "#[fg=red,bg=black]#[fg=black,bg=red,bold] #{session_name} #[fg=red,bg=black] "
+
+# Windows: inactive dimmed, active cyan pill
+set -g window-status-separator ""
+set -g window-status-format "#[fg=colour8,bg=black] #I #W  "
+set -g window-status-current-format "#[fg=cyan,bg=black]#[fg=black,bg=cyan,bold] #I #W #[fg=cyan,bg=black] "
+
+# Right: hostname (red) + time (green) — matches Starship right_format
+set -g status-right "#[fg=black,bg=black]#[fg=red,bg=black] {{ .chezmoi.hostname }} #[fg=black]#[fg=green,bg=black] %R "
+
+# Pane borders
+set -g pane-border-style "fg=colour8"
+set -g pane-active-border-style "fg=cyan"
+
+# Message bar
+set -g message-style "bg=black,fg=cyan,bold"
 
 # Resurrect
 set -g @resurrect-capture-pane-contents 'on'

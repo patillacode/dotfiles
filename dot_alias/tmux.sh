@@ -7,6 +7,48 @@ alias tl="tmux ls"
 alias tk="tmux kill-session -t"
 alias tn="tmux new -s"
 
+alias tch="tmux_cheatsheet"
+
+tmux_cheatsheet() {
+  glow - <<'EOF'
+# tmux cheatsheet · prefix: Ctrl+Space
+
+## Sessions
+| Command | Action |
+|---------|--------|
+| `tm` | fuzzy pick / launch session |
+| `tl` | list sessions |
+| `tn <name>` | new named session |
+| `tk <name>` | kill session |
+| `prefix d` | detach (session keeps running) |
+| `ta` | reattach to last session |
+
+## Windows
+| Key | Action |
+|-----|--------|
+| `prefix c` | new window (same path) |
+| `prefix 1`–`9` | switch to window |
+| `prefix ,` | rename window |
+| `prefix &` | kill window |
+
+## Panes
+| Key | Action |
+|-----|--------|
+| `prefix \` | split right |
+| `prefix -` | split down |
+| `prefix ←→↑↓` | navigate panes |
+| `prefix hjkl` | navigate panes (vim) |
+| `prefix z` | zoom pane fullscreen (toggle) |
+| `prefix x` | kill pane |
+
+## Other
+| Key | Action |
+|-----|--------|
+| `prefix r` | reload config |
+| `prefix [` | scroll mode (q to exit) |
+EOF
+}
+
 tmux_session_picker() {
   local sessions_dir="$HOME/.config/tmux/sessions"
   local running defined all
