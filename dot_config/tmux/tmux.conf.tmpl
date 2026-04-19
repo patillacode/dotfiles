@@ -44,6 +44,9 @@ bind Right select-pane -R
 # Don't exit copy mode when dragging with mouse
 unbind -T copy-mode-vi MouseDragEnd1Pane
 
+# Sesh session picker popup
+bind s display-popup -E -w 60% -h 50% "sesh connect \$(sesh list | fzf --prompt='session > ')"
+
 # Start windows and panes at 1, not 0
 set -g base-index 1
 set -g pane-base-index 1
@@ -76,7 +79,7 @@ set -g window-status-current-format "#[fg=cyan,bg=black]#[fg=black,bg=cyan,bold]
 set -g status-right "#[fg=colour8]#(cd #{pane_current_path} && git rev-parse --abbrev-ref HEAD 2>/dev/null | sed 's/.*/  &/')  #[fg=red,bg=black] {{ .chezmoi.hostname }} #[fg=green,bg=black] %R "
 
 # Pane borders
-set -g pane-border-lines rounded
+set -g pane-border-lines single
 set -g pane-border-style "fg=colour8"
 set -g pane-active-border-style "fg=cyan"
 

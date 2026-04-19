@@ -1,8 +1,10 @@
 # tmux.sh — terminal multiplexer shortcuts
 
 alias t="tmux"
-alias tm="tmux_session_picker"
+alias ts="tmux_session_picker"
 alias tt="bash ~/.config/tmux/sessions/totoro.sh"
+alias tw="bash ~/.config/tmux/sessions/work.sh"
+alias twork="bash ~/.config/tmux/sessions/work.sh"
 alias ta="tmux_attach_session"
 alias tl="tmux ls"
 alias tk="tmux_kill_session"
@@ -18,7 +20,8 @@ tmux_cheatsheet() {
 | Command | Action |
 |---------|--------|
 | `tt` | connect to totoro session |
-| `tm` | fuzzy pick / launch session |
+| `tw` / `twork` | connect to work session |
+| `ts` | fuzzy pick / launch session |
 | `tl` | list sessions |
 | `tn <name>` | new named session |
 | `tk` | kill session (fuzzy pick) |
