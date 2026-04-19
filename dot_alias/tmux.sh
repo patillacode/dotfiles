@@ -3,9 +3,9 @@
 alias t="tmux"
 alias tm="tmux_session_picker"
 alias tt="bash ~/.config/tmux/sessions/totoro.sh"
-alias ta="tmux attach -t"
+alias ta="tmux_attach_session"
 alias tl="tmux ls"
-alias tk="tmux kill-session -t"
+alias tk="tmux_kill_session"
 alias tn="tmux new -s"
 
 alias tch="tmux_cheatsheet"
@@ -21,9 +21,9 @@ tmux_cheatsheet() {
 | `tm` | fuzzy pick / launch session |
 | `tl` | list sessions |
 | `tn <name>` | new named session |
-| `tk <name>` | kill session |
+| `tk` | kill session (fuzzy pick) |
 | `prefix d` | detach (session keeps running) |
-| `ta` | reattach to last session |
+| `ta` | attach to session (fuzzy pick) |
 
 ## Windows
 | Key | Action |
@@ -49,6 +49,22 @@ tmux_cheatsheet() {
 | `prefix r` | reload config |
 | `prefix [` | scroll mode (q to exit) |
 EOF
+}
+
+tmux_attach_session() {
+  local session
+  session=$(tmux list-sessions -F "#{session_name}" 2>/dev/null \
+    | fzf --prompt="attach > " --height=40%)
+  [[ -z "$session" ]] && return
+  [[ -n "$TMUX" ]] && tmux switch-client -t "=$session" || tmux attach-session -t "=$session"
+}
+
+tmux_kill_session() {
+  local session
+  session=$(tmux list-sessions -F "#{session_name}" 2>/dev/null \
+    | fzf --prompt="kill session > " --height=40%)
+  [[ -z "$session" ]] && return
+  tmux kill-session -t "=$session"
 }
 
 tmux_session_picker() {

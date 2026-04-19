@@ -48,6 +48,7 @@ unbind -T copy-mode-vi MouseDragEnd1Pane
 set -g base-index 1
 set -g pane-base-index 1
 set -g renumber-windows on # Automatically renumber windows when one is closed
+set -g allow-rename off   # Prevent programs from renaming windows
 
 # tpm plugin manager
 set -g @plugin 'tmux-plugins/tpm'
@@ -61,7 +62,7 @@ set -g @plugin 'hendrikmi/tmux-cpu-mem-monitor' # CPU and memory info
 set -g status-position bottom
 set -g status-style "bg=black,fg=white"
 set -g status-left-length 40
-set -g status-right-length 60
+set -g status-right-length 80
 
 # Left: session name pill (red, matches Starship machine label)
 set -g status-left "#[fg=red,bg=black]#[fg=black,bg=red,bold] #{session_name} #[fg=red,bg=black] "
@@ -71,10 +72,11 @@ set -g window-status-separator ""
 set -g window-status-format "#[fg=colour8,bg=black] #I #W  "
 set -g window-status-current-format "#[fg=cyan,bg=black]#[fg=black,bg=cyan,bold] #I #W #[fg=cyan,bg=black] "
 
-# Right: hostname (red) + time (green) — matches Starship right_format
-set -g status-right "#[fg=black,bg=black]#[fg=red,bg=black] {{ .chezmoi.hostname }} #[fg=black]#[fg=green,bg=black] %R "
+# Right: git branch + hostname (red) + time (green) — matches Starship right_format
+set -g status-right "#[fg=colour8]#(cd #{pane_current_path} && git rev-parse --abbrev-ref HEAD 2>/dev/null | sed 's/.*/  &/')  #[fg=red,bg=black] {{ .chezmoi.hostname }} #[fg=green,bg=black] %R "
 
 # Pane borders
+set -g pane-border-lines rounded
 set -g pane-border-style "fg=colour8"
 set -g pane-active-border-style "fg=cyan"
 
