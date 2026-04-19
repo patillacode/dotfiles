@@ -31,7 +31,7 @@ bind - split-window -v -c "#{pane_current_path}"
 # New window in same path
 bind c new-window -c "#{pane_current_path}"
 
-# Pane navigation — arrow keys and vim keys
+# Pane navigation — prefix+hjkl/arrows and Alt+hjkl (no prefix)
 bind h select-pane -L
 bind j select-pane -D
 bind k select-pane -U
@@ -40,6 +40,23 @@ bind Left  select-pane -L
 bind Down  select-pane -D
 bind Up    select-pane -U
 bind Right select-pane -R
+bind -n M-h select-pane -L
+bind -n M-j select-pane -D
+bind -n M-k select-pane -U
+bind -n M-l select-pane -R
+
+# Window switching — Alt+number, Alt+n/p (no prefix)
+bind -n M-1 select-window -t 1
+bind -n M-2 select-window -t 2
+bind -n M-3 select-window -t 3
+bind -n M-4 select-window -t 4
+bind -n M-5 select-window -t 5
+bind -n M-6 select-window -t 6
+bind -n M-7 select-window -t 7
+bind -n M-8 select-window -t 8
+bind -n M-9 select-window -t 9
+bind -n M-n next-window
+bind -n M-p previous-window
 
 # Don't exit copy mode when dragging with mouse
 unbind -T copy-mode-vi MouseDragEnd1Pane
