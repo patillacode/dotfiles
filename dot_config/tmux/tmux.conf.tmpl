@@ -124,10 +124,10 @@ set -g @prefix_highlight_bg 'yellow'
 # Right: prefix cue + git branch + hostname (red) + time (green) — matches Starship right_format
 set -g status-right "#{prefix_highlight} #[fg=colour8]#(cd #{pane_current_path} && git rev-parse --abbrev-ref HEAD 2>/dev/null | sed 's/.*/  &/')  #[fg=red,bg=black] {{ .chezmoi.hostname }} #[fg=green,bg=black] %R "
 
-# Pane borders — double lines + bright red on active (matches status-bar red)
-set -g pane-border-lines double
-set -g pane-border-style "fg=colour8"
-set -g pane-active-border-style "fg=colour208,bold"
+# Pane borders — double lines, warm orange active, light grey inactive
+set -g pane-border-lines "double"
+set -g pane-border-style "bg=default,fg=colour245"
+set -g pane-active-border-style "bg=default,fg=colour166"
 
 # Per-pane bottom-border row — colored stripe (orange active, dim inactive), no label text
 set -g pane-border-status bottom
