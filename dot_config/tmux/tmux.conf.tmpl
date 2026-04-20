@@ -58,6 +58,7 @@ bind -n M-8 select-window -t 8
 bind -n M-9 select-window -t 9
 bind -n M-n next-window
 bind -n M-p previous-window
+bind -n M-Tab last-window
 
 # Pane cycling — Alt+Up/Down (by index)
 bind -n M-Up   select-pane -t :.+
@@ -78,6 +79,9 @@ bind -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-no-clear
 
 # Sesh session picker popup
 bind s display-popup -E -w 60% -h 50% "sesh connect \$(sesh list | fzf --prompt='session > ')"
+
+# Cheatsheet popup (prefix + H)
+bind H display-popup -E -w 40% -h 80% "glow -p ~/.config/tmux/cheatsheet.md"
 
 # Start windows and panes at 1, not 0
 set -g base-index 1
@@ -124,6 +128,10 @@ set -g status-right "#{prefix_highlight} #[fg=colour8]#(cd #{pane_current_path} 
 set -g pane-border-lines heavy
 set -g pane-border-style "fg=colour8"
 set -g pane-active-border-style "fg=cyan,bold"
+
+# Per-pane top-border row — colored stripe (cyan active, dim inactive), no label text
+set -g pane-border-status top
+set -g pane-border-format "#{?pane_active,#[bg=cyan],#[bg=colour236]} "
 
 # Dim text in inactive panes (fg only — preserves Ghostty transparency)
 set -g window-style "fg=colour245"

@@ -13,49 +13,7 @@ alias tn="tmux new -s"
 alias tch="tmux_cheatsheet"
 
 tmux_cheatsheet() {
-  glow - <<'EOF'
-# tmux cheatsheet · prefix: Ctrl+Space
-
-## Sessions
-| Command | Action |
-|---------|--------|
-| `tt` | connect to totoro session |
-| `tw` / `twork` | connect to nordhealth session |
-| `ts` | fuzzy pick / launch session |
-| `tl` | list sessions |
-| `tn <name>` | new named session |
-| `tk` | kill session (fuzzy pick) |
-| `prefix d` | detach (session keeps running) |
-| `ta` | attach to session (fuzzy pick) |
-
-## Windows
-| Key | Action |
-|-----|--------|
-| `prefix c` | new window (same path) |
-| `Alt+1`–`9` | switch to window (no prefix) |
-| `Alt+n` / `Alt+p` | next / previous window |
-| `Alt+Shift+←` / `Alt+Shift+→` | previous / next window |
-| `Alt+[` / `Alt+]` | previous / next window |
-| `prefix ,` | rename window |
-| `prefix &` | kill window |
-
-## Panes
-| Key | Action |
-|-----|--------|
-| `prefix \` | split right |
-| `prefix -` | split down |
-| `Alt+hjkl` | navigate panes (no prefix) |
-| `Alt+↑` / `Alt+↓` | cycle panes by index |
-| `prefix ←→↑↓` | navigate panes |
-| `prefix z` | zoom pane fullscreen (toggle) |
-| `prefix x` | kill pane |
-
-## Other
-| Key | Action |
-|-----|--------|
-| `prefix r` | reload config |
-| `prefix [` | scroll mode (q to exit) |
-EOF
+  glow ~/.config/tmux/cheatsheet.md
 }
 
 tmux_attach_session() {
