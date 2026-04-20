@@ -3,8 +3,8 @@
 alias t="tmux"
 alias ts="tmux_session_picker"
 alias tt="bash ~/.config/tmux/sessions/totoro.sh"
-alias tw="bash ~/.config/tmux/sessions/work.sh"
-alias twork="bash ~/.config/tmux/sessions/work.sh"
+alias tw="bash ~/.config/tmux/sessions/nordhealth.sh"
+alias twork="bash ~/.config/tmux/sessions/nordhealth.sh"
 alias ta="tmux_attach_session"
 alias tl="tmux ls"
 alias tk="tmux_kill_session"
@@ -20,7 +20,7 @@ tmux_cheatsheet() {
 | Command | Action |
 |---------|--------|
 | `tt` | connect to totoro session |
-| `tw` / `twork` | connect to work session |
+| `tw` / `twork` | connect to nordhealth session |
 | `ts` | fuzzy pick / launch session |
 | `tl` | list sessions |
 | `tn <name>` | new named session |

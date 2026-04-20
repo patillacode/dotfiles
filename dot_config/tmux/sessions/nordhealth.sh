@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SESSION="work"
+SESSION="nordhealth"
 
 tmux has-session -t "=$SESSION" 2>/dev/null && exec tmux attach-session -t "=$SESSION"
 
