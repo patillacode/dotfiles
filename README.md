@@ -381,7 +381,7 @@ What each trait deploys:
 
 | | `base` | `gui` | `personal` | `work` |
 |-|--------|-------|------------|--------|
-| **aliases** | ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils | ghostty | music, tv, twitch (`personal+gui` only) | — |
+| **aliases** | ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils, yazi | ghostty | music, tv, twitch (`personal+gui` only) | nordhealth |
 | **configs** | atuin, btop, claude, gh, git, nvim, starship, tmux | ghostty, zed | mpv, yt-dlp (`personal+gui` only) | — |
 | **packages** | atuin, bat, btop, chezmoi, duf, eza, fastfetch, fd, fzf, gcc, gh, git-delta, git-lfs, glow, gum, jq, n, neovim, prek, ripgrep, rtk, ruff, starship, tmux, uv, wget | ghostty, keepassxc, raycast, rectangle, sf-symbols, stats | cmatrix, ffmpeg, ffmpegthumbnailer, figlet, imagemagick, mpv, ollama, poppler, socat, streamlink, yt-dlp, firefox, jordanbaird-ice, nextcloud, telegram, transmission, vlc, zen | zen |
 

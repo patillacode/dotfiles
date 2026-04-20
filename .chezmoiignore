@@ -30,8 +30,11 @@ docs/
 dot_config/ghostty/
 {{ end -}}
 
-# ─── entertainment configs (personal + gui only) ──────────────
+# ─── entertainment aliases + configs (personal + gui only) ──
 {{ if not (and (has "personal" .profiles) (has "gui" .profiles)) -}}
+dot_alias/music.sh
+dot_alias/tv.sh
+dot_alias/twitch.sh
 dot_config/mpv/
 dot_config/yt-dlp/
 {{ end -}}
@@ -43,7 +46,7 @@ dot_config/yt-dlp/
 {{ if not (has "work" .profiles) -}}
 dot_config/git/nordhealth
 dot_oh-my-zsh/custom/themes/nordhealth.zsh-theme
-dot_config/tmux/sessions/work.sh
+dot_config/tmux/sessions/nordhealth.sh
 {{ end -}}
 
 # ─── gui-only dev tools ───────────────────────────────────────

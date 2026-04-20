@@ -42,14 +42,6 @@ source $ZSH/oh-my-zsh.sh
 [[ -f "$HOME/.alias/{{ . }}.sh" ]] && source "$HOME/.alias/{{ . }}.sh"
 {{ end -}}
 {{- end }}
-{{- if has "gui" .profiles }}
-[[ -f "$HOME/.alias/ghostty.sh" ]] && source "$HOME/.alias/ghostty.sh"
-{{- end }}
-{{- if and (has "personal" .profiles) (has "gui" .profiles) }}
-[[ -f "$HOME/.alias/music.sh" ]] && source "$HOME/.alias/music.sh"
-[[ -f "$HOME/.alias/tv.sh" ]] && source "$HOME/.alias/tv.sh"
-[[ -f "$HOME/.alias/twitch.sh" ]] && source "$HOME/.alias/twitch.sh"
-{{- end }}
 
 {{ if eq .machine_name "bars" -}}
 # bars-specific: telegram notifier
