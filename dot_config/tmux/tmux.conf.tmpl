@@ -10,6 +10,7 @@ set -g history-limit 1000000    # Increase history size (from 2,000)
 set -g mouse on                 # Enable mouse support
 set -g status-interval 3        # Update the status bar every 3 seconds (default: 15 seconds)
 set -g allow-passthrough on     # Allow programs in the pane to bypass tmux (e.g. for image preview)
+set -g display-time 4000        # Keep status-bar messages on screen for 4s (default: 750ms)
 
 # Set prefix key
 unbind C-b              # Unbind the default prefix key
@@ -17,7 +18,7 @@ set -g prefix C-Space   # Set new prefix key to Ctrl+Space
 
 # Refresh tmux config with r
 unbind r
-bind r source-file ~/.config/tmux/tmux.conf
+bind r source-file ~/.config/tmux/tmux.conf \; display-message "✓ tmux.conf reloaded"
 
 # Split horizontally in CWD with \
 unbind %
