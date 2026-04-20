@@ -59,6 +59,17 @@ bind -n M-9 select-window -t 9
 bind -n M-n next-window
 bind -n M-p previous-window
 
+# Pane cycling — Alt+Up/Down (by index)
+bind -n M-Up   select-pane -t :.+
+bind -n M-Down select-pane -t :.-
+
+# Window cycling — Alt+Shift+Left/Right and Alt+[/] (plain Alt+Left/Right
+# is reserved by Ghostty for shell word-navigation)
+bind -n M-S-Left  previous-window
+bind -n M-S-Right next-window
+bind -n M-\[      previous-window
+bind -n M-\]      next-window
+
 # Copy mode — vi-style bindings, persist selection after copy
 setw -g mode-keys vi
 bind -T copy-mode-vi v send-keys -X begin-selection
@@ -109,10 +120,14 @@ set -g @prefix_highlight_bg 'yellow'
 # Right: prefix cue + git branch + hostname (red) + time (green) — matches Starship right_format
 set -g status-right "#{prefix_highlight} #[fg=colour8]#(cd #{pane_current_path} && git rev-parse --abbrev-ref HEAD 2>/dev/null | sed 's/.*/  &/')  #[fg=red,bg=black] {{ .chezmoi.hostname }} #[fg=green,bg=black] %R "
 
-# Pane borders
-set -g pane-border-lines single
+# Pane borders — heavy lines + bright cyan on active
+set -g pane-border-lines heavy
 set -g pane-border-style "fg=colour8"
-set -g pane-active-border-style "fg=cyan"
+set -g pane-active-border-style "fg=cyan,bold"
+
+# Dim text in inactive panes (fg only — preserves Ghostty transparency)
+set -g window-style "fg=colour245"
+set -g window-active-style "fg=terminal"
 
 # Message bar
 set -g message-style "bg=black,fg=cyan,bold"

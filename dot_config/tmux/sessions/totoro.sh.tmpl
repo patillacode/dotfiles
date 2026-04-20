@@ -2,7 +2,13 @@
 {{ if eq .chezmoi.hostname "totoro" -}}
 SESSION="totoro"
 
-tmux has-session -t "=$SESSION" 2>/dev/null && exec tmux attach-session -t "=$SESSION"
+if tmux has-session -t "=$SESSION" 2>/dev/null; then
+    if [[ -n "$TMUX" ]]; then
+        exec tmux switch-client -t "=$SESSION"
+    else
+        exec tmux attach-session -t "=$SESSION"
+    fi
+fi
 
 # ── Window 1: music ────────────────────────────────────────────────
 tmux new-session -d -s "$SESSION" -n "music" -c "/mnt/services/music/slskd/downloads/complete"
@@ -43,7 +49,11 @@ tmux select-pane -t "$SESSION:banana.1"
 
 # ── Focus music on attach ──────────────────────────────────────────
 tmux select-window -t "$SESSION:music"
-tmux attach-session -t "$SESSION"
+if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t "=$SESSION"
+else
+    tmux attach-session -t "=$SESSION"
+fi
 {{ else -}}
 ssh totoro -t "bash \$HOME/.config/tmux/sessions/totoro.sh"
 {{ end -}}

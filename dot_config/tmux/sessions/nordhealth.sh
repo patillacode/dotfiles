@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 SESSION="nordhealth"
 
-tmux has-session -t "=$SESSION" 2>/dev/null && exec tmux attach-session -t "=$SESSION"
+if tmux has-session -t "=$SESSION" 2>/dev/null; then
+    if [[ -n "$TMUX" ]]; then
+        exec tmux switch-client -t "=$SESSION"
+    else
+        exec tmux attach-session -t "=$SESSION"
+    fi
+fi
 
 # ── Tab 1: assistant ──────────────────────────────────────────────
 tmux new-session -d -s "$SESSION" -n "assistant" -c "/Users/gonz/assistant"
@@ -36,4 +42,8 @@ tmux split-window -h -t "$SESSION:banana" -c "$HOME"
 
 tmux select-window -t "$SESSION:assistant"
 tmux select-pane -t "$SESSION:assistant.1"
-tmux attach-session -t "$SESSION"
+if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t "=$SESSION"
+else
+    tmux attach-session -t "=$SESSION"
+fi

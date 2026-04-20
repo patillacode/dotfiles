@@ -34,6 +34,8 @@ tmux_cheatsheet() {
 | `prefix c` | new window (same path) |
 | `Alt+1`–`9` | switch to window (no prefix) |
 | `Alt+n` / `Alt+p` | next / previous window |
+| `Alt+Shift+←` / `Alt+Shift+→` | previous / next window |
+| `Alt+[` / `Alt+]` | previous / next window |
 | `prefix ,` | rename window |
 | `prefix &` | kill window |
 
@@ -43,6 +45,7 @@ tmux_cheatsheet() {
 | `prefix \` | split right |
 | `prefix -` | split down |
 | `Alt+hjkl` | navigate panes (no prefix) |
+| `Alt+↑` / `Alt+↓` | cycle panes by index |
 | `prefix ←→↑↓` | navigate panes |
 | `prefix z` | zoom pane fullscreen (toggle) |
 | `prefix x` | kill pane |

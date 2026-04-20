@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 SESSION="ligaconquis"
 
-tmux has-session -t "=$SESSION" 2>/dev/null && exec tmux attach-session -t "=$SESSION"
+if tmux has-session -t "=$SESSION" 2>/dev/null; then
+    if [[ -n "$TMUX" ]]; then
+        exec tmux switch-client -t "=$SESSION"
+    else
+        exec tmux attach-session -t "=$SESSION"
+    fi
+fi
 
 # Left pane (full height): claude code
 tmux new-session -d -s "$SESSION" -c "$HOME/projects/ligaconquis"
@@ -13,4 +19,8 @@ tmux split-window -v -t "$SESSION" -c "$HOME/projects/ligaconquis"
 tmux split-window -v -t "$SESSION" -c "$HOME/projects/ligaconquis"
 
 tmux select-pane -t "$SESSION:1.1"
-tmux attach-session -t "$SESSION"
+if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t "=$SESSION"
+else
+    tmux attach-session -t "=$SESSION"
+fi
