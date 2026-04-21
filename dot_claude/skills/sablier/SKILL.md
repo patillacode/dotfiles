@@ -184,7 +184,9 @@ if ($http_user_agent = "") {
 
 **Why this matters:** crawlers find services via SSL certificate transparency logs. Without this, each crawl request triggers Sablier to wake the container, causing spurious UP/DOWN cycles in monitoring.
 
-**Adding more blocked UAs:** edit the `if` blocks in `make_config()` and re-run `sudo python3 setup-npm.py --force`. Known offenders seen in logs: Tencent Cloud bots (fake iPhone iOS 13_2_3 UA), Scrapy, CensysInspect, SecurityScanner, InternetMeasurement, meta-externalagent (Facebook link preview crawler), Chrome/120.0.0.0 (scanner fingerprint — real Chrome always has a build number), empty UA. ClaudeBot handled by robots.txt. Bots with rotating realistic current-version Chrome UAs (e.g. 204.76.203.x) can't be blocked safely by UA alone.
+**Adding more blocked UAs:** edit the `if` blocks in `make_config()` and re-run `sudo python3 setup-npm.py --force`.
+
+**Adding blocked IPs:** append `deny <ip>;` to the "Block known scanner IPs" section in `make_config()` and re-run `sudo python3 setup-npm.py --force`. Known offenders: `195.178.110.242` (env/git file scanner), `103.168.67.159` (multi-UA scanner), `45.148.10.0/24` (mass env/config scanner, rotating UAs, whole subnet). Known offenders seen in logs: Tencent Cloud bots (fake iPhone iOS 13_2_3 UA), Scrapy, CensysInspect, SecurityScanner, InternetMeasurement, meta-externalagent (Facebook link preview crawler), Chrome/N.0.0.0 (scanner fingerprint — real Chrome always has a build number, pattern `Chrome/[0-9]+\.0\.0\.0` blocks all versions), empty UA. ClaudeBot handled by robots.txt. Bots with rotating realistic current-version Chrome UAs can't be blocked safely by UA alone.
 
 ---
 

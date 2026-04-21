@@ -1,117 +1,98 @@
-# Homepage Categories and Entry Formats
-
-Live file: `/home/dvitto/services/homepage/config/services.yaml`
+# Homepage Groups and Docker Label Formats
 
 ---
 
-## Tab Structure
+## Tab → Group Structure
 
-### TAB: MEDIA
-- **Media Center** — streaming and consumption (plex, immich, overseerr, tautulli, dispatcharr)
-- **Media Management** — *arr suite automation (radarr, sonarr, prowlarr, bazarr, huntarr, cleanuparr, jackett)
-- **Downloads** — download clients (transmission, sabnzbd)
-
-### TAB: PROJECTS
-- **Production Sites** — live production deployments (ligaconquistador, humedecete)
-- **Personal Projects** — personal apps and games (binnacle, kuevasonne, pimpositor, patilloid, exex, visit-book)
-
-### TAB: TOOLS
-- **Productivity** — tools for personal use (nextcloud, atuin, docmost, excalidraw, vikunja)
-- **Infrastructure** — server/ops tools (glances, beszel, dozzle, arcane, wud, teamspeak, Nginx Proxy Manager)
-
-### Always visible (all tabs)
-- **system** — glances CPU/temp/network/mem/process widgets
-- **storage** — glances filesystem widgets
-
----
-
-## YAML Indentation Rules
-
-The file uses a specific indentation pattern — **follow it exactly**:
-
-```yaml
-- Category Name:        # 0 indent, list item
-      - service-name:   # 6 spaces indent (4 + 2 for the dash)
-            key: value  # 12 spaces indent
+```
+Media tab:          Media Center, Music, Media Management, Downloads
+Apps tab:           Apps
+Misc tab:           Personal Projects, Production Sites
+Dev tab:            Dev
+Monitoring tab:     Monitoring
+Infrastructure tab: Infrastructure
 ```
 
-This is non-standard YAML (6-space indent for service entries, 12-space for properties) but is what the existing file uses throughout. Match it exactly.
+### Group reference (example services for placement guidance)
+
+| Group | Tab | Examples |
+|-------|-----|---------|
+| Media Center | Media | plex, immich, seerr/overseerr, tautulli, dispatcharr |
+| Music | Media | navidrome, lidarr, slskd, icecast |
+| Media Management | Media | radarr, sonarr, prowlarr, bazarr, jackett, cleanuparr, maintainerr |
+| Downloads | Media | transmission, sabnzbd |
+| Apps | Apps | nextcloud, docmost, vikunja, freshrss, ironcalc, zipline, excalidraw, lasso, atuin, secretapi |
+| Personal Projects | Misc | visit-book, binnacle*, kuevasonne*, pimpositor*, patilloid*, exex |
+| Production Sites | Misc | liga conquistador x2, humedecete, madridcam |
+| Dev | Dev | forgejo |
+| Monitoring | Monitoring | uptime-kuma, checkmate, adguard, glances, beszel, dozzle, kula, cup |
+| Infrastructure | Infrastructure | arcane, Nginx Proxy Manager, wireguard, ntfy, syncthing, teamspeak |
+
+\* static sites with no compose file — kept in `services.yaml`
+
+**Always visible (all tabs):** `system` and `storage` (glances widgets, defined in `services.yaml`)
 
 ---
 
-## Entry Formats
+## Docker Label Formats
 
-### Without widget (most tools)
+Homepage service discovery reads `homepage.*` labels directly from Docker containers. Add these to the app container's `labels:` block in `compose.yml` — no `services.yaml` edit needed.
 
-```yaml
-      - <service>:
-            icon: <service>.png
-            href: https://<service>.patilla.es
-            description: Short description of the service
-            server: my-docker
-            container: <container-name>
-            showStats: true
-```
-
-### Without widget, internal access only (no public domain)
+### Without widget
 
 ```yaml
-      - <service>:
-            icon: <service>.png
-            href: http://192.168.1.2:<port>
-            description: Short description of the service
-            server: my-docker
-            container: <container-name>
-            showStats: true
+      - "homepage.group=<Group Name>"
+      - "homepage.name=<Display Name>"
+      - "homepage.icon=<service>.png"
+      - "homepage.href=https://<service>.patilla.es"
+      - "homepage.description=<short description>"
+      - "homepage.server=my-docker"
+      - "homepage.container=<container-name>"
+      - "homepage.showStats=true"
 ```
 
 ### With widget + API key
 
 ```yaml
-      - <service>:
-            icon: <service>.png
-            href: https://<service>.patilla.es
-            description: Short description of the service
-            server: my-docker
-            container: <container-name>
-            showStats: true
-            widget:
-                type: <widget-type>
-                url: http://192.168.1.2:<port>
-                key: {{HOMEPAGE_VAR_<SERVICE>_KEY}}
+      - "homepage.group=<Group Name>"
+      - "homepage.name=<Display Name>"
+      - "homepage.icon=<service>.png"
+      - "homepage.href=https://<service>.patilla.es"
+      - "homepage.description=<short description>"
+      - "homepage.server=my-docker"
+      - "homepage.container=<container-name>"
+      - "homepage.showStats=true"
+      - "homepage.widget.type=<widget-type>"
+      - "homepage.widget.url=http://192.168.1.2:<port>"
+      - "homepage.widget.key={{HOMEPAGE_VAR_<SERVICE>_KEY}}"
 ```
 
-Widget URL always uses the internal IP `192.168.1.2:<port>`, not the public domain. The `key` references a var from homepage's `.env` file at `/home/dvitto/services/homepage/.env`.
-
-### With widget + credentials (not key)
+### With widget + credentials
 
 ```yaml
-      - <service>:
-            icon: <service>.png
-            href: https://<service>.patilla.es
-            description: Short description of the service
-            server: my-docker
-            container: <container-name>
-            showStats: true
-            widget:
-                type: <widget-type>
-                url: http://192.168.1.2:<port>
-                username: {{HOMEPAGE_VAR_<SERVICE>_USER}}
-                password: {{HOMEPAGE_VAR_<SERVICE>_PASS}}
+      - "homepage.group=<Group Name>"
+      - "homepage.name=<Display Name>"
+      - "homepage.icon=<service>.png"
+      - "homepage.href=https://<service>.patilla.es"
+      - "homepage.description=<short description>"
+      - "homepage.server=my-docker"
+      - "homepage.container=<container-name>"
+      - "homepage.showStats=true"
+      - "homepage.widget.type=<widget-type>"
+      - "homepage.widget.url=http://192.168.1.2:<port>"
+      - "homepage.widget.username={{HOMEPAGE_VAR_<SERVICE>_USER}}"
+      - "homepage.widget.password={{HOMEPAGE_VAR_<SERVICE>_PASS}}"
 ```
 
-### With ping check (for remote/external services)
+**Widget URL** always uses the internal IP `http://192.168.1.2:<port>`, never the public domain.
 
-```yaml
-      - <service>:
-            icon: <service>.png
-            href: https://<service>.patilla.es
-            description: Short description of the service
-            server: my-docker
-            container: <container-name>
-            ping: 192.168.1.2
-            showStats: true
-```
+**`HOMEPAGE_VAR_*` variables** resolve from homepage's own `.env` at `/home/dvitto/services/homepage/.env`. Never put them in the service's `.env`.
+
+---
+
+## Fallback: services.yaml (no compose file)
+
+For static sites, external services, or anything without a `compose.yml`, add a YAML entry to `/home/dvitto/services/homepage/config/services.yaml` using the equivalent fields. Use targeted `Edit` — never rewrite the whole file. This is the exception; docker labels are the standard.
 
 ---
 
@@ -130,25 +111,10 @@ Prefer in this order:
    - Examples: `mdi-server-outline.svg-#F1C9AF`
 
 4. **Full URL** — for services without standard icons
-   - Examples: custom logos at their own domain, DuckDuckGo image proxy
-
----
-
-## Inserting New Entries
-
-Use **targeted `Edit`** to insert entries. Never rewrite the entire services.yaml.
-
-Find the end of the target category by identifying the last entry, then insert after it. For example, to add to "Productivity":
-
-Find the last entry in Productivity (currently `vikunja`), and insert after its closing lines before the `- Infrastructure:` line.
-
-**Always verify the indentation matches** surrounding entries before writing. The file is indentation-sensitive YAML.
 
 ---
 
 ## API Key Setup (if widget needs one)
-
-After adding an entry with `{{HOMEPAGE_VAR_<SERVICE>_KEY}}`:
 
 1. Get the API key from the service's settings UI
 2. Add to `/home/dvitto/services/homepage/.env`:

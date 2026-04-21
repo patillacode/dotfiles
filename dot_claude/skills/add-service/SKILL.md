@@ -80,7 +80,15 @@ Ask:
 
 Ask:
 1. **Healthcheck** — propose the command from docs. If the image has no HTTP endpoint or lacks curl/wget, propose the TCP fallback: `["CMD-SHELL", "nc -z localhost <port> || exit 1"]`. A healthcheck is mandatory — never omit it.
-2. **Homepage** — which category? (Productivity / Infrastructure / Media Center / Media Management / Downloads / Production Sites / Personal Projects — or new category?) Does a Homepage widget exist? What icon? (`<service>.png` / `si-<service>.svg` / `mdi-...` / full URL)
+2. **Homepage** — which group?
+   - Media tab: Media Center / Music / Media Management / Downloads
+   - Apps tab: Apps
+   - Misc tab: Personal Projects / Production Sites
+   - Dev tab: Dev
+   - Monitoring tab: Monitoring
+   - Infrastructure tab: Infrastructure
+
+   Does a homepage widget exist? What icon? (`<service>.png` / `si-<service>.svg` / `mdi-...` / full URL)
 3. **Backup script needed?** — yes/no
 4. **Nginx subdomain?** — will it get a `<service>.patilla.es` domain via NPM? What's the subdomain?
 5. **Uptime Kuma monitor** — AutoKuma labels will be added to compose.yml so the monitor is created automatically. Confirm:
@@ -111,13 +119,13 @@ mkdir -p /mnt/services/<service>/<data-subdirs>
 3. `/home/dvitto/services/<service>/justfile`
 4. `/home/dvitto/services/<service>/just/service.just`
 5. `/home/dvitto/services/<service>/just/cli.just` — **only** if the service has a meaningful CLI worth wrapping
-6. Homepage entry — use **targeted `Edit`** to insert into the correct category in `/home/dvitto/services/homepage/config/services.yaml`. Never rewrite the whole file.
+6. Homepage labels — already included in `compose.yml` above (step 1). No `services.yaml` edit needed. If the widget needs an API key, add `HOMEPAGE_VAR_<SERVICE>_KEY` to `/home/dvitto/services/homepage/.env` (see Phase 4 checklist).
 
 ### File templates
 
 See `patterns/compose-template.md` for compose patterns.
 See `patterns/justfile-template.md` for exact justfile content (do not deviate).
-See `patterns/homepage-categories.md` for category locations and YAML format.
+See `patterns/homepage-categories.md` for group reference and docker label formats.
 
 ### compose.yml rules
 
@@ -169,7 +177,7 @@ After all files are written, output a clean checklist:
 - /home/dvitto/services/<service>/justfile
 - /home/dvitto/services/<service>/just/service.just
 [- /home/dvitto/services/<service>/just/cli.just]
-- Homepage entry added to <Category> in services.yaml
+- Homepage labels added to compose.yml (<Group> group)
 
 ## Data directories created
 
@@ -181,7 +189,7 @@ After all files are written, output a clean checklist:
 - [ ] cd /home/dvitto/services/<service> && just up
 - [ ] Verify: docker ps | grep <service>
 [- [ ] Create proxy host in NPM: <service>.patilla.es → http://192.168.1.2:<port>]
-[- [ ] Set HOMEPAGE_VAR_<SERVICE>_KEY in /home/dvitto/services/homepage/.env (widget API key)]
+[- [ ] Add HOMEPAGE_VAR_<SERVICE>_KEY to /home/dvitto/services/homepage/.env and restart: cd /home/dvitto/services/homepage && just restart]
 [- AutoKuma labels added to compose.yml — monitor will be created automatically on `just up`]
 [- [ ] Add backup cron (script already executable):
       (crontab -l; echo "0 3 * * * /mnt/services/<service>/backups/backup-<service>.sh >> /mnt/services/<service>/backups/logs/backup-<service>.log 2>&1") | crontab -]
@@ -198,3 +206,11 @@ Only include lines that are relevant to this specific service.
 ## Sablier Automation (run only if user said yes in Round 3 Q6)
 
 After `docker compose up -d`, use the `/sablier add <service>` skill to handle the full Sablier integration — it covers NPM config, kuma label update, homepage icon check, container stop, and cleanup instructions.
+
+**Before running `/sablier add`**, ensure the compose.yml has `homepage.ping` set to the internal IP:
+
+```yaml
+- "homepage.ping=http://192.168.1.2:<port>"
+```
+
+This must be added alongside `homepage.href`. Without it, homepage's `statusStyle: dot` polls the public subdomain (`href`) every 60s via `got`, which goes through NPM → Sablier and either wakes stopped containers or keeps running ones alive indefinitely — breaking Sablier's idle management entirely.
