@@ -35,6 +35,7 @@
 | `prefix ←→↑↓` | navigate panes |
 | `prefix z` | zoom pane fullscreen (toggle) |
 | `prefix x` | kill pane |
+| `prefix T` | rename current pane (title) |
 
 ## Copy / Extract
 | Key | Action |
