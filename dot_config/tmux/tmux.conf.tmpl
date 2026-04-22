@@ -131,12 +131,13 @@ set -g pane-border-lines "double"
 set -g pane-border-style "bg=default,fg=colour245"
 set -g pane-active-border-style "bg=default,fg=colour166"
 
-# Per-pane title label (falls back to the running command when no title is set)
+# Per-pane title label — prefers user-set title (@user_title), falls back to
+# running program's title, then current command
 set -g pane-border-status top
-set -g pane-border-format " #{?pane_title,#{pane_title},#{pane_current_command}} "
+set -g pane-border-format " #{?#{@user_title},#{@user_title},#{?pane_title,#{pane_title},#{pane_current_command}}} "
 
-# Rename the current pane — prefix + T
-bind T command-prompt -p "Pane title:" "select-pane -T '%%'"
+# Rename the current pane — prefix + T (stored in @user_title so programs can't overwrite it)
+bind T command-prompt -p "Pane title:" "set-option -p @user_title '%%'"
 
 # Dim text in inactive panes (fg only — preserves Ghostty transparency)
 set -g window-style "fg=colour245"
