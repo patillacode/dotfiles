@@ -34,6 +34,15 @@ tmux_kill_session() {
 tmux_session_picker() {
   local sessions_dir="$HOME/.config/tmux/sessions"
   local running defined all
+  local resurrect_last="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last"
+  if ! tmux list-sessions >/dev/null 2>&1 && [[ -e "$resurrect_last" ]]; then
+    tmux start-server
+    local deadline=$(( SECONDS + 5 ))
+    while (( SECONDS < deadline )); do
+      tmux list-sessions >/dev/null 2>&1 && break
+      sleep 0.1
+    done
+  fi
   running=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
   defined=$(ls "$sessions_dir"/*.sh 2>/dev/null | xargs -I{} basename {} .sh)
   all=$(printf "%s\n%s" "$running" "$defined" | sort -u | grep -v '^$' \

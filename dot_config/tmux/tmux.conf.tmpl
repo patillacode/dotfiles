@@ -146,8 +146,10 @@ set -g window-active-style "fg=terminal"
 # Message bar
 set -g message-style "bg=black,fg=cyan,bold"
 
-# Resurrect
+# Resurrect / Continuum
 set -g @resurrect-capture-pane-contents 'on'
+set -g @continuum-restore 'on'
+set -g @continuum-save-interval '5'
 
 # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
 run '~/.tmux/plugins/tpm/tpm'
