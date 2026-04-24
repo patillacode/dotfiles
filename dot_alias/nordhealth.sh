@@ -1,4 +1,4 @@
-# nordhealth.sh — work-specific utilities
+# nordhealth.sh — nordhealth-specific utilities
 
 certex() {
     local input output
