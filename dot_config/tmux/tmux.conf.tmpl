@@ -10,6 +10,8 @@ set -g detach-on-destroy off    # Don't exit from tmux when closing a session
 set -g escape-time 0            # Remove delay for exiting insert mode with ESC in Neovim
 set -g history-limit 1000000    # Increase history size (from 2,000)
 set -g mouse on                 # Enable mouse support
+bind -n WheelUpPane   if -Ft= "#{mouse_any_flag}" "send-keys -M" "if -Ft= '#{pane_in_mode}' 'send-keys -X scroll-up; send-keys -X scroll-up; send-keys -X scroll-up' 'copy-mode -e; send-keys -X scroll-up; send-keys -X scroll-up; send-keys -X scroll-up'"
+bind -n WheelDownPane if -Ft= "#{mouse_any_flag}" "send-keys -M" "if -Ft= '#{pane_in_mode}' 'send-keys -X scroll-down; send-keys -X scroll-down; send-keys -X scroll-down' 'send-keys -M'"
 set -g status-interval 3        # Update the status bar every 3 seconds (default: 15 seconds)
 set -g allow-passthrough on     # Allow programs in the pane to bypass tmux (e.g. for image preview)
 set -g display-time 4000        # Keep status-bar messages on screen for 4s (default: 750ms)
