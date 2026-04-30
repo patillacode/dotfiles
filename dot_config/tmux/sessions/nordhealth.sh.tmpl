@@ -49,5 +49,5 @@ else
     tmux attach-session -t "=$SESSION"
 fi
 {{ else -}}
-ssh nordhealth -t "bash \$HOME/.config/tmux/sessions/nordhealth.sh"
+ssh nordhealth -t "bash -l \$HOME/.config/tmux/sessions/nordhealth.sh"
 {{ end -}}
