@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+{{ if eq .chezmoi.hostname "FNSLT-HHJH4W10MP" -}}
 SESSION="nordhealth"
 
 if tmux has-session -t "=$SESSION" 2>/dev/null; then
@@ -47,3 +48,6 @@ if [[ -n "$TMUX" ]]; then
 else
     tmux attach-session -t "=$SESSION"
 fi
+{{ else -}}
+ssh nordhealth -t "bash \$HOME/.config/tmux/sessions/nordhealth.sh"
+{{ end -}}
