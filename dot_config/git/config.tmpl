@@ -84,11 +84,6 @@
 	process = git-lfs filter-process
 	required = true
 
-{{ if has "work" .profiles -}}
-[includeIf "gitdir/i:~/projects/work/nordhealth/**"]
-	path = ~/.config/git/nordhealth
-
-{{ end -}}
 [init]
     defaultBranch = development
 
@@ -139,3 +134,13 @@
 [user]
 	name = {{ .git.name | quote }}
 	email = {{ .git.email | quote }}
+
+{{ if has "work" .profiles -}}
+# Work identity overrides — must come after the personal [user] block so the
+# include wins on path match (last value in git config takes precedence).
+[includeIf "gitdir/i:~/projects/work/nordhealth/**"]
+	path = ~/.config/git/nordhealth
+
+[includeIf "gitdir/i:~/projects/nordhealth/**"]
+	path = ~/.config/git/nordhealth
+{{- end }}
