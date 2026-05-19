@@ -94,3 +94,6 @@ certex() {
 }
 
 alias xc='certex'
+
+# Grafana MCP service-account token (read-only). Token lives in ~/.grafana (not in dotfiles).
+[ -r "$HOME/.grafana" ] && export GRAFANA_SERVICE_ACCOUNT_TOKEN="$(<"$HOME/.grafana")"
