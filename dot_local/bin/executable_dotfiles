@@ -450,13 +450,23 @@ cmd_secrets() {
     fi
 
     # ── Navidrome ──────────────────────────────────────────────
-    _section "[4/4] Navidrome"
+    _section "[4/5] Navidrome"
     _dim "Entry: Code/dotfiles/navidrome"
     local nav_user nav_pass
     nav_user=$(kp_show UserName "Code/dotfiles/navidrome")
     nav_pass=$(kp_show Password "Code/dotfiles/navidrome")
     if [[ -n "$nav_user" && -n "$nav_pass" ]]; then
         _ok "NAVIDROME_USER / NAVIDROME_PASS"
+    else
+        _fail "Not found — skipping"
+    fi
+
+    _section "[5/5] dropit token"
+    _dim "Entry: Code/dotfiles/dropit-token"
+    local dropit_token
+    dropit_token=$(kp_show Password "Code/dotfiles/dropit-token")
+    if [[ -n "$dropit_token" ]]; then
+        _ok "DROPIT_TOKEN"
     else
         _fail "Not found — skipping"
     fi
@@ -474,6 +484,7 @@ EOF
     [[ -n "$github_token" ]] && echo "export GITHUB_TOKEN=\"$github_token\"" >> "$HOME/.env"
     [[ -n "$github_token" ]] && echo "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$github_token\"" >> "$HOME/.env"
     [[ -n "$forgejo_token" ]] && echo "export FORGEJO_TOKEN=\"$forgejo_token\"" >> "$HOME/.env"
+    [[ -n "$dropit_token" ]] && echo "export DROPIT_TOKEN=\"$dropit_token\"" >> "$HOME/.env"
     [[ -n "$nav_user" ]] && echo "export NAVIDROME_USER=\"$nav_user\"" >> "$HOME/.env"
     [[ -n "$nav_pass" ]] && echo "export NAVIDROME_PASS=\"$nav_pass\"" >> "$HOME/.env"
 
@@ -489,6 +500,7 @@ EOF
     local token_count=0
     [[ -n "$github_token" ]] && token_count=$((token_count + 1))
     [[ -n "$forgejo_token" ]] && token_count=$((token_count + 1))
+    [[ -n "$dropit_token" ]] && token_count=$((token_count + 1))
     echo ""
     _ok "~/.env updated  —  $token_count token(s), $tg_count chat(s)"
     _dim "Run 'source ~/.env' or open a new shell to load."
