@@ -2,6 +2,3 @@
 --downloader aria2c
 --cookies ~/.config/yt-dlp/cookies/youtube.com_cookies.txt
 --mark-watched
-
-# set always to best quality
--f best
