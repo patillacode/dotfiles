@@ -1,0 +1,179 @@
+#!/bin/bash
+# vid2audio — extract audio from a video file
+#
+# Default: stream-copies the existing audio track (instant, lossless).
+# Output extension is auto-picked from the source codec.
+# Pass a format to re-encode instead (mp3 @ VBR2, aac @ 192k, etc.).
+
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: vid2audio <input> [format] [--track N] [--force] [--verbose]
+
+Extract audio from a video file.
+
+By default, copies the audio stream as-is (instant, lossless). The output
+extension is chosen to match the source codec (mp4/AAC → .m4a, webm/Opus →
+.opus, mkv/Vorbis → .ogg, etc.). Exotic codecs fall back to re-encoding to
+mp3 @ VBR2 with a warning.
+
+Pass a format argument to force a re-encode.
+
+Arguments:
+  input          Path to a video file.
+  format         Optional. One of: mp3, m4a, aac, flac, ogg, opus, wav.
+                 If omitted, the source audio is stream-copied.
+
+Options:
+  --track N      Pick audio stream N (0-indexed). Defaults to 0.
+                 If the source has multiple audio tracks, a warning is
+                 printed; use this flag to pick another.
+  -f, --force    Overwrite the output file if it already exists.
+  -v, --verbose  Show full ffmpeg output (default hides banner, keeps stats).
+  -h, --help     Show this help.
+
+Examples:
+  vid2audio clip.mp4               # → clip.m4a   (stream-copy AAC)
+  vid2audio movie.mkv mp3          # → movie.mp3  (re-encode @ VBR2)
+  vid2audio movie.mkv --track 1    # extract the second audio track
+  vid2audio show.mp4 mp3 --force   # overwrite show.mp3 if present
+EOF
+}
+
+input=""
+format=""
+track=0
+force=0
+verbose=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)    usage; exit 0 ;;
+        -f|--force)   force=1; shift ;;
+        -v|--verbose) verbose=1; shift ;;
+        --track)
+            [ $# -ge 2 ] || { echo "Error: --track requires a value" >&2; exit 1; }
+            track="$2"; shift 2 ;;
+        --track=*) track="${1#--track=}"; shift ;;
+        --) shift; break ;;
+        -*) echo "Error: unknown flag: $1" >&2; usage >&2; exit 1 ;;
+        *)
+            if [ -z "$input" ]; then
+                input="$1"
+            elif [ -z "$format" ]; then
+                format="$1"
+            else
+                echo "Error: unexpected argument: $1" >&2
+                usage >&2; exit 1
+            fi
+            shift ;;
+    esac
+done
+
+if [ -z "$input" ]; then usage >&2; exit 1; fi
+
+if ! command -v ffmpeg &>/dev/null; then
+    echo "Error: ffmpeg is not installed." >&2
+    exit 1
+fi
+if ! command -v ffprobe &>/dev/null; then
+    echo "Error: ffprobe is not installed." >&2
+    exit 1
+fi
+
+if [ ! -f "$input" ]; then
+    echo "Not found: $input" >&2
+    exit 1
+fi
+
+case "$format" in
+    aac) format="m4a" ;;
+    vorbis) format="ogg" ;;
+esac
+
+streams=$(ffprobe -v error -select_streams a \
+    -show_entries stream=index,codec_name -of csv=p=0 "$input" || true)
+
+if [ -z "$streams" ]; then
+    echo "Error: no audio stream found in $input" >&2
+    exit 1
+fi
+
+stream_count=$(printf '%s\n' "$streams" | wc -l | tr -d ' ')
+if [ "$stream_count" -gt 1 ] && [ "$track" = "0" ]; then
+    echo "Note: $input has $stream_count audio tracks. Extracting track 0." >&2
+    echo "      Use --track N to pick another (0..$((stream_count - 1)))." >&2
+fi
+
+source_codec=$(printf '%s\n' "$streams" | sed -n "$((track + 1))p" | cut -d, -f2)
+if [ -z "$source_codec" ]; then
+    echo "Error: track $track not found (have $stream_count track(s))" >&2
+    exit 1
+fi
+
+base="${input%.*}"
+
+if [ -z "$format" ]; then
+    case "$source_codec" in
+        aac)      ext="m4a"  ;;
+        mp3)      ext="mp3"  ;;
+        opus)     ext="opus" ;;
+        vorbis)   ext="ogg"  ;;
+        flac)     ext="flac" ;;
+        ac3)      ext="ac3"  ;;
+        eac3)     ext="eac3" ;;
+        pcm_*)    ext="wav"  ;;
+        *)
+            echo "Note: source codec '$source_codec' not recognized for stream-copy." >&2
+            echo "      Falling back to re-encode → mp3 @ VBR2." >&2
+            format="mp3"; ext="mp3"
+            ;;
+    esac
+    mode="copy"
+    [ -n "$format" ] && mode="reencode"
+else
+    case "$format" in
+        mp3|m4a|flac|ogg|opus|wav) ext="$format" ;;
+        *) echo "Error: unsupported format: $format" >&2; usage >&2; exit 1 ;;
+    esac
+    mode="reencode"
+fi
+
+output="${base}.${ext}"
+
+if [ "$output" = "$input" ]; then
+    echo "Error: output ($output) would overwrite the input." >&2
+    exit 1
+fi
+
+if [ -f "$output" ] && [ "$force" -ne 1 ]; then
+    echo "Already exists: $output (use --force to overwrite)" >&2
+    exit 1
+fi
+
+log_args=(-hide_banner -loglevel warning -stats)
+[ "$verbose" -eq 1 ] && log_args=()
+
+overwrite_arg="-n"
+[ "$force" -eq 1 ] && overwrite_arg="-y"
+
+ffmpeg_args=("${log_args[@]}" "$overwrite_arg" -i "$input" -vn -map "0:a:$track")
+
+if [ "$mode" = "copy" ]; then
+    ffmpeg_args+=(-c:a copy)
+else
+    case "$format" in
+        mp3)  ffmpeg_args+=(-c:a libmp3lame -q:a 2) ;;
+        m4a)  ffmpeg_args+=(-c:a aac -b:a 192k) ;;
+        flac) ffmpeg_args+=(-c:a flac) ;;
+        ogg)  ffmpeg_args+=(-c:a libvorbis -q:a 5) ;;
+        opus) ffmpeg_args+=(-c:a libopus -b:a 128k) ;;
+        wav)  ffmpeg_args+=(-c:a pcm_s16le) ;;
+    esac
+fi
+
+ffmpeg_args+=("$output")
+
+ffmpeg "${ffmpeg_args[@]}"
+echo "Saved to: $output"

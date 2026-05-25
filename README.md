@@ -361,6 +361,7 @@ dotfiles/
 │   ├── executable_vid2gif       # convert video to GIF (requires explicit output name)
 │   ├── executable_vid2gif-auto  # vid2gif wrapper with auto output name (used by yazi)
 │   ├── executable_ffmpeg-trim   # trim a video clip
+│   ├── executable_vid2audio     # extract audio from a video
 │   ├── executable_img-convert   # convert image formats
 │   ├── executable_screen-cap    # screen recording
 │   ├── executable_git-clean-branches
@@ -435,6 +436,7 @@ All scripts are in `~/.local/bin/` (on `$PATH`), available on every machine. Run
 | `vid2gif [-s width] <in> <out>` | Convert video to GIF (explicit output name required) |
 | `vid2gif-auto <in>` | Convert video to GIF (auto-names output as `<in>.gif`) |
 | `ffmpeg-trim <in> <start> <end>` | Trim a video clip |
+| `vid2audio <in> [format]` | Extract audio from a video (stream-copy by default, re-encode if format given) |
 | `img-convert` | Convert image formats (macOS sips) |
 | `screen-cap` | Screen recording (macOS) |
 
