@@ -9,31 +9,29 @@
         "model_parameters": []
     },
     "agent_servers": {
-        "claude": {
+        "claude-acp": {
+            "type": "registry",
             "default_mode": "plan"
         }
     },
-    "features": {
-        "edit_prediction_provider": "copilot"
-    },
     "edit_predictions": {
+        "provider": "copilot",
         "mode": "eager",
-        "enabled_in_text_threads": true,
         "disabled_globs": []
     },
-
     // --- SSH connections (per-machine) ---
+    {{- if eq .machine_name "bars" }}
     "ssh_connections": [
-        {{- if eq .machine_name "bars" }}
         {
             "host": "totoro",
             "username": "dvitto",
             "args": [],
             "projects": []
         }
-        {{- end }}
     ],
-
+    {{- else }}
+    "ssh_connections": [],
+    {{- end }}
     // --- Appearance ---
     "theme": "Tokyo Patilla",
     "icon_theme": "Material Icon Theme",
@@ -57,7 +55,6 @@
     "diff_view_style": "unified",
     "show_whitespaces": "selection",
     "confirm_quit": true,
-
     // --- Editing ---
     "autosave": "off",
     "format_on_save": "on",
@@ -67,13 +64,14 @@
     "remove_trailing_whitespace_on_save": true,
     "ensure_final_newline_on_save": true,
     "preferred_line_length": 100,
-    "wrap_guides": [100],
+    "wrap_guides": [
+        100
+    ],
     "show_wrap_guides": true,
     "soft_wrap": "none",
     "indent_guides": {
         "enabled": false
     },
-
     // --- Visual aids ---
     "gutter": {
         "line_numbers": true,
@@ -109,7 +107,6 @@
         "enabled": false
     },
     "vim_mode": false,
-
     // --- Git ---
     "git": {
         "git_gutter": "tracked_files",
@@ -121,7 +118,6 @@
             "min_column": 0
         }
     },
-
     // --- Panels ---
     "project_panel": {
         "button": true,
@@ -156,7 +152,6 @@
         "activate_on_close": "history",
         "show_diagnostics": "all"
     },
-
     // --- Files ---
     "file_scan_inclusions": [
         ".env*"
@@ -171,11 +166,17 @@
     ],
     "redact_private_values": false,
     "file_types": {
-        "YAML": ["yml"],
-        "Makefile": ["Makefile", "makefile"],
-        "Dockerfile": ["Dockerfile*"]
+        "YAML": [
+            "yml"
+        ],
+        "Makefile": [
+            "Makefile",
+            "makefile"
+        ],
+        "Dockerfile": [
+            "Dockerfile*"
+        ]
     },
-
     // --- Terminal ---
     "terminal": {
         "shell": "system",
@@ -192,7 +193,12 @@
         "line_height": "comfortable",
         "detect_venv": {
             "on": {
-                "directories": [".env", "env", ".venv", "venv"],
+                "directories": [
+                    ".env",
+                    "env",
+                    ".venv",
+                    "venv"
+                ],
                 "activate_script": "default"
             }
         },
@@ -204,10 +210,11 @@
         },
         "font_family": "{{ .font.family }}",
         "font_size": {{ .font.size }},
-        "font_fallbacks": ["ZedMono Nerd Font Propo"],
+        "font_fallbacks": [
+            "ZedMono Nerd Font Propo"
+        ],
         "max_scroll_history_lines": 20000
     },
-
     // --- Languages ---
     "languages": {
         "Python": {
@@ -221,10 +228,18 @@
             ],
             "format_on_save": "on",
             "formatter": [
-                { "code_action": "source.organizeImports.ruff" },
-                { "language_server": { "name": "ruff" } }
+                {
+                    "code_action": "source.organizeImports.ruff"
+                },
+                {
+                    "language_server": {
+                        "name": "ruff"
+                    }
+                }
             ],
-            "debuggers": ["Debugpy"],
+            "debuggers": [
+                "Debugpy"
+            ],
             "inlay_hints": {
                 "enabled": true,
                 "show_type_hints": true,
@@ -240,7 +255,9 @@
             "use_on_type_format": false,
             "allow_rewrap": "anywhere",
             "soft_wrap": "editor_width",
-            "prettier": { "allowed": true }
+            "prettier": {
+                "allowed": true
+            }
         },
         "Git Commit": {
             "allow_rewrap": "anywhere"
@@ -254,51 +271,90 @@
             "ensure_final_newline_on_save": false
         },
         "JavaScript": {
-            "language_servers": ["!typescript-language-server", "vtsls", "..."],
-            "prettier": { "allowed": true }
+            "language_servers": [
+                "!typescript-language-server",
+                "vtsls",
+                "..."
+            ],
+            "prettier": {
+                "allowed": true
+            }
         },
         "TypeScript": {
-            "language_servers": ["!typescript-language-server", "vtsls", "..."],
-            "prettier": { "allowed": true }
+            "language_servers": [
+                "!typescript-language-server",
+                "vtsls",
+                "..."
+            ],
+            "prettier": {
+                "allowed": true
+            }
         },
         "TSX": {
-            "language_servers": ["!typescript-language-server", "vtsls", "..."],
-            "prettier": { "allowed": true }
+            "language_servers": [
+                "!typescript-language-server",
+                "vtsls",
+                "..."
+            ],
+            "prettier": {
+                "allowed": true
+            }
         },
         "Vue.js": {
-            "language_servers": ["vue-language-server", "..."],
-            "prettier": { "allowed": true }
+            "language_servers": [
+                "vue-language-server",
+                "..."
+            ],
+            "prettier": {
+                "allowed": true
+            }
         },
         "CSS": {
             "formatter": "prettier",
             "format_on_save": "on",
-            "prettier": { "allowed": true }
+            "prettier": {
+                "allowed": true
+            }
         },
         "SCSS": {
-            "prettier": { "allowed": true }
+            "prettier": {
+                "allowed": true
+            }
         },
         "HTML": {
-            "prettier": { "allowed": true }
+            "prettier": {
+                "allowed": true
+            }
         },
         "JSON": {
-            "prettier": { "allowed": true }
+            "prettier": {
+                "allowed": true
+            }
         },
         "JSONC": {
-            "prettier": { "allowed": true }
+            "prettier": {
+                "allowed": true
+            }
         },
         "GraphQL": {
-            "prettier": { "allowed": true }
+            "prettier": {
+                "allowed": true
+            }
         },
         "SQL": {
             "prettier": {
                 "allowed": true,
-                "plugins": ["prettier-plugin-sql"]
+                "plugins": [
+                    "prettier-plugin-sql"
+                ]
             }
         },
         "XML": {
             "prettier": {
                 "allowed": true,
-                "plugins": ["@prettier/plugin-xml"]
+                "plugins": [
+                    "@prettier/plugin-xml"
+                ]
             }
         },
         "YAML": {
@@ -309,10 +365,11 @@
             "tab_size": 2
         },
         "TOML": {
-            "language_servers": ["!Taplo"]
+            "language_servers": [
+                "!Taplo"
+            ]
         }
     },
-
     "lsp": {
         "ty": {
             "initialization_options": {
@@ -333,7 +390,6 @@
             }
         }
     },
-
     // --- Misc ---
     "auto_update": true,
     "restore_on_startup": "last_session",
