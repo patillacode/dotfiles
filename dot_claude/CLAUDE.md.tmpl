@@ -31,6 +31,14 @@ This file applies to all Claude Code sessions on this machine ({{ .machine_name 
 ## Rules
 
 See `~/.claude/rules/` for additional context-specific instructions.
+
+## Obsidian Knowledge Base
+
+I keep a durable knowledge vault at `~/syncthing/obsidian/` managed by the `/obsidian` skill.
+
+When a task produces durable, reusable knowledge — a technical finding or fix, a runbook/how-to, a decision or research conclusion, or a project doc/spec — **offer** to save it with `/obsidian`. Offer liberally: the skill always previews and asks before writing, so over-offering costs nothing.
+
+Never write to the vault without my explicit yes, and never on my behalf without offering first. This is separate from `~/assistant` (fast work capture); the vault is for durable cross-life knowledge.
 {{ if has "work" .profiles }}
 ---
 
