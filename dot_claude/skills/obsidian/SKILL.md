@@ -1,13 +1,13 @@
 ---
 name: obsidian
-description: Use when the user invokes /obsidian, or asks to save / document / note / write up something to their Obsidian vault — a finding, fix, runbook, decision, research result, project doc, recipe, or any durable knowledge from a finished task. Creates, edits, and soft-deletes notes in the vault at ~/syncthing/obsidian with consistent metadata, links, and navigation.
+description: Use when the user invokes /obsidian, or asks to save / document / note / write up something to their Obsidian vault — a finding, fix, runbook, decision, research result, project doc, recipe, or any durable knowledge from a finished task. Creates, edits, and soft-deletes notes in the user's Obsidian vault (path resolved at runtime) with consistent metadata, links, and navigation.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Obsidian vault manager
 
-Turn finished work into durable, connected knowledge in the user's Obsidian vault at
-`~/syncthing/obsidian/` (synced via syncthing to every machine).
+Turn finished work into durable, connected knowledge in the user's Obsidian vault
+(path resolved in Step 0 below, synced via syncthing across machines).
 
 **Core principle: never write, edit, or delete without showing a preview and getting one
 explicit `y`.** Every file operation is gated by confirmation. This is what makes proactive
@@ -15,7 +15,7 @@ offering safe.
 
 ## The vault is self-describing
 
-`~/syncthing/obsidian/_meta/vault-guide.md` is the source of truth for folder routing, naming,
+`$VAULT/_meta/vault-guide.md` is the source of truth for folder routing, naming,
 frontmatter, linking, and deletion policy. **Always read it first** — the user edits it from
 inside Obsidian, so it can change. This SKILL only describes the *process*; the guide describes
 the *rules*.
@@ -31,8 +31,21 @@ existing contents.
 
 ## Workflow
 
+### 0. Resolve vault path
+Run:
+```bash
+if [ -d ~/syncthing/obsidian ]; then
+  echo ~/syncthing/obsidian
+elif [ -d /mnt/services/syncthing/data/obsidian ]; then
+  echo /mnt/services/syncthing/data/obsidian
+fi
+```
+Store the result as **VAULT**. If both paths are absent, stop and tell the user:
+"Vault not found at `~/syncthing/obsidian` or `/mnt/services/syncthing/data/obsidian`. Please confirm the correct path."
+Do not proceed until the user provides a valid path.
+
 ### 1. Load the rulebook
-Read `~/syncthing/obsidian/_meta/vault-guide.md`. Use its routing table, frontmatter standard,
+Read `$VAULT/_meta/vault-guide.md`. Use its routing table, frontmatter standard,
 and conventions for every decision below. (Missing → bootstrap, see above.)
 
 ### 2. Classify the content
@@ -48,7 +61,7 @@ Capture **`source`** now while you have context: the repo path, Linear ticket, U
 ### 3. Search first (consolidate, don't fragment)
 Before creating anything, search the vault for related notes:
 ```
-Grep/Glob over ~/syncthing/obsidian (EXCLUDING eros/ and .trash/) by title keywords and body
+Grep/Glob over $VAULT (EXCLUDING eros/ and .trash/) by title keywords and body
 ```
 - **Strong match** → propose updating `[[That Note]]` (append a section or merge) instead of a
   new file. Show what you'd add.
@@ -84,7 +97,7 @@ Ask once: `Write this? [y/n]`. Do nothing to disk until `y`.
 When asked to delete a note:
 1. Show the file's path and a snippet.
 2. Confirm: `Move to .trash? [y/n]`.
-3. On `y`: `mkdir -p ~/syncthing/obsidian/.trash` and `mv` the file there (preserve the basename;
+3. On `y`: `mkdir -p $VAULT/.trash` and `mv` the file there (preserve the basename;
    if a name collision, suffix with a counter).
 4. Prune its entry from the folder's `_index.md`.
 Recoverable from Obsidian, and a move (not a delete) is safe under syncthing. Never `rm`.
