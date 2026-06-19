@@ -59,8 +59,11 @@ title:       short label for the issue
 severity:    HIGH | MEDIUM | LOW
 file:        path relative to repo root
 lines:       start_line-end_line (or single line)
+summary:     1–2 sentence what/why
 explanation: detailed description
+snippet:     { code, lang } — the relevant code excerpt + its language (e.g. "python"), or null
 fix:         concrete suggestion
+mrComment:   the copy/paste comment (see Phase 4 tone rules)
 source:      manual
 ```
 
@@ -136,11 +139,50 @@ next step. Use natural openers like "I noticed", "one thing that caught my eye",
 
 ---
 
+---
+
+## Phase 5 — HTML report
+
+After the terminal output above, **additionally** write a self-contained interactive
+HTML report. This never replaces the terminal output — it is an extra artifact.
+
+**Step 8.** Compute `SAFE_BRANCH` = the reviewed branch name with `/` replaced by `-`
+(use `TARGET_BRANCH` if set, else `CURRENT_BRANCH`).
+
+**Step 9.** Build a JSON array of the merged, sorted findings — one object per finding
+using the exact field names: `title`, `severity` (`"HIGH"|"MEDIUM"|"LOW"`), `file`,
+`lines`, `summary`, `explanation`, `snippet` (`{ "code": ..., "lang": ... }` or `null`),
+`mrComment`, `source` (`"manual"|"coderabbit"|"both"`).
+
+**Step 10.** Read the template `~/.claude/skills/review/template.html` and produce the
+report by replacing its three placeholders:
+
+- `<!--__TITLE__-->` (appears twice) → `Code review — <SAFE_BRANCH>`
+- `<!--__META__-->` → e.g. `<SAFE_BRANCH> · main...HEAD · N findings · <today's date>`
+- `/*__FINDINGS__*/[]` → the JSON array from Step 9
+
+```bash
+mkdir -p ~/assistant/reviews
+```
+
+Write the result to `~/assistant/reviews/<SAFE_BRANCH>.html` (overwrite if it exists).
+
+**Step 11.** Open it and print the path:
+
+```bash
+open ~/assistant/reviews/<SAFE_BRANCH>.html
+```
+
+Then print: `📄 HTML report: ~/assistant/reviews/<SAFE_BRANCH>.html`
+
+---
+
 ## Constraints
 
 - DO NOT apply any code changes or fixes
 - DO NOT create any Linear tickets
 - DO NOT produce any output before both Step 5a and Step 5b are fully complete
+- The HTML report is **in addition to** the terminal output, never a replacement
 - After the worktree cleanup (if applicable), output a brief summary line:
   `Review complete — N findings (X high, Y medium, Z low)`
 
