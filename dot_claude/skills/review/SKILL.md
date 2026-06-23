@@ -33,6 +33,13 @@ git diff main...HEAD -- <file>            # for each file in CHANGED_FILES
 
 Read the **full content** of every changed file, not just the diff.
 
+**Line numbers (do this for every finding):** Never derive `lines` from diff
+hunk headers (`@@ -624,3 +627,32 @@`) or from a `sed`/scroll window — those
+drift by tens of lines. Before recording any finding, run
+`grep -n "<unique symbol from the finding>" <file>` against the **actual
+reviewed file** (the worktree checkout, or `git show <branch>:<file>`) and cite
+that line. The `file:line` must point at the exact code the finding describes.
+
 ---
 
 ## Phase 2 — Run both reviews
