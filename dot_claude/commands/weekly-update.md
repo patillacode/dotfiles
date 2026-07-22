@@ -44,9 +44,14 @@ Format:
 - [from step 2, or "None"]
 ---
 
-## Step 4: Offer to publish
+## Step 4: Save to Obsidian
 
-After showing the draft, ask:
-"Want me to post this to Notion or copy it for Slack?"
-- If Notion: create a new Notion page titled "Weekly Update — [week of date]"
-- If Slack: format it for pasting (no markdown headers, just clean text with line breaks)
+After showing the draft, save it to the vault following the `/obsidian` skill conventions
+(read `_meta/vault-guide.md`, preview + confirm before writing, update the `_index.md` MoC):
+
+- **Folder:** `work/nordhealth/Weekly Updates/`
+- **Filename:** `Weekly Update [Monday date].md` (ISO date suffix, e.g. `Weekly Update 2026-07-22.md`)
+- **Frontmatter:** `tags: [work/nordhealth]`, `type: note`, `created`/`updated` today, `source: conversation`
+- **Body:** the drafted markdown from Step 3, unchanged
+
+Preview the full note and wait for confirmation before writing.
