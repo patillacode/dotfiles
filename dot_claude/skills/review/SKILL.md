@@ -76,16 +76,28 @@ source:      manual
 
 ### Step 5b — CodeRabbit (run in parallel with Step 5a)
 
-If any `.py` files are in `CHANGED_FILES`, run:
+If any `.py` files are in `CHANGED_FILES`, run (from inside the reviewed
+worktree/branch — CodeRabbit reviews the git diff itself, not file arguments):
 
 ```bash
-coderabbit --prompt-only $(git diff main...HEAD --name-only | grep -E '\.py$')
+coderabbit review --agent --base main
 ```
 
-**Do NOT set a timeout. Wait however long it takes for CodeRabbit to finish.**
+`--agent` emits newline-delimited JSON events to stdout. The stream ends with a
+`{"type":"complete","findings":N,"reviewedFiles":[...]}` line; individual issues
+arrive as their own JSON objects before it. Parse each finding object into the
+same internal structure as Step 5a, with `source: coderabbit`. `findings: 0` +
+no issue objects means CodeRabbit found nothing.
 
-Parse every finding from CodeRabbit's output into the same internal structure as
-Step 5a, with `source: coderabbit`.
+**Do NOT set a timeout. Wait however long it takes for CodeRabbit to finish.**
+The CLI can take a few minutes. Run it in the background and poll its output
+file rather than blocking a single foreground call.
+
+If the CLI hangs at startup with no output (even `coderabbit --version` never
+returns), it is broken/unauthenticated — reinstall
+(`curl -fsSL https://cli.coderabbit.ai/install.sh | sh`) and
+`coderabbit auth login`, then retry. `--prompt-only` and positional file
+arguments are from an older CLI and no longer exist.
 
 If no Python files changed, skip this step gracefully with a note in the final output.
 
