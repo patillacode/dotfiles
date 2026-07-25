@@ -19,9 +19,9 @@ name = "tokyo-night"
 
 # Override individual color tokens on top of the base theme.
 # Accepts: hex (#rrggbb), named colors, rgb(r,g,b), or panel_bg = "reset"
-# [theme.custom]
+[theme.custom]
+accent = "#f7768e"
 # panel_bg = "reset"
-# accent = "#f5c2e7"
 # red = "#ff6188"
 # green = "#a6e3a1"
 
@@ -76,8 +76,8 @@ prefix = "ctrl+space"
 # remove_worktree = ""  # optional, unset by default; opens confirmation
 # rename_workspace = "prefix+shift+w"
 # close_workspace = "prefix+shift+d"
-# previous_workspace = "" # optional, unset by default
-# next_workspace = ""     # optional, unset by default
+previous_workspace = "prefix+["
+next_workspace = "prefix+]"
 # previous_agent = ""     # optional, unset by default
 # next_agent = ""         # optional, unset by default
 # focus_agent = ""        # optional indexed binding, e.g. "prefix+alt+1..9"
