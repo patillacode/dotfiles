@@ -9,7 +9,9 @@ herdr_machine_picker() {
     | fzf --prompt="herdr > " --height=40%)
   [[ -z "$machine" ]] && return
   # ~/.ssh/config supplies the user for each host, so bare names are enough.
-  if [[ "$machine" == "$(hostname -s)" ]]; then
+  # machine_name (chezmoi data, not `hostname`) is the canonical id — nordhealth's
+  # real hostname differs from the "nordhealth" alias used here and in ssh config.
+  if [[ "$machine" == "{{ .machine_name }}" ]]; then
     herdr
   else
     herdr --remote "$machine"
