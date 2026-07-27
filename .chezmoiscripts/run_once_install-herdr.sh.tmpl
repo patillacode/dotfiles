@@ -1,0 +1,13 @@
+#!/bin/bash
+# run_once_install-herdr.sh — install herdr terminal workspace manager (runs once per machine)
+
+set -e
+
+if command -v herdr &>/dev/null; then
+    echo "herdr already installed — skipping"
+    exit 0
+fi
+
+echo "Installing herdr..."
+curl -fsSL https://herdr.dev/install.sh | sh
+echo "Done. Run 'herdr' to start; updates via 'herdr update'."
