@@ -347,7 +347,7 @@ dotfiles/
 │   ├── zed/                     # settings.json.tmpl
 │   ├── yazi/
 │   │   └── themes/              # catppuccin theme files + executable_download-themes.sh / executable_switch-theme.sh
-│   └── atuin/ btop/ gh/ mpv/ nvim/ tmux/ yt-dlp/
+│   └── atuin/ btop/ gh/ herdr/ mpv/ nvim/ yt-dlp/
 ├── dot_local/bin/               # → ~/.local/bin/ (all executable)
 │   ├── executable_dotfiles      # CLI wrapper for chezmoi
 │   ├── executable_bak           # timestamped file backup
@@ -382,9 +382,9 @@ What each trait deploys:
 
 | | `base` | `gui` | `personal` | `work` |
 |-|--------|-------|------------|--------|
-| **aliases** | ai, atuin, docker, fzf, git, misc, ssh, system, tmux, utils, yazi | ghostty | music, tv, twitch (`personal+gui` only) | nordhealth |
-| **configs** | atuin, btop, claude, gh, git, nvim, starship, tmux | ghostty, zed | mpv, yt-dlp (`personal+gui` only) | — |
-| **packages** | atuin, bat, btop, chezmoi, duf, eza, fastfetch, fd, fzf, gcc, gh, git-delta, git-lfs, glow, gum, jq, n, neovim, prek, ripgrep, rtk, ruff, starship, tmux, uv, wget | ghostty, keepassxc, raycast, rectangle, sf-symbols, stats | cmatrix, ffmpeg, ffmpegthumbnailer, figlet, imagemagick, mpv, ollama, poppler, socat, streamlink, yt-dlp, firefox, jordanbaird-ice, nextcloud, telegram, transmission, vlc, zen | zen |
+| **aliases** | ai, atuin, docker, fzf, git, herdr, misc, ssh, system, utils, yazi | ghostty | music, tv, twitch (`personal+gui` only) | nordhealth |
+| **configs** | atuin, btop, claude, gh, git, herdr, nvim, starship | ghostty, zed | mpv, yt-dlp (`personal+gui` only) | — |
+| **packages** | atuin, bat, btop, chezmoi, duf, eza, fastfetch, fd, fzf, gcc, gh, git-delta, git-lfs, glow, gum, jq, n, neovim, prek, ripgrep, rtk, ruff, starship, uv, wget | ghostty, keepassxc, raycast, rectangle, sf-symbols, stats | cmatrix, ffmpeg, ffmpegthumbnailer, figlet, imagemagick, mpv, ollama, poppler, socat, streamlink, yt-dlp, firefox, jordanbaird-ice, nextcloud, telegram, transmission, vlc, zen | zen |
 
 ---
 

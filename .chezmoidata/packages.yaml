@@ -34,8 +34,6 @@ trait_packages:
     - rtk
     - ruff
     - starship
-    - tmux
-    - sesh
     - uv
     - csvlens
     - hexyl
