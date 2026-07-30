@@ -188,6 +188,29 @@ Then `chezmoi apply`.
 
 The install script only adds — it doesn't uninstall. Remove the line from `.chezmoidata/packages.yaml`, then uninstall manually with `brew remove` or `apt remove`.
 
+### Remove a deployed file from all machines
+
+Deleting a file from the source only makes chezmoi stop managing it — the copy already in `$HOME` stays as an orphan. To delete it everywhere, list the home-relative target path (one per line) in `.chezmoiremove`; the next `chezmoi apply` on each machine removes it. It runs on every apply, so drop the entries once all machines have synced.
+
+Example — the tmux → herdr migration (July 2026) used:
+
+```
+# .chezmoiremove
+.alias/tmux.sh
+.config/tmux
+.tmux                # tpm plugins
+.local/share/tmux    # resurrect snapshots
+```
+
+Runtime state (a running server, sockets) isn't a file — clear it per machine:
+
+```bash
+tmux kill-server 2>/dev/null || true
+rm -rf "/tmp/tmux-$(id -u)"
+dotfiles sync   # .chezmoiremove deletes the on-disk files
+exec zsh        # drop removed aliases from the live shell
+```
+
 ### Add a new alias file
 
 Alias files live in `dot_alias/` and are sourced based on active traits.
