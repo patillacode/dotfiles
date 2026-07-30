@@ -1,7 +1,9 @@
 # herdr cheatsheet · prefix: Ctrl+Space
 
-Mouse-first, agent-aware multiplexer. Trialing it alongside tmux — nothing here
-touches your tmux setup. `prefix ?` shows every live binding inside herdr.
+Mouse-first, agent-aware multiplexer. **tmux is fully retired** (removed from the
+dotfiles + all machines as of July 2026) — herdr is the multiplexer now. `prefix ?`
+shows every live binding inside herdr. The "Coming from tmux" map below is kept as a
+migration reference.
 
 ## Concepts
 | Term | What it is |
