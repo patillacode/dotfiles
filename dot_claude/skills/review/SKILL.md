@@ -10,35 +10,106 @@ description: "/review [branch-name] — code review for current branch, or a dif
 **Step 1.** Parse arguments. If a branch name was provided, store it as `TARGET_BRANCH`.
 
 **Step 2.** Run `git branch --show-current` → store as `CURRENT_BRANCH`.
+Compute `SAFE_BRANCH` now = reviewed branch name with `/` replaced by `-`
+(`TARGET_BRANCH` if set, else `CURRENT_BRANCH`). The worktree path, the report
+filename, and the cleanup path all use it.
 
 **Step 3 — Worktree mode** (TARGET_BRANCH is set and differs from CURRENT_BRANCH):
 
 ```bash
-git worktree remove .worktrees/<TARGET_BRANCH> --force 2>/dev/null || true
-git worktree add .worktrees/<TARGET_BRANCH> <TARGET_BRANCH>
+# Fetch FIRST. Without this you review whatever the remote-tracking ref happened
+# to be at the last fetch — silently stale code and line numbers that don't match
+# what the reviewer sees in the MR.
+git fetch origin "<TARGET_BRANCH>" main || echo "WARNING: fetch failed — reviewing possibly stale local refs"
+
+grep -qxF '.worktrees/' .gitignore 2>/dev/null || echo '.worktrees/' >> .gitignore
+
+git worktree remove ".worktrees/<SAFE_BRANCH>" --force 2>/dev/null || true
+git worktree add --detach ".worktrees/<SAFE_BRANCH>" "origin/<TARGET_BRANCH>"
 ```
 
-Run all subsequent git commands from inside `.worktrees/<TARGET_BRANCH>/`.
+- `origin/<TARGET_BRANCH>`, not `<TARGET_BRANCH>` — pins the review to the remote
+  tip instead of a stale local branch that happens to share the name.
+- `--detach` — without it, `worktree add` creates a local branch that **survives
+  `worktree remove --force`** and pollutes the branch list.
+- If the fetch fails (offline), continue against the local refs, but keep the
+  warning and repeat it in the Step 11 summary. Degrade, don't hard-fail.
+
+Run all subsequent git commands from inside `.worktrees/<SAFE_BRANCH>/`.
 
 **Step 3 — Normal mode** (no TARGET_BRANCH, or already on that branch):
 
-Run all git commands from the repo root.
+Run all git commands from the repo root, after `git fetch origin main`.
 
-**Step 4.** Collect changed files and their diffs:
+**Both modes — always diff against `origin/main`, never local `main`.** Local `main` is routinely
+behind, and the obvious repair (`git fetch origin main:main`) is *fatal* in the most
+common case — reviewing someone else's branch while sitting on `main`:
+
+```
+fatal: refusing to fetch into branch 'refs/heads/main' checked out at '…'
+```
+
+so it cannot be relied on. `origin/main` is always current after the fetch above and
+is correct regardless of what is checked out.
+
+**Step 3b — Record provenance.** From inside the reviewed checkout:
 
 ```bash
-git diff main...HEAD --name-only          # → CHANGED_FILES
-git diff main...HEAD -- <file>            # for each file in CHANGED_FILES
+REVIEWED_SHA=$(git rev-parse --short HEAD)
+BASE_SHA=$(git merge-base origin/main HEAD | cut -c1-7)
+```
+
+Carry both into the report meta (Step 10) and the summary line so a stale report
+is self-evident without re-running the review.
+
+**Step 4.** Collect changed files and their diffs, against the `origin/main` freshly
+fetched in Step 3:
+
+```bash
+git diff origin/main...HEAD --name-only          # → CHANGED_FILES
+git diff origin/main...HEAD -- <file>            # for each file in CHANGED_FILES
 ```
 
 Read the **full content** of every changed file, not just the diff.
 
-**Line numbers (do this for every finding):** Never derive `lines` from diff
-hunk headers (`@@ -624,3 +627,32 @@`) or from a `sed`/scroll window — those
-drift by tens of lines. Before recording any finding, run
-`grep -n "<unique symbol from the finding>" <file>` against the **actual
-reviewed file** (the worktree checkout, or `git show <branch>:<file>`) and cite
-that line. The `file:line` must point at the exact code the finding describes.
+**Step 4b — Build the changed-lines index.** Run once and keep it for Phase 2:
+
+```bash
+git diff origin/main...HEAD --unified=0 | awk '
+  /^\+\+\+ b\// { f=substr($0,7); next }
+  /^@@/ { split($3,h,","); s=substr(h[1],2)+0; n=(h[2]==""?1:h[2]+0);
+          if (n>0) printf "%s:%d-%d\n", f, s, s+n-1 }'
+```
+
+→ `CHANGED_RANGES`, e.g. `src/efr/views/transaction_views.py:66-97`. At
+`--unified=0` each hunk is one contiguous change and the `+c,d` header gives
+exact **new-file** coordinates — no manual offset counting, so these ranges are
+authoritative. Deletion-only hunks (`d=0`) are skipped; they anchor nothing.
+
+**Line numbers (do this for every finding).** Both checks must pass before a
+finding is recorded:
+
+1. **Content check** — `sed -n '<line>p' <file>` (or
+   `git show <REVIEWED_SHA>:<file> | sed -n '<line>p'`) must display the code the
+   finding describes. Catches off-by-N.
+2. **Membership check** — the cited line must fall inside a `CHANGED_RANGES` entry
+   for that file. Catches anchoring on untouched code.
+
+**When the root cause is outside the diff.** A finding whose mechanism lives in an
+unchanged file is still valid — the MR newly exposes it — but it must be labelled,
+never silently anchored on whichever changed line is nearest:
+
+- Anchor `file`/`lines` on the changed line that **introduces the exposure**, so
+  the membership check passes.
+- Begin `explanation` with `Root cause: <file>:<line> (not in this diff).`
+- Repeat that pointer in `mrComment`, so the reader isn't sent to a line that looks
+  innocent.
+- Do **not** auto-downgrade severity — a pre-existing root cause is not lower impact.
+
+Worked example: "`document_type` forced to `INVOICE` on the Z-Bon" anchors on
+`src/efr/actions/z_report_actions.py:42` (inside `CHANGED_RANGES` `1-43`), and its
+explanation opens
+`Root cause: src/efr/serializers/gateway/requests.py:538 (not in this diff).`
 
 ---
 
@@ -80,8 +151,12 @@ If any `.py` files are in `CHANGED_FILES`, run (from inside the reviewed
 worktree/branch — CodeRabbit reviews the git diff itself, not file arguments):
 
 ```bash
-coderabbit review --agent --base main
+coderabbit review --agent --base origin/main
 ```
+
+`--base origin/main` for the same reason as Step 4 — verified accepted by the CLI,
+which echoes `"baseBranch":"origin/main"` in its `review_context` event. Passing
+plain `main` would silently review against a stale local base.
 
 `--agent` emits newline-delimited JSON events to stdout. The stream ends with a
 `{"type":"complete","findings":N,"reviewedFiles":[...]}` line; individual issues
@@ -165,8 +240,7 @@ next step. Use natural openers like "I noticed", "one thing that caught my eye",
 After the terminal output above, **additionally** write a self-contained interactive
 HTML report. This never replaces the terminal output — it is an extra artifact.
 
-**Step 8.** Compute `SAFE_BRANCH` = the reviewed branch name with `/` replaced by `-`
-(use `TARGET_BRANCH` if set, else `CURRENT_BRANCH`).
+**Step 8.** Reuse `SAFE_BRANCH` from Step 2 — do not recompute it.
 
 **Step 9.** Build a JSON array of the merged, sorted findings — one object per finding
 using the exact field names: `title`, `severity` (`"HIGH"|"MEDIUM"|"LOW"`), `file`,
@@ -177,7 +251,9 @@ using the exact field names: `title`, `severity` (`"HIGH"|"MEDIUM"|"LOW"`), `fil
 report by replacing its three placeholders:
 
 - `<!--__TITLE__-->` (appears twice) → `Code review — <SAFE_BRANCH>`
-- `<!--__META__-->` → e.g. `<SAFE_BRANCH> · main...HEAD · N findings · <today's date>`
+- `<!--__META__-->` → `<SAFE_BRANCH> · <REVIEWED_SHA> vs <BASE_SHA> · N findings · <today's date>`
+  (the SHAs from Step 3b — `main...HEAD` alone records nothing falsifiable, so a
+  stale report can't be spotted later)
 - `/*__FINDINGS__*/[]` → the JSON array from Step 9
 
 ```bash
@@ -203,7 +279,8 @@ Then print: `📄 HTML report: ~/assistant/reviews/<SAFE_BRANCH>.html`
 - DO NOT produce any output before both Step 5a and Step 5b are fully complete
 - The HTML report is **in addition to** the terminal output, never a replacement
 - After the worktree cleanup (if applicable), output a brief summary line:
-  `Review complete — N findings (X high, Y medium, Z low)`
+  `Review complete — N findings (X high, Y medium, Z low) · reviewed <REVIEWED_SHA> vs <BASE_SHA>`
+  If a fetch failed in Step 3, append the stale-ref warning to this line.
 
 ---
 
