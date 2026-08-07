@@ -47,6 +47,8 @@ migration reference.
 | `prefix Shift+n` | new workspace |
 | `prefix Shift+w` | rename workspace |
 | `prefix Shift+d` | close workspace |
+| `prefix a` | toggle last two spaces (MRU) |
+| `prefix Shift+1`–`9` | jump to space N |
 
 ## Tabs
 | Key | Action |
@@ -84,6 +86,7 @@ Detach and reattach: `prefix q`, later `h`. Panes and agents survive.
 | `Alt+hjkl` nav | `prefix hjkl` | herdr nav is prefixed |
 | windows | tabs + workspaces | workspace ≈ a whole tmux session per repo |
 | sesh picker | `prefix w` / `hs` | workspaces auto-create per cwd |
+| session last-window | `prefix a` | no native equivalent, and alt+tab doesn't reach herdr here; `herdr-last-space` script |
 | resurrect / continuum | server + `pane_history` | persists without plugins |
 | extrakto | — | **no equivalent** (use mouse copy) |
 | tmux-yank / tmux-open | mouse copy / click | **no plugin needed** |

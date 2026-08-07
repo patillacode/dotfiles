@@ -87,7 +87,7 @@ next_workspace = "prefix+]"
 # previous_tab = "prefix+p"
 # next_tab = "prefix+n"
 # switch_tab = "prefix+1..9"
-# switch_workspace = ""   # optional indexed binding, e.g. "prefix+shift+1..9"
+switch_workspace = "prefix+shift+1..9"
 # close_tab = "prefix+shift+x"
 # rename_pane = "prefix+shift+p"
 # edit_scrollback = "prefix+e"
@@ -126,6 +126,14 @@ zoom = "prefix+z"       # legacy alias: fullscreen
 # command = "lazygit"
 # width = "80%"
 # height = "80%"
+
+# Toggle between the current space and the last one you left (MRU, tmux-style
+# alt+tab). alt+tab doesn't reach herdr on this setup (Ghostty/macOS), so
+# prefix+a is the binding in use.
+[[keys.command]]
+key = "prefix+a"
+type = "shell"
+command = "$HOME/.local/bin/herdr-last-space"
 
 # Legacy indexed shortcut config is still parsed for compatibility.
 # Prefer switch_tab, switch_workspace, and focus_agent for new configs.

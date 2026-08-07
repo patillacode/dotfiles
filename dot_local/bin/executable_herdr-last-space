@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+# Toggle between the current herdr space and the last one this script left.
+# ponytail: only learns switches it performs, so mouse-hopping through 2+ spaces
+# makes it stale. Upgrade path: a herdr plugin with a workspace_focused event hook
+# (HERDR_PLUGIN_EVENT_JSON + HERDR_PLUGIN_STATE_DIR) for exact MRU.
+set -eu
+
+state="${TMPDIR:-/tmp}/herdr-last-space${HERDR_SESSION:+.$HERDR_SESSION}"
+list=$(herdr workspace list)
+cur=$(printf '%s' "$list" | jq -r '.result.workspaces[] | select(.focused) | .workspace_id')
+[ -n "$cur" ] || exit 0
+
+prev=$(cat "$state" 2>/dev/null || true)
+printf '%s' "$cur" >"$state"
+[ -n "$prev" ] && [ "$prev" != "$cur" ] || exit 0
+
+# the remembered space may have been closed since
+printf '%s' "$list" | jq -e --arg w "$prev" \
+    '.result.workspaces[] | select(.workspace_id == $w)' >/dev/null || exit 0
+
+herdr workspace focus "$prev"
