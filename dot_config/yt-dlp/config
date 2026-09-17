@@ -1,4 +1,2 @@
 # youtube-dlp configuration file
 --downloader aria2c
---cookies ~/.config/yt-dlp/cookies/youtube.com_cookies.txt
---mark-watched
