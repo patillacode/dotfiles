@@ -1,6 +1,7 @@
 # minmal.toml
 
 add_newline = false
+scan_timeout = 100
 palette = "default"
 
 format = """

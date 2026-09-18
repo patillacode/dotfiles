@@ -1,6 +1,7 @@
 # nord.toml — Nord palette (arctic, north-bluish)
 
 add_newline = true
+scan_timeout = 100
 palette = "nord"
 
 format = """

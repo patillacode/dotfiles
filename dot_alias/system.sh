@@ -1,5 +1,11 @@
 # system.sh — system-level aliases and utilities
 
+# mole's default 30s size-probe timeout is too short for large caches
+# (e.g. ~/Library/Caches/Arc at 12GB/650k files takes ~40s to `du`), which
+# cancels the entire `mole clean` run, and too short for `mole uninstall`'s
+# per-app pkgutil receipt scan (~36s on this machine). Raising it fixes both.
+export MOLE_TIMEOUT_DISK_VERIFY_SEC=300
+
 # Color codes for use in other aliases/scripts
 RED="\033[0;31m"
 GREEN="\033[0;32m"

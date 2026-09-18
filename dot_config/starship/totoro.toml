@@ -4,6 +4,8 @@
 # ║  Nature-inspired colors with perfect balance                 ║
 # ╚══════════════════════════════════════════════════════════════╝
 
+scan_timeout = 100
+
 format = """
 $time\
 $hostname\
