@@ -52,6 +52,9 @@ source $ZSH/oh-my-zsh.sh
 # nordhealth-specific: tool paths
 export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 export PATH="/opt/homebrew/opt/mysql@8.0/bin:$PATH"
+export PATH="/opt/homebrew/bin:$PATH"
+# reportlab build cache: its download server returns 403, stand-in lives here
+export RL_CACHE_DIR="$HOME/.cache/reportlab"
 {{ end -}}
 
 ###########
