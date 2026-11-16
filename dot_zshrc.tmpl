@@ -50,7 +50,8 @@ source $ZSH/oh-my-zsh.sh
 
 {{ if eq .machine_name "nordhealth" -}}
 # nordhealth-specific: tool paths
-export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
+#export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
+export PATH="/usr/local/bin:$PATH"
 export PATH="/opt/homebrew/opt/mysql@8.0/bin:$PATH"
 export PKG_CONFIG_PATH="/opt/homebrew/opt/mysql@8.0/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PATH="/opt/homebrew/bin:$PATH"

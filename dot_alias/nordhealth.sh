@@ -89,8 +89,19 @@ certex() {
     fi
 
     echo
-    openssl pkcs12 -in "$input" -out "$output" -nodes && \
-        echo "${GREEN}✓ Created:${RESET} $output"
+    local pw
+    printf "${BOLD}Import password:${RESET} "
+    read -rs pw
+    echo
+
+    # Old .p12 files (RC2-40) need -legacy on OpenSSL 3+, so retry with it
+    if ! CERTEX_PW="$pw" openssl pkcs12 -in "$input" -passin env:CERTEX_PW \
+            -out "$output" -nodes 2>/dev/null; then
+        echo "${YELLOW}Retrying with -legacy...${RESET}"
+        CERTEX_PW="$pw" openssl pkcs12 -legacy -in "$input" -passin env:CERTEX_PW \
+            -out "$output" -nodes || return 1
+    fi
+    echo "${GREEN}✓ Created:${RESET} $output"
 }
 
 alias xc='certex'
